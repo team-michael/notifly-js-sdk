@@ -1,7 +1,7 @@
 const { NAMESPACE } = require('./src/constants');
 const { logEvent } = require('./src/logEvent');
 const { saveCognitoIdToken } = require('./src/auth');
-const { getNotiflyUserID } = require('./src/user');
+const { getNotiflyUserID, setUserProperties, removeUserId } = require('./src/user');
 const { v5 } = require('uuid');
 
 async function initialize(projectID, userName, password, deviceToken) {
@@ -56,4 +56,7 @@ async function _apiCall(apiUrl, requestOptions) {
 module.exports = {
     initialize,
     trackEvent: logEvent,
+    setUserProperties,
+    removeUserId,
+    setUserId,
 };
