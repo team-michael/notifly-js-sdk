@@ -1,1 +1,1 @@
-declare module 'notifly-js-sdk-dev';
+declare module 'notifly-js-sdk';
