@@ -1,34 +1,8 @@
-const { NAMESPACE, SDK_VERSION } = require('./src/constants');
+const { NAMESPACE } = require('./src/constants');
+const { logEvent } = require('./src/logEvent');
 const { saveCognitoIdToken } = require('./src/auth');
 const { getNotiflyUserID } = require('./src/user');
-const { v5, v4 } = require('uuid');
-
-async function trackEvent(eventName, eventParams, segmentation_event_param_keys = null, isInternalEvent = false) {
-    const [projectID, deviceToken, cognitoIDToken, notiflyDeviceID, externalUserID] = [
-        localStorage.getItem('__notiflyProjectID'),
-        localStorage.getItem('__notiflyDeviceToken'),
-        localStorage.getItem('__notiflyCognitoIDToken'),
-        localStorage.getItem('__notiflyDeviceID'),
-        localStorage.getItem('__notiflyExternalUserID'),
-    ];
-    const notiflyUserID = getNotiflyUserID(deviceToken);
-    const data = {
-        id: v4(),
-        project_id: projectID,
-        name: eventName,
-        event_params: eventParams,
-        notifly_device_id: notiflyDeviceID,
-        notifly_user_id: notiflyUserID,
-        external_user_id: externalUserID,
-        device_token: deviceToken,
-        is_internal_event: isInternalEvent,
-        segmentation_event_param_keys: segmentation_event_param_keys,
-        sdk_version: SDK_VERSION,
-        time: parseInt(new Date().valueOf() / 1000),
-        platform: null, //TODO: platform
-    };
-    console.log(data);
-}
+const { v5 } = require('uuid');
 
 async function initialize(projectID, userName, password, deviceToken) {
     if (!(projectID && userName && password && deviceToken)) {
@@ -59,7 +33,27 @@ function _saveNotiflyData(data) {
     }
 }
 
+function _getRequestOptionsForLogEvent(token, body) {
+    const myHeaders = new Headers();
+    myHeaders.append('Authorization', token);
+    myHeaders.append('Content-Type', 'application/json');
+
+    const requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        body: body,
+        redirect: 'follow',
+    };
+    return requestOptions;
+}
+
+async function _apiCall(apiUrl, requestOptions) {
+    const result = fetch(apiUrl, requestOptions).then((response) => response.text());
+    return result;
+}
+
+
 module.exports = {
     initialize,
-    trackEvent,
+    trackEvent: logEvent,
 };
