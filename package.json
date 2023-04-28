@@ -11,5 +11,7 @@
   "author": "daeseongKim",
   "license": "ISC",
   "type": "module",
-  "devDependencies": {}
+  "dependencies": {
+    "uuid": "^9.0.0"
+  }
 }
