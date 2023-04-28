@@ -1,4 +1,5 @@
 const { v5 } = require('uuid');
+const { NAMESPACE } = require('./constants');
 
 function getNotiflyUserID(deviceToken) {
     const externalUserID = localStorage.getItem('__notiflyExternalUserID');

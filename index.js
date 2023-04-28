@@ -25,6 +25,7 @@ async function trackEvent(eventName, eventParams, segmentation_event_param_keys 
         segmentation_event_param_keys: segmentation_event_param_keys,
         sdk_version: SDK_VERSION,
         time: parseInt(new Date().valueOf() / 1000),
+        platform: null, //TODO: platform
     };
     console.log(data);
 }
