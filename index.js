@@ -25,8 +25,16 @@ async function initialize(projectID, userName, password, deviceToken) {
 }
 
 async function setUserId(userID) {
-    localStorage.setItem('__notiflyExternalUserID', userID);
-    // TODO: setUserProperties
+    if (!userID) {
+        await removeUserId();
+    }
+    try {
+        await setUserProperties({
+            external_user_id: userID,
+        });
+    } catch (err) {
+        console.warn('[Notifly] setUserId failed');
+    }
 }
 
 function _saveNotiflyData(data) {
