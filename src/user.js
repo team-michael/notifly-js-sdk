@@ -28,10 +28,8 @@ async function setUserProperties(params) {
                 getNotiflyUserId(),
                 localStorage.getItem('__notiflyExternalUserId'),
             ]); */
-            await Promise.all([
-                localStorage.setItem('__notiflyExternalUserId', params.external_user_id),
-                localStorage.removeItem('__notiflyUserId'),
-            ]);
+            localStorage.setItem('__notiflyExternalUserId', params.external_user_id);
+            localStorage.removeItem('__notiflyUserId');
             /* params['previous_notifly_user_id'] = previousNotiflyUserID;
             params['previous_external_user_id'] = previousExternalUserID; */
         }
@@ -52,10 +50,8 @@ async function setUserProperties(params) {
  */
 async function removeUserId() {
     try {
-        await Promise.all([
-            localStorage.removeItem('__notiflyExternalUserId'),
-            localStorage.removeItem('__notiflyUserId'),
-        ]);
+        localStorage.removeItem('__notiflyExternalUserId');
+        localStorage.removeItem('__notiflyUserId');
         return await logEvent('remove_external_user_id', {}, null, true);
     } catch (err) {
         console.warn('[Notifly] Failed to remove userID');

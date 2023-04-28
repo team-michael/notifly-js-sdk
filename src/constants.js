@@ -1,4 +1,4 @@
-const SDK_VERSION = '1.0.1';
+const SDK_VERSION = '1.0.2';
 
 const NAMESPACE = {
     'EVENTID': '830b5f7b-e392-43db-a17b-d835f0bcab2b',
