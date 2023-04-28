@@ -26,7 +26,7 @@ async function logEvent(eventName, eventParams, segmentation_event_param_keys = 
         segmentation_event_param_keys: segmentation_event_param_keys,
         sdk_version: SDK_VERSION,
         time: parseInt(new Date().valueOf() / 1000),
-        platform: null, //TODO: platform
+        platform: _isIOS() ? 'ios' : 'android',
     });
 
     const body = JSON.stringify({
@@ -53,7 +53,6 @@ async function logEvent(eventName, eventParams, segmentation_event_param_keys = 
 
 }
 
-
 function _getRequestOptionsForLogEvent(token, body) {
     const myHeaders = new Headers();
     myHeaders.append('Authorization', token);
@@ -69,11 +68,19 @@ function _getRequestOptionsForLogEvent(token, body) {
 }
 
 async function _apiCall(apiUrl, requestOptions) {
-    console.log(apiUrl, requestOptions);
     const result = fetch(apiUrl, requestOptions).then((response) => response.text());
     return result;
 }
 
+function _isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
+
+async function sessionStart() {
+    return await logEvent('session_start', {}, null, true);
+}
+
 module.exports = {
     logEvent,
+    sessionStart,
 }
