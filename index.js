@@ -1,7 +1,7 @@
 const { NAMESPACE } = require('./src/constants');
 const { logEvent } = require('./src/logEvent');
 const { saveCognitoIdToken } = require('./src/auth');
-const { getNotiflyUserID, setUserProperties, removeUserId } = require('./src/user');
+const { setUserProperties, removeUserId } = require('./src/user');
 const { v5 } = require('uuid');
 const { sessionStart } = require('./src/logEvent');
 
@@ -12,7 +12,7 @@ async function initialize(projectID, userName, password, deviceToken) {
     }
     await saveCognitoIdToken(userName, password);
     const notiflyDeviceID = v5(deviceToken, NAMESPACE.DEVICEID);
-    const notiflyUserID = getNotiflyUserID(deviceToken);
+    // const notiflyUserID = getNotiflyUserID(deviceToken);
     _saveNotiflyData({
         __notiflyProjectID: projectID,
         __notiflyUserName: userName,

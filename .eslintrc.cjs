@@ -4,21 +4,15 @@ module.exports = {
         es6: true,
         jest: true,
         node: true,
-        'react-native/react-native': true,
     },
     parser: '@babel/eslint-parser',
-    plugins: ['react', 'react-native'],
+    plugins: ['react'],
     extends: ['eslint:recommended', 'plugin:react/recommended'],
     rules: {
         'react/prop-types': 'off',
         'react/react-in-jsx-scope': 'off',
         'no-console': 'off',
         'no-unused-vars': 'warn',
-        'react-native/no-unused-styles': 'warn',
-        'react-native/split-platform-components': 'warn',
-        'react-native/no-inline-styles': 'warn',
-        'react-native/no-color-literals': 'warn',
-        'react-native/no-raw-text': 'warn',
     },
     settings: {
         react: {
