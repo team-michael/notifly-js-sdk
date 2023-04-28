@@ -54,7 +54,7 @@ async function setUserId(userID) {
 }
 
 function _saveNotiflyData(data) {
-    for (const [key, val] of data.entries()) {
+    for (const [key, val] of Object.entries(data)) {
         localStorage.setItem(key, val);
     }
 }
