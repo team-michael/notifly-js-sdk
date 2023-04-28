@@ -10,7 +10,7 @@ async function initialize(projectID, userName, password, deviceToken) {
         return false;
     }
     await saveCognitoIdToken(userName, password);
-    const notiflyDeviceID = v5(deviceToken, NAMESPACE.DEVICEID);
+    const notiflyDeviceID = v5(deviceToken, NAMESPACE.DEVICEID).replace(/-/g, '');
     // const notiflyUserID = getNotiflyUserID(deviceToken);
     _saveNotiflyData({
         __notiflyProjectID: projectID,
@@ -43,8 +43,6 @@ function _saveNotiflyData(data) {
     }
 }
 
-
-
 /**
  * Sets user properties for the current user.
  *
@@ -58,7 +56,6 @@ function _saveNotiflyData(data) {
 async function setUserProperties(params) {
     try {
         if (params.external_user_id) {
-
             /* const [previousNotiflyUserID, previousExternalUserID] = await Promise.all([
                 getNotiflyUserId(),
                 localStorage.getItem('__notiflyExternalUserID'),
