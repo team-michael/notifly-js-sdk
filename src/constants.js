@@ -10,4 +10,4 @@ const NAMESPACE = {
 module.exports = {
     SDK_VERSION,
     NAMESPACE,
-}
+};

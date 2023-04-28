@@ -4,7 +4,13 @@ const { saveCognitoIdToken } = require('./auth');
 const { getNotiflyUserID } = require('./user');
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 
-async function logEvent(eventName, eventParams, segmentation_event_param_keys = null, isInternalEvent = false, retryCount = 1) {
+async function logEvent(
+    eventName,
+    eventParams,
+    segmentation_event_param_keys = null,
+    isInternalEvent = false,
+    retryCount = 1
+) {
     const [projectID, deviceToken, cognitoIDToken, notiflyDeviceID, externalUserID] = [
         localStorage.getItem('__notiflyProjectID'),
         localStorage.getItem('__notiflyDeviceToken'),
@@ -50,7 +56,6 @@ async function logEvent(eventName, eventParams, segmentation_event_param_keys = 
         await saveCognitoIdToken(userName, password);
         await logEvent(eventName, eventParams, segmentation_event_param_keys, isInternalEvent, 0);
     }
-
 }
 
 function _getRequestOptionsForLogEvent(token, body) {
@@ -83,4 +88,4 @@ async function sessionStart() {
 module.exports = {
     logEvent,
     sessionStart,
-}
+};
