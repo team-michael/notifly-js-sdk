@@ -33,7 +33,6 @@ async function setUserProperties(params) {
             params['previous_notifly_user_id'] = previousNotiflyUserID;
             params['previous_external_user_id'] = previousExternalUserID;
         }
-        console.log('[Notifly] setUserProperties:', JSON.stringify(params));
         return await logEvent('set_user_properties', params, null, true);
     } catch (err) {
         console.warn('[Notifly] Failed to set user properties');

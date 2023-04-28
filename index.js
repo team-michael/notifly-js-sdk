@@ -27,6 +27,7 @@ async function initialize(projectID, userName, password, deviceToken) {
 async function setUserId(userID) {
     if (!userID) {
         await removeUserId();
+        return;
     }
     try {
         await setUserProperties({
