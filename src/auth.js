@@ -9,7 +9,7 @@
  * @example
  * const token = await getCognitoIdToken('myUserName', 'myPassword');
  */
- async function getCognitoIdToken(userName, password) {
+async function getCognitoIdToken(userName, password) {
     const headers = new Headers({
         'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth',
         'Content-Type': 'application/x-amz-json-1.1',
@@ -48,4 +48,4 @@ async function saveCognitoIdToken(userName, password) {
 
 module.exports = {
     saveCognitoIdToken,
-}
+};

@@ -13,5 +13,8 @@
   "type": "module",
   "dependencies": {
     "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "prettier": "^2.8.8"
   }
 }

@@ -8,4 +8,4 @@ function getNotiflyUserID(deviceToken) {
 }
 module.exports = {
     getNotiflyUserID,
-}
+};

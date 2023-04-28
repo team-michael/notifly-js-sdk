@@ -3,12 +3,7 @@ const { saveCognitoIdToken } = require('./src/auth');
 const { getNotiflyUserID } = require('./src/user');
 const { v5, v4 } = require('uuid');
 
-async function trackEvent(
-    eventName,
-    eventParams,
-    segmentation_event_param_keys = null,
-    isInternalEvent = false
-) {
+async function trackEvent(eventName, eventParams, segmentation_event_param_keys = null, isInternalEvent = false) {
     const [projectID, deviceToken, cognitoIDToken, notiflyDeviceID, externalUserID] = [
         localStorage.getItem('__notiflyProjectID'),
         localStorage.getItem('__notiflyDeviceToken'),
@@ -30,10 +25,9 @@ async function trackEvent(
         segmentation_event_param_keys: segmentation_event_param_keys,
         sdk_version: SDK_VERSION,
         time: parseInt(new Date().valueOf() / 1000),
-    }
+    };
     console.log(data);
 }
-
 
 async function initialize(projectID, userName, password, deviceToken) {
     if (!(projectID && userName && password && deviceToken)) {
@@ -67,4 +61,4 @@ function _saveNotiflyData(data) {
 module.exports = {
     initialize,
     trackEvent,
-}
+};
