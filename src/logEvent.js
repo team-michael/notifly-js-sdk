@@ -48,7 +48,7 @@ async function logEvent(eventName, eventParams, segmentation_event_param_keys = 
             localStorage.getItem('__notiflyPassword'),
         ];
         await saveCognitoIdToken(userName, password);
-        await trackEvent(eventName, eventParams, segmentation_event_param_keys, isInternalEvent, 0);
+        await logEvent(eventName, eventParams, segmentation_event_param_keys, isInternalEvent, 0);
     }
 
 }

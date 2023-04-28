@@ -3,7 +3,7 @@ const { logEvent } = require('./src/logEvent');
 const { saveCognitoIdToken } = require('./src/auth');
 const { getNotiflyUserID, setUserProperties, removeUserId } = require('./src/user');
 const { v5 } = require('uuid');
-const { sessionStart } = require('../notifly-node-package/src/utils');
+const { sessionStart } = require('./src/logEvent');
 
 async function initialize(projectID, userName, password, deviceToken) {
     if (!(projectID && userName && password && deviceToken)) {
