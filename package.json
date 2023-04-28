@@ -1,6 +1,6 @@
 {
   "name": "notifly-js-sdk-dev",
-  "version": "1.0.0",
+  "version": "1.0.8",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,6 @@
   },
   "author": "daeseongKim",
   "license": "ISC",
-  "type": "module",
   "dependencies": {
     "uuid": "^9.0.0"
   },

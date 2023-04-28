@@ -1,4 +1,6 @@
 const { v5 } = require('uuid');
+const { NAMESPACE } = require('./constants');
+
 function getNotiflyUserID(deviceToken) {
     const externalUserID = localStorage.getItem('__notiflyExternalUserID');
     if (externalUserID) {
@@ -6,6 +8,7 @@ function getNotiflyUserID(deviceToken) {
     }
     return v5(deviceToken, NAMESPACE.UNREGISTERED_USERID);
 }
+
 module.exports = {
     getNotiflyUserID,
 };
