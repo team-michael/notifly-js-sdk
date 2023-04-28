@@ -34,6 +34,7 @@ async function trackEvent(
     console.log(data);
 }
 
+
 async function initialize(projectID, userName, password, deviceToken) {
     if (!(projectID && userName && password && deviceToken)) {
         console.error('[Notifly] projectID, userName, password, and deviceToken must be not null');
