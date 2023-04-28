@@ -1,11 +1,9 @@
 import { Linking } from 'react-native';
-import RootSiblings from 'react-native-root-siblings';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import messaging from '@react-native-firebase/messaging';
 import logEvent from './src/log_event';
 import { setUserProperties, removeUserId } from './src/user';
-import { base64Decode, clickHandler, sessionStart } from './src/utils';
-import { showInAppMessage } from './src/in_app_message';
+import { clickHandler, sessionStart } from './src/utils';
 let isSetBackgroundHandler = false;
 exports.trackEvent = logEvent;
 exports.setUserProperties = setUserProperties;
@@ -110,12 +108,6 @@ exports.setUserId = async function (userID) {
 exports.initialize = async function (prjId, userName, password, useCustomClickHandler = false) {
     try {
         await messaging().requestPermission();
-        // in-app-message
-        const openedInAppWebViewCount = { count: 0 };
-        messaging().onMessage((remoteMessage) => {
-            new RootSiblings(null).destroy();
-            handleInAppMessage(remoteMessage, openedInAppWebViewCount);
-        });
 
         // push
         messaging().onNotificationOpenedApp(handleNotificationOpened);
@@ -142,17 +134,6 @@ exports.initialize = async function (prjId, userName, password, useCustomClickHa
     }
 };
 
-async function handleInAppMessage(remoteMessage, openedInAppWebViewCount) {
-    try {
-        if (remoteMessage.data?.notifly_message_type === 'in-app-message' && remoteMessage.data?.notifly_in_app_message_data) {
-            const decodedJsonString = base64Decode(remoteMessage.data?.notifly_in_app_message_data);
-            const notiflyInAppMessageData = JSON.parse(decodedJsonString);
-            showInAppMessage(notiflyInAppMessageData, openedInAppWebViewCount);
-        }
-    } catch (err) {
-        console.warn('[Notifly] In-app message handling failed:', err);
-    }
-}
 
 async function handleNotificationOpened(remoteMessage) {
     try {
