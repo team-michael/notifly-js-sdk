@@ -2,6 +2,7 @@ const { SDK_VERSION } = require('./constants');
 const { v4 } = require('uuid');
 const { saveCognitoIdToken } = require('./auth');
 const { getNotiflyUserID } = require('./user');
+const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 
 async function logEvent(eventName, eventParams, segmentation_event_param_keys = null, isInternalEvent = false, retryCount = 1) {
     const [projectID, deviceToken, cognitoIDToken, notiflyDeviceID, externalUserID] = [
@@ -36,7 +37,7 @@ async function logEvent(eventName, eventParams, segmentation_event_param_keys = 
             },
         ],
     });
-    const requestOptions = _getRequestOptionsForLogEvent(token, body);
+    const requestOptions = _getRequestOptionsForLogEvent(cognitoIDToken, body);
     const response = await _apiCall(NOTIFLY_LOG_EVENT_URL, requestOptions);
     const result = JSON.parse(response);
 
@@ -51,6 +52,28 @@ async function logEvent(eventName, eventParams, segmentation_event_param_keys = 
     }
 
 }
+
+
+function _getRequestOptionsForLogEvent(token, body) {
+    const myHeaders = new Headers();
+    myHeaders.append('Authorization', token);
+    myHeaders.append('Content-Type', 'application/json');
+
+    const requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        body: body,
+        redirect: 'follow',
+    };
+    return requestOptions;
+}
+
+async function _apiCall(apiUrl, requestOptions) {
+    console.log(apiUrl, requestOptions);
+    const result = fetch(apiUrl, requestOptions).then((response) => response.text());
+    return result;
+}
+
 module.exports = {
     logEvent,
 }
