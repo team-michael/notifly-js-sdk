@@ -39,7 +39,7 @@ async function logEvent(
         segmentation_event_param_keys: segmentation_event_param_keys,
         sdk_version: SDK_VERSION,
         time: parseInt(new Date().valueOf() / 1000),
-        platform: _isIOS() ? 'ios' : 'android',
+        platform: getPlatform(),
     });
 
     const body = JSON.stringify({
@@ -84,8 +84,18 @@ async function _apiCall(apiUrl, requestOptions) {
     return result;
 }
 
-function _isIOS() {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent);
+function getPlatform() {
+    const userAgent = navigator.userAgent;
+
+    if (/iPad|iPhone|iPod/.test(userAgent)) {
+        return 'ios';
+    } else if (/Android/.test(userAgent)) {
+        return 'android';
+    } else if (/webOS|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet|Firefox|Chrome/.test(userAgent)) {
+        return 'web';
+    } else {
+        return 'unknown';
+    }
 }
 
 async function sessionStart() {
