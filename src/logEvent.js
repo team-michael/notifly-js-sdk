@@ -1,8 +1,16 @@
-const { SDK_VERSION } = require('./constants');
-const { v4 } = require('uuid');
+const { SDK_VERSION, NAMESPACE } = require('./constants');
+const { v4, v5 } = require('uuid');
 const { saveCognitoIdToken } = require('./auth');
-const { getNotiflyUserID } = require('./user');
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
+
+
+function getNotiflyUserID(deviceToken) {
+    const externalUserID = localStorage.getItem('__notiflyExternalUserID');
+    if (externalUserID) {
+        return v5(externalUserID, NAMESPACE.REGISTERED_USERID);
+    }
+    return v5(deviceToken, NAMESPACE.UNREGISTERED_USERID);
+}
 
 async function logEvent(
     eventName,
@@ -88,4 +96,5 @@ async function sessionStart() {
 module.exports = {
     logEvent,
     sessionStart,
+    getNotiflyUserID,
 };
