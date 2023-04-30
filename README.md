@@ -1,9 +1,9 @@
 # Notifly Javascript SDK
 
-![npm](https://img.shields.io/npm/v/notifly-sdk)
-![Downloads](https://img.shields.io/npm/dt/notifly-sdk)
+![npm](https://img.shields.io/npm/v/notifly-js-sdk)
+![Downloads](https://img.shields.io/npm/dt/notifly-js-sdk)
 
-_Notifly SDK for Javascript_ is an easy-to-use package for integrating Notifly with your JS applications.
+_Notifly SDK for Javascript_ is an easy-to-use package for integrating Notifly with your browser JS applications.
 
 ## Installation
 
