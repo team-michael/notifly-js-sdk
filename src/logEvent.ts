@@ -1,9 +1,13 @@
+// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'SDK_VERSIO... Remove this comment to see the full error message
 const { SDK_VERSION, NAMESPACE } = require('./constants');
+// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'v5'.
 const { v4, v5 } = require('uuid');
+// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'saveCognit... Remove this comment to see the full error message
 const { saveCognitoIdToken } = require('./auth');
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 
-function getNotiflyUserID(deviceToken) {
+// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'getNotifly... Remove this comment to see the full error message
+function getNotiflyUserID(deviceToken: any) {
     const externalUserID = localStorage.getItem('__notiflyExternalUserID');
     if (externalUserID) {
         return v5(externalUserID, NAMESPACE.REGISTERED_USERID).replace(/-/g, '');
@@ -11,9 +15,10 @@ function getNotiflyUserID(deviceToken) {
     return v5(deviceToken, NAMESPACE.UNREGISTERED_USERID).replace(/-/g, '');
 }
 
+// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'logEvent'.
 async function logEvent(
-    eventName,
-    eventParams,
+    eventName: any,
+    eventParams: any,
     segmentation_event_param_keys = null,
     isInternalEvent = false,
     retryCount = 1
@@ -38,6 +43,7 @@ async function logEvent(
         is_internal_event: isInternalEvent,
         segmentation_event_param_keys: segmentation_event_param_keys,
         sdk_version: SDK_VERSION,
+        // @ts-expect-error TS(2345): Argument of type 'number' is not assignable to par... Remove this comment to see the full error message
         time: parseInt(new Date().valueOf() / 1000),
         platform: getPlatform(),
     });
@@ -65,7 +71,7 @@ async function logEvent(
     }
 }
 
-function _getRequestOptionsForLogEvent(token, body) {
+function _getRequestOptionsForLogEvent(token: any, body: any) {
     const myHeaders = new Headers();
     myHeaders.append('Authorization', token);
     myHeaders.append('Content-Type', 'application/json');
@@ -79,7 +85,7 @@ function _getRequestOptionsForLogEvent(token, body) {
     return requestOptions;
 }
 
-async function _apiCall(apiUrl, requestOptions) {
+async function _apiCall(apiUrl: any, requestOptions: any) {
     const result = fetch(apiUrl, requestOptions).then((response) => response.text());
     return result;
 }
@@ -98,10 +104,12 @@ function getPlatform() {
     }
 }
 
+// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'sessionSta... Remove this comment to see the full error message
 async function sessionStart() {
     return await logEvent('session_start', {}, null, true);
 }
 
+// @ts-expect-error TS(2580): Cannot find name 'module'. Do you need to install ... Remove this comment to see the full error message
 module.exports = {
     logEvent,
     sessionStart,
