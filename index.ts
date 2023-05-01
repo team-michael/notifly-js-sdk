@@ -90,9 +90,9 @@ async function removeUserId() {
     }
 }
 
-export {
+export default {
     initialize,
-    logEvent as trackEvent,
+    trackEvent: logEvent,
     setUserProperties,
     removeUserId,
     setUserId,
