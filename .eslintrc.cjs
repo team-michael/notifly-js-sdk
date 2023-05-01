@@ -9,7 +9,7 @@ module.exports = {
     parser: '@typescript-eslint/parser',
     plugins: ['react', '@typescript-eslint'],
     extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:@typescript-eslint/recommended', 'plugin:react-hooks/recommended'],
-    ignorePatterns: ["*.d.ts"],
+    ignorePatterns: ["*.d.ts", "/dist/**"],
     rules: {
         'react/prop-types': 'off',
         'react/react-in-jsx-scope': 'off',

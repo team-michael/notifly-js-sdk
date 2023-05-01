@@ -4,7 +4,7 @@ import { logEvent } from './src/logEvent';
 import { saveCognitoIdToken } from './src/auth';
 import { sessionStart, getNotiflyUserID } from './src/logEvent';
 
-async function initialize(projectID: any, userName: any, password: any, deviceToken: any) {
+async function initialize(projectID: string | null, userName: string | null, password: string | null, deviceToken: string | null): Promise<boolean> {
     if (!(projectID && userName && password && deviceToken)) {
         console.error('[Notifly] projectID, userName, password, and deviceToken must be not null');
         return false;
@@ -23,7 +23,7 @@ async function initialize(projectID: any, userName: any, password: any, deviceTo
     return true;
 }
 
-async function setUserId(userID: any) {
+async function setUserId(userID: string | null) {
     if (!userID) {
         await removeUserId();
         return;
@@ -37,7 +37,7 @@ async function setUserId(userID: any) {
     }
 }
 
-function _saveNotiflyData(data: any) {
+function _saveNotiflyData(data: Record<string, string>): void {
     for (const [key, val] of Object.entries(data)) {
         localStorage.setItem(key, val as string);
     }
@@ -53,7 +53,7 @@ function _saveNotiflyData(data: any) {
  * @example
  * await setUserProperties({ external_user_id: 'myUserID' });
  */
-async function setUserProperties(params: any) {
+async function setUserProperties(params: Record<string, any>): Promise<void> {
     try {
         if (params.external_user_id) {
             /* const [previousNotiflyUserID, previousExternalUserID] = await Promise.all([
@@ -80,7 +80,7 @@ async function setUserProperties(params: any) {
  * @example
  * await removeUserId();
  */
-async function removeUserId() {
+async function removeUserId(): Promise<void> {
     try {
         localStorage.removeItem('__notiflyExternalUserID');
         localStorage.removeItem('__notiflyUserId');

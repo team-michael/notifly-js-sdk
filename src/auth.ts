@@ -9,7 +9,7 @@
  * @example
  * const token = await getCognitoIdToken('myUserName', 'myPassword');
  */
-async function getCognitoIdToken(userName: any, password: any) {
+async function getCognitoIdToken(userName: string, password: string): Promise<string> {
     const headers = new Headers({
         'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth',
         'Content-Type': 'application/x-amz-json-1.1',
@@ -38,10 +38,11 @@ async function getCognitoIdToken(userName: any, password: any) {
         return token;
     } catch (error) {
         console.warn('[Notifly]: ', error);
+        return '';
     }
 }
 
-async function saveCognitoIdToken(userName: any, password: any) {
+async function saveCognitoIdToken(userName: string, password: string): Promise<void> {
     const cognitoIDToken = await getCognitoIdToken(userName, password);
     localStorage.setItem('__notiflyCognitoIDToken', cognitoIDToken);
 }

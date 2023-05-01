@@ -4,7 +4,11 @@ import { saveCognitoIdToken } from './auth';
 
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 
-function getNotiflyUserID(deviceToken: any) {
+function getNotiflyUserID(deviceToken: string | null): string | null {
+    if (!deviceToken) {
+        console.warn('[Notifly] getNotiflyUserID: deviceToken is null');
+        return null;
+    }
     const externalUserID = localStorage.getItem('__notiflyExternalUserID');
     if (externalUserID) {
         return v5(externalUserID, NAMESPACE.REGISTERED_USERID).replace(/-/g, '');
@@ -13,16 +17,16 @@ function getNotiflyUserID(deviceToken: any) {
 }
 
 async function logEvent(
-    eventName: any,
-    eventParams: any,
+    eventName: string,
+    eventParams: Record<string, any>,
     segmentation_event_param_keys = null,
     isInternalEvent = false,
     retryCount = 1
-) {
+): Promise<void> {
     const [projectID, deviceToken, cognitoIDToken, notiflyDeviceID, externalUserID] = [
         localStorage.getItem('__notiflyProjectID'),
         localStorage.getItem('__notiflyDeviceToken'),
-        localStorage.getItem('__notiflyCognitoIDToken'),
+        localStorage.getItem('__notiflyCognitoIDToken') || '',
         localStorage.getItem('__notiflyDeviceID'),
         localStorage.getItem('__notiflyExternalUserID'),
     ];
@@ -58,15 +62,15 @@ async function logEvent(
     // If the token is expired, get a new token and retry the logEvent.
     if (result.message == 'The incoming token has expired' && retryCount) {
         const [userName, password] = [
-            localStorage.getItem('__notiflyUserName'),
-            localStorage.getItem('__notiflyPassword'),
+            localStorage.getItem('__notiflyUserName') || '',
+            localStorage.getItem('__notiflyPassword') || '',
         ];
         await saveCognitoIdToken(userName, password);
         await logEvent(eventName, eventParams, segmentation_event_param_keys, isInternalEvent, 0);
     }
 }
 
-function _getRequestOptionsForLogEvent(token: any, body: any) {
+function _getRequestOptionsForLogEvent(token: string, body: string): RequestInit {
     const myHeaders = new Headers();
     myHeaders.append('Authorization', token);
     myHeaders.append('Content-Type', 'application/json');
@@ -75,17 +79,17 @@ function _getRequestOptionsForLogEvent(token: any, body: any) {
         method: 'POST',
         headers: myHeaders,
         body: body,
-        redirect: 'follow',
+        redirect: 'follow' as RequestRedirect,
     };
     return requestOptions;
 }
 
-async function _apiCall(apiUrl: any, requestOptions: any) {
+async function _apiCall(apiUrl: string, requestOptions: RequestInit): Promise<string> {
     const result = fetch(apiUrl, requestOptions).then((response) => response.text());
     return result;
 }
 
-function getPlatform() {
+function getPlatform(): string {
     const userAgent = navigator.userAgent;
 
     if (/iPad|iPhone|iPod/.test(userAgent)) {
@@ -99,7 +103,7 @@ function getPlatform() {
     }
 }
 
-async function sessionStart() {
+async function sessionStart(): Promise<void> {
     return await logEvent('session_start', {}, null, true);
 }
 
