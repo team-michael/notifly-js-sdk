@@ -1,5 +1,5 @@
 import { v5 } from 'uuid';
-import { getNotiflyUserID } from '../../src/logEvent';
+import { getNotiflyUserID } from '../../src/utils';
 import { NAMESPACE } from '../../src/constants';
 
 describe('getNotiflyUserID', () => {
