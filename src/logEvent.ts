@@ -1,20 +1,9 @@
-import { v4, v5 } from 'uuid';
-import { SDK_VERSION, NAMESPACE } from './constants';
+import { v4 } from 'uuid';
+import { SDK_VERSION } from './constants';
 import { saveCognitoIdToken } from './auth';
+import { getNotiflyUserID, getPlatform } from './utils';
 
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
-
-function getNotiflyUserID(deviceToken: string | null): string | null {
-    if (!deviceToken) {
-        console.warn('[Notifly] getNotiflyUserID: deviceToken is null');
-        return null;
-    }
-    const externalUserID = localStorage.getItem('__notiflyExternalUserID');
-    if (externalUserID) {
-        return v5(externalUserID, NAMESPACE.REGISTERED_USERID).replace(/-/g, '');
-    }
-    return v5(deviceToken, NAMESPACE.UNREGISTERED_USERID).replace(/-/g, '');
-}
 
 async function logEvent(
     eventName: string,
@@ -89,20 +78,6 @@ async function _apiCall(apiUrl: string, requestOptions: RequestInit): Promise<st
     return result;
 }
 
-function getPlatform(): string {
-    const userAgent = navigator.userAgent;
-
-    if (/iPad|iPhone|iPod/.test(userAgent)) {
-        return 'ios';
-    } else if (/Android/.test(userAgent)) {
-        return 'android';
-    } else if (/webOS|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet|Firefox|Chrome/.test(userAgent)) {
-        return 'web';
-    } else {
-        return 'unknown';
-    }
-}
-
 async function sessionStart(): Promise<void> {
     return await logEvent('session_start', {}, null, true);
 }
@@ -110,5 +85,4 @@ async function sessionStart(): Promise<void> {
 export {
     logEvent,
     sessionStart,
-    getNotiflyUserID,
 };

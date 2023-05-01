@@ -11,7 +11,6 @@ declare module 'notifly-js-sdk-dev' {
         setUserProperties(userProperties: Record<string, any>): void;
         removeUserId(): void;
         setUserId(userId?: string | null): void;
-        getNotiflyUserID(deviceToken: string): string;
     }
     const notifly: NotiflySDK;
     export default notifly;
