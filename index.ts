@@ -22,7 +22,7 @@ async function initialize(projectID: string | null | undefined, userName: string
         __notiflyPassword: password,
         __notiflyDeviceToken: deviceToken,
         __notiflyDeviceID: notiflyDeviceID,
-        __notiflyUserID: notiflyUserID || '-unknown-',
+        ...(notiflyUserID !== undefined && { __notiflyUserID: notiflyUserID }),
     });
     await sessionStart();
     return true;
