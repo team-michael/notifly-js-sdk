@@ -2,6 +2,7 @@
 
 # source files
 **/*.ts
+!index.d.ts
 **/*.map
 **/*.tsbuildinfo
 
