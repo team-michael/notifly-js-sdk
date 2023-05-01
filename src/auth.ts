@@ -47,4 +47,4 @@ async function saveCognitoIdToken(userName: string, password: string): Promise<v
     localStorage.setItem('__notiflyCognitoIDToken', cognitoIDToken);
 }
 
-export { saveCognitoIdToken };
+export { getCognitoIdToken, saveCognitoIdToken };
