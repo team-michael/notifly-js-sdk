@@ -20,8 +20,8 @@ async function logEvent(
     eventName: string,
     eventParams: Record<string, any>,
     segmentation_event_param_keys: string[] | null = null,
-    isInternalEvent: boolean = false,
-    retryCount: number = 1
+    isInternalEvent = false,
+    retryCount = 1
 ): Promise<void> {
     const [projectID, deviceToken, cognitoIDToken, notiflyDeviceID, externalUserID] = [
         localStorage.getItem('__notiflyProjectID'),
