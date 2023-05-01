@@ -1,10 +1,10 @@
-const { NAMESPACE } = require('./src/constants');
-const { logEvent } = require('./src/logEvent');
-const { saveCognitoIdToken } = require('./src/auth');
-const { v5 } = require('uuid');
-const { sessionStart, getNotiflyUserID } = require('./src/logEvent');
+import { v5 } from 'uuid';
+import { NAMESPACE } from './src/constants';
+import { logEvent } from './src/logEvent';
+import { saveCognitoIdToken } from './src/auth';
+import { sessionStart, getNotiflyUserID } from './src/logEvent';
 
-async function initialize(projectID, userName, password, deviceToken) {
+async function initialize(projectID: any, userName: any, password: any, deviceToken: any) {
     if (!(projectID && userName && password && deviceToken)) {
         console.error('[Notifly] projectID, userName, password, and deviceToken must be not null');
         return false;
@@ -23,7 +23,7 @@ async function initialize(projectID, userName, password, deviceToken) {
     return true;
 }
 
-async function setUserId(userID) {
+async function setUserId(userID: any) {
     if (!userID) {
         await removeUserId();
         return;
@@ -37,9 +37,9 @@ async function setUserId(userID) {
     }
 }
 
-function _saveNotiflyData(data) {
+function _saveNotiflyData(data: any) {
     for (const [key, val] of Object.entries(data)) {
-        localStorage.setItem(key, val);
+        localStorage.setItem(key, val as string);
     }
 }
 
@@ -53,7 +53,7 @@ function _saveNotiflyData(data) {
  * @example
  * await setUserProperties({ external_user_id: 'myUserID' });
  */
-async function setUserProperties(params) {
+async function setUserProperties(params: any) {
     try {
         if (params.external_user_id) {
             /* const [previousNotiflyUserID, previousExternalUserID] = await Promise.all([
@@ -90,7 +90,7 @@ async function removeUserId() {
     }
 }
 
-module.exports = {
+export default {
     initialize,
     trackEvent: logEvent,
     setUserProperties,

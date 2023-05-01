@@ -1,9 +1,10 @@
-const { SDK_VERSION, NAMESPACE } = require('./constants');
-const { v4, v5 } = require('uuid');
-const { saveCognitoIdToken } = require('./auth');
+import { v4, v5 } from 'uuid';
+import { SDK_VERSION, NAMESPACE } from './constants';
+import { saveCognitoIdToken } from './auth';
+
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 
-function getNotiflyUserID(deviceToken) {
+function getNotiflyUserID(deviceToken: any) {
     const externalUserID = localStorage.getItem('__notiflyExternalUserID');
     if (externalUserID) {
         return v5(externalUserID, NAMESPACE.REGISTERED_USERID).replace(/-/g, '');
@@ -12,8 +13,8 @@ function getNotiflyUserID(deviceToken) {
 }
 
 async function logEvent(
-    eventName,
-    eventParams,
+    eventName: any,
+    eventParams: any,
     segmentation_event_param_keys = null,
     isInternalEvent = false,
     retryCount = 1
@@ -38,7 +39,7 @@ async function logEvent(
         is_internal_event: isInternalEvent,
         segmentation_event_param_keys: segmentation_event_param_keys,
         sdk_version: SDK_VERSION,
-        time: parseInt(new Date().valueOf() / 1000),
+        time: new Date().valueOf() / 1000,
         platform: getPlatform(),
     });
 
@@ -65,7 +66,7 @@ async function logEvent(
     }
 }
 
-function _getRequestOptionsForLogEvent(token, body) {
+function _getRequestOptionsForLogEvent(token: any, body: any) {
     const myHeaders = new Headers();
     myHeaders.append('Authorization', token);
     myHeaders.append('Content-Type', 'application/json');
@@ -79,7 +80,7 @@ function _getRequestOptionsForLogEvent(token, body) {
     return requestOptions;
 }
 
-async function _apiCall(apiUrl, requestOptions) {
+async function _apiCall(apiUrl: any, requestOptions: any) {
     const result = fetch(apiUrl, requestOptions).then((response) => response.text());
     return result;
 }
@@ -102,7 +103,7 @@ async function sessionStart() {
     return await logEvent('session_start', {}, null, true);
 }
 
-module.exports = {
+export {
     logEvent,
     sessionStart,
     getNotiflyUserID,
