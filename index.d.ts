@@ -1,8 +1,12 @@
 declare module 'notifly-js-sdk-dev' {
-    export function initialize(apiKey: string, options?: any): boolean;
-    export function trackEvent(eventName: string, eventProperties?: any, options?: any): void;
-    export function setUserProperties(userProperties: any, options?: any): void;
-    export function removeUserId(): void;
-    export function setUserId(userId: string, options?: any): void;
-    export function getNotiflyUserID(deviceToken: string): string;
+    interface NotiflySDK {
+        initialize(apiKey: string, options?: any): boolean;
+        trackEvent(eventName: string, eventProperties?: any, options?: any): void;
+        setUserProperties(userProperties: any, options?: any): void;
+        removeUserId(): void;
+        setUserId(userId: string, options?: any): void;
+        getNotiflyUserID(deviceToken: string): string;
+    }
+    const notifly: NotiflySDK;
+    export default notifly;
 }
