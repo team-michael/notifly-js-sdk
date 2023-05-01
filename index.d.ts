@@ -1,10 +1,16 @@
 declare module 'notifly-js-sdk-dev' {
     interface NotiflySDK {
-        initialize(apiKey: string, options?: any): boolean;
-        trackEvent(eventName: string, eventProperties?: any, options?: any): void;
-        setUserProperties(userProperties: any, options?: any): void;
+        initialize(projectID: string | null, userName: string | null, password: string | null, deviceToken: string | null): boolean;
+        trackEvent(
+            eventName: string,
+            eventParams: Record<string, any>,
+            segmentation_event_param_keys?: string[] | null,
+            isInternalEvent?: boolean,
+            retryCount?: number
+        ): void;
+        setUserProperties(userProperties: Record<string, any>): void;
         removeUserId(): void;
-        setUserId(userId: string, options?: any): void;
+        setUserId(userId?: string | null): void;
         getNotiflyUserID(deviceToken: string): string;
     }
     const notifly: NotiflySDK;
