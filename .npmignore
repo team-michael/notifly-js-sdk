@@ -1,0 +1,26 @@
+# Files and directories to ignore when publishing to npm
+
+# source files
+**/*.ts
+**/*.map
+**/*.tsbuildinfo
+
+# tests
+test/
+tests/
+__tests__/
+*.test.*
+*.spec.*
+
+# docs and build tools
+docs/
+website/
+CHANGELOG.md
+CONTRIBUTING.md
+ISSUE_TEMPLATE.md
+PULL_REQUEST_TEMPLATE.md
+
+# misc
+*.log
+.DS_Store
+.github/
