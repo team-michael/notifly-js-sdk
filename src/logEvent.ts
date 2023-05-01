@@ -39,8 +39,7 @@ async function logEvent(
         is_internal_event: isInternalEvent,
         segmentation_event_param_keys: segmentation_event_param_keys,
         sdk_version: SDK_VERSION,
-        // @ts-expect-error TS(2345): Argument of type 'number' is not assignable to par... Remove this comment to see the full error message
-        time: parseInt(new Date().valueOf() / 1000),
+        time: new Date().valueOf() / 1000,
         platform: getPlatform(),
     });
 
