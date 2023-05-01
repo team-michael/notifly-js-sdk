@@ -23,7 +23,7 @@ async function initialize(projectID: string | null, userName: string | null, pas
     return true;
 }
 
-async function setUserId(userID: string | null) {
+async function setUserId(userID?: string | null) {
     if (!userID) {
         await removeUserId();
         return;
