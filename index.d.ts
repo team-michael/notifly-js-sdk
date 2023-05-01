@@ -1,4 +1,4 @@
-declare module 'notifly-js-sdk-dev' {
+declare module 'notifly-js-sdk' {
     interface NotiflySDK {
         initialize(projectID: string | null | undefined, userName: string | null | undefined, password: string | null | undefined, deviceToken: string | null | undefined): boolean;
         trackEvent(
