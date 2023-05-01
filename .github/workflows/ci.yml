@@ -18,9 +18,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run Jest tests
         run: npm test
-      
+
       - name: Run lint
         run: npm run lint
+
+      - name: Run type check
+        run: npm run type-check

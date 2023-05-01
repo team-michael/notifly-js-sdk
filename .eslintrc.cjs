@@ -6,14 +6,15 @@ module.exports = {
         browser: true,
         node: true,
     },
-    parser: '@babel/eslint-parser',
-    plugins: ['react'],
-    extends: ['eslint:recommended', 'plugin:react/recommended'],
+    parser: '@typescript-eslint/parser',
+    plugins: ['react', '@typescript-eslint'],
+    extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:@typescript-eslint/recommended', 'plugin:react-hooks/recommended'],
+    ignorePatterns: ["*.d.ts"],
     rules: {
         'react/prop-types': 'off',
         'react/react-in-jsx-scope': 'off',
         'no-console': 'off',
-        'no-unused-vars': 'warn',
+        '@typescript-eslint/no-unused-vars': 'warn',
     },
     settings: {
         react: {
@@ -21,15 +22,11 @@ module.exports = {
         },
     },
     parserOptions: {
-        requireConfigFile: false,
         ecmaVersion: 2021,
         sourceType: 'module',
         ecmaFeatures: {
             jsx: true,
         },
-        babelOptions: {
-            presets: ['@babel/preset-env', '@babel/preset-react'],
-            plugins: ['@babel/plugin-syntax-import-assertions'],
-        },
+        project: './tsconfig.json',
     },
 };

@@ -1,5 +1,8 @@
-// @ts-expect-error TS(2580): Cannot find name 'module'. Do you need to install ... Remove this comment to see the full error message
-module.exports = {
+import type { Config } from '@jest/types';
+
+// @ts-check
+
+const config: Config.InitialOptions = {
     testEnvironment: 'jsdom',
     displayName: {
         name: 'notifly-js-sdk',
@@ -7,3 +10,5 @@ module.exports = {
     },
     collectCoverage: false,
 };
+
+export default config

@@ -1,13 +1,8 @@
-// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'NAMESPACE'... Remove this comment to see the full error message
-const { NAMESPACE } = require('./src/constants');
-// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'logEvent'.
-const { logEvent } = require('./src/logEvent');
-// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'saveCognit... Remove this comment to see the full error message
-const { saveCognitoIdToken } = require('./src/auth');
-// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'v5'.
-const { v5 } = require('uuid');
-// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'sessionSta... Remove this comment to see the full error message
-const { sessionStart, getNotiflyUserID } = require('./src/logEvent');
+import { v5 } from 'uuid';
+import { NAMESPACE } from './src/constants';
+import { logEvent } from './src/logEvent';
+import { saveCognitoIdToken } from './src/auth';
+import { sessionStart, getNotiflyUserID } from './src/logEvent';
 
 async function initialize(projectID: any, userName: any, password: any, deviceToken: any) {
     if (!(projectID && userName && password && deviceToken)) {
@@ -43,9 +38,8 @@ async function setUserId(userID: any) {
 }
 
 function _saveNotiflyData(data: any) {
-    // @ts-expect-error TS(2550): Property 'entries' does not exist on type 'ObjectC... Remove this comment to see the full error message
     for (const [key, val] of Object.entries(data)) {
-        localStorage.setItem(key, val);
+        localStorage.setItem(key, val as string);
     }
 }
 
@@ -96,10 +90,9 @@ async function removeUserId() {
     }
 }
 
-// @ts-expect-error TS(2580): Cannot find name 'module'. Do you need to install ... Remove this comment to see the full error message
-module.exports = {
+export {
     initialize,
-    trackEvent: logEvent,
+    logEvent as trackEvent,
     setUserProperties,
     removeUserId,
     setUserId,

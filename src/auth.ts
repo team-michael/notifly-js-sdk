@@ -24,7 +24,7 @@ async function getCognitoIdToken(userName: any, password: any) {
         ClientId: '2pc5pce21ec53csf8chafknqve',
     });
 
-    const requestOptions = {
+    const requestOptions: RequestInit = {
         method: 'POST',
         headers,
         body,
@@ -32,7 +32,6 @@ async function getCognitoIdToken(userName: any, password: any) {
     };
 
     try {
-        // @ts-expect-error TS(2345): Argument of type '{ method: string; headers: Heade... Remove this comment to see the full error message
         const response = await fetch('https://cognito-idp.ap-northeast-2.amazonaws.com/', requestOptions);
         const result = await response.text();
         const token = JSON.parse(result).AuthenticationResult.IdToken;
@@ -42,13 +41,9 @@ async function getCognitoIdToken(userName: any, password: any) {
     }
 }
 
-// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'saveCognit... Remove this comment to see the full error message
 async function saveCognitoIdToken(userName: any, password: any) {
     const cognitoIDToken = await getCognitoIdToken(userName, password);
     localStorage.setItem('__notiflyCognitoIDToken', cognitoIDToken);
 }
 
-// @ts-expect-error TS(2580): Cannot find name 'module'. Do you need to install ... Remove this comment to see the full error message
-module.exports = {
-    saveCognitoIdToken,
-};
+export { saveCognitoIdToken };

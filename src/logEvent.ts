@@ -1,12 +1,9 @@
-// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'SDK_VERSIO... Remove this comment to see the full error message
-const { SDK_VERSION, NAMESPACE } = require('./constants');
-// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'v5'.
-const { v4, v5 } = require('uuid');
-// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'saveCognit... Remove this comment to see the full error message
-const { saveCognitoIdToken } = require('./auth');
+import { v4, v5 } from 'uuid';
+import { SDK_VERSION, NAMESPACE } from './constants';
+import { saveCognitoIdToken } from './auth';
+
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 
-// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'getNotifly... Remove this comment to see the full error message
 function getNotiflyUserID(deviceToken: any) {
     const externalUserID = localStorage.getItem('__notiflyExternalUserID');
     if (externalUserID) {
@@ -15,7 +12,6 @@ function getNotiflyUserID(deviceToken: any) {
     return v5(deviceToken, NAMESPACE.UNREGISTERED_USERID).replace(/-/g, '');
 }
 
-// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'logEvent'.
 async function logEvent(
     eventName: any,
     eventParams: any,
@@ -104,13 +100,11 @@ function getPlatform() {
     }
 }
 
-// @ts-expect-error TS(2451): Cannot redeclare block-scoped variable 'sessionSta... Remove this comment to see the full error message
 async function sessionStart() {
     return await logEvent('session_start', {}, null, true);
 }
 
-// @ts-expect-error TS(2580): Cannot find name 'module'. Do you need to install ... Remove this comment to see the full error message
-module.exports = {
+export {
     logEvent,
     sessionStart,
     getNotiflyUserID,
