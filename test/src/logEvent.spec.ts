@@ -4,6 +4,7 @@ const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.ama
 
 
 describe('logEvent', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let mockLocalStorage: any;
     let mockFetch: jest.Mock;
 

@@ -32,11 +32,6 @@ describe('setUserProperties', () => {
             user_name: 'john',
             email: 'john@example.com',
         };
-        const expectedOptions = {
-            segmentation_event_param_keys: null,
-            isInternalEvent: true,
-            retryCount: 1,
-        };
 
         await setUserProperties(params);
 
