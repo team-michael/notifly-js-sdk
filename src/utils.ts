@@ -1,7 +1,7 @@
 import { v5 } from 'uuid';
 import { NAMESPACE } from './constants';
 
-function getNotiflyUserID(deviceToken: string | null): string | null {
+function getNotiflyUserID(deviceToken: string | null | undefined): string | null {
     if (!deviceToken) {
         console.warn('[Notifly] getNotiflyUserID: deviceToken is null');
         return null;

@@ -1,6 +1,6 @@
 import { logEvent } from "./logEvent";
 
-async function setUserId(userID?: string | null) {
+async function setUserId(userID?: string | null | undefined) {
     if (!userID) {
         await removeUserId();
         return;

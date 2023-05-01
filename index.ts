@@ -5,7 +5,7 @@ import { saveCognitoIdToken } from './src/auth';
 import { sessionStart } from './src/logEvent';
 import { setUserId, setUserProperties, removeUserId } from './src/user';
 
-async function initialize(projectID: string | null, userName: string | null, password: string | null, deviceToken: string | null): Promise<boolean> {
+async function initialize(projectID: string | null | undefined, userName: string | null | undefined, password: string | null | undefined, deviceToken: string | null | undefined): Promise<boolean> {
     if (!(projectID && userName && password && deviceToken)) {
         console.error('[Notifly] projectID, userName, password, and deviceToken must be not null');
         return false;
