@@ -14,6 +14,8 @@ describe('setUserProperties', () => {
         };
         const expectedParams = {
             external_user_id: '1234567890',
+            previous_external_user_id: null,
+            previous_notifly_user_id: null,
         };
 
         await setUserProperties(params);

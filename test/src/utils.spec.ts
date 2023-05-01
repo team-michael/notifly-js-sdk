@@ -19,15 +19,38 @@ describe('getNotiflyUserID', () => {
         window.localStorage.getItem = originalLocalStorage.getItem;
     });
 
+    test('should return notifly user ID when notifly user ID is available in localStorage', () => {
+        const deviceToken = 'deviceToken';
+        const externalUserID = 'externalUserID';
+        const notiflyUserID = 'notiflyUserID';
+        const expectedUserID = notiflyUserID;
+
+        (window.localStorage.getItem as jest.Mock).mockReturnValue(notiflyUserID);
+
+        const result = getNotiflyUserID(externalUserID, deviceToken);
+
+        expect(window.localStorage.getItem).toHaveBeenCalledWith('__notiflyUserID');
+        expect(result).toBe(expectedUserID);
+    });
+
     test('should return registered user ID when external user ID is available in localStorage', () => {
         const deviceToken = 'deviceToken';
         const externalUserID = 'externalUserID';
         const expectedUserID = v5(externalUserID, NAMESPACE.REGISTERED_USERID).replace(/-/g, '');
+        const mockLocalStorageGetItem = jest.spyOn(window.localStorage, 'getItem');
+        mockLocalStorageGetItem.mockImplementation((key: string) => {
+            if (key === '__notiflyExternalUserID') {
+                return externalUserID;
+            } else if (key === '__notiflyDeviceToken') {
+                return deviceToken;
+            } else {
+                return null;
+            }
+        });
 
-        (window.localStorage.getItem as jest.Mock).mockReturnValue(externalUserID);
+        const result = getNotiflyUserID(undefined, deviceToken);
 
-        const result = getNotiflyUserID(deviceToken);
-
+        expect(window.localStorage.getItem).toHaveBeenCalledWith('__notiflyUserID');
         expect(window.localStorage.getItem).toHaveBeenCalledWith('__notiflyExternalUserID');
         expect(result).toBe(expectedUserID);
     });
@@ -36,11 +59,20 @@ describe('getNotiflyUserID', () => {
         const deviceToken = 'deviceToken';
         const expectedUserID = v5(deviceToken, NAMESPACE.UNREGISTERED_USERID).replace(/-/g, '');
 
-        (window.localStorage.getItem as jest.Mock).mockReturnValue(null);
+        const mockLocalStorageGetItem = jest.spyOn(window.localStorage, 'getItem');
+        mockLocalStorageGetItem.mockImplementation((key: string) => {
+            if (key === '__notiflyDeviceToken') {
+                return deviceToken;
+            } else {
+                return null;
+            }
+        });
 
-        const result = getNotiflyUserID(deviceToken);
+        const result = getNotiflyUserID(undefined, undefined);
 
+        expect(window.localStorage.getItem).toHaveBeenCalledWith('__notiflyUserID');
         expect(window.localStorage.getItem).toHaveBeenCalledWith('__notiflyExternalUserID');
+        expect(window.localStorage.getItem).toHaveBeenCalledWith('__notiflyDeviceToken');
         expect(result).toBe(expectedUserID);
     });
 });
