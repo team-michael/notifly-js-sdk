@@ -4,6 +4,7 @@ import { logEvent } from './src/logEvent';
 import { saveCognitoIdToken } from './src/auth';
 import { sessionStart } from './src/logEvent';
 import { setUserId, setUserProperties, removeUserId } from './src/user';
+import { getNotiflyUserID } from './src/utils';
 
 async function initialize(projectID: string | null | undefined, userName: string | null | undefined, password: string | null | undefined, deviceToken: string | null | undefined): Promise<boolean> {
     if (!(projectID && userName && password && deviceToken)) {
@@ -11,14 +12,17 @@ async function initialize(projectID: string | null | undefined, userName: string
         return false;
     }
     await saveCognitoIdToken(userName, password);
+    // Always generate a new device ID
     const notiflyDeviceID = v5(deviceToken, NAMESPACE.DEVICEID).replace(/-/g, '');
-    // const notiflyUserID = getNotiflyUserID(deviceToken);
+    // Utilize cached notiflyUserID if it exists
+    const notiflyUserID = getNotiflyUserID(undefined, deviceToken);
     _saveNotiflyData({
         __notiflyProjectID: projectID,
         __notiflyUserName: userName,
         __notiflyPassword: password,
         __notiflyDeviceToken: deviceToken,
         __notiflyDeviceID: notiflyDeviceID,
+        __notiflyUserID: notiflyUserID || '-unknown-',
     });
     await sessionStart();
     return true;
