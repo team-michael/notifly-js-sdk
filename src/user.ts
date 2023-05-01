@@ -1,4 +1,5 @@
 import { logEvent } from "./logEvent";
+import { generateNotiflyUserID } from "./utils";
 
 async function setUserId(userID?: string | null | undefined) {
     if (!userID) {
@@ -27,14 +28,15 @@ async function setUserId(userID?: string | null | undefined) {
 async function setUserProperties(params: Record<string, any>): Promise<void> {
     try {
         if (params.external_user_id) {
-            /* const [previousNotiflyUserID, previousExternalUserID] = await Promise.all([
-                getNotiflyUserId(),
+            const [previousNotiflyUserID, previousExternalUserID] = await Promise.all([
+                localStorage.getItem('__notiflyUserID'),
                 localStorage.getItem('__notiflyExternalUserID'),
-            ]); */
+            ]);
+            params['previous_notifly_user_id'] = previousNotiflyUserID;
+            params['previous_external_user_id'] = previousExternalUserID;
             localStorage.setItem('__notiflyExternalUserID', params.external_user_id);
-            localStorage.removeItem('__notiflyUserId');
-            /* params['previous_notifly_user_id'] = previousNotiflyUserID;
-            params['previous_external_user_id'] = previousExternalUserID; */
+            localStorage.setItem('__notiflyUserID', generateNotiflyUserID(params.external_user_id) as string);
+            
         }
         return await logEvent('set_user_properties', params, null, true);
     } catch (err) {
@@ -54,7 +56,7 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
 async function removeUserId(): Promise<void> {
     try {
         localStorage.removeItem('__notiflyExternalUserID');
-        localStorage.removeItem('__notiflyUserId');
+        localStorage.removeItem('__notiflyUserID');
         return await logEvent('remove_external_user_id', {}, null, true);
     } catch (err) {
         console.warn('[Notifly] Failed to remove userID');

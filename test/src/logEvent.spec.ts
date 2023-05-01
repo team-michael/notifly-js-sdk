@@ -107,7 +107,6 @@ describe('logEvent', () => {
             retryCount
         );
 
-        // FIXME(minyong): __notiflyExternalUserID called twice
         expect(mockLocalStorage.getItem).toHaveBeenCalledTimes(6);
         expect(mockLocalStorage.getItem).toHaveBeenCalledWith(
             '__notiflyProjectID'
@@ -123,6 +122,9 @@ describe('logEvent', () => {
         );
         expect(mockLocalStorage.getItem).toHaveBeenCalledWith(
             '__notiflyExternalUserID'
+        );
+        expect(mockLocalStorage.getItem).toHaveBeenCalledWith(
+            '__notiflyUserID'
         );
 
         expect(mockFetch).toHaveBeenCalledTimes(1);

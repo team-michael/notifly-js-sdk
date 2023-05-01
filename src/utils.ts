@@ -1,16 +1,37 @@
 import { v5 } from 'uuid';
 import { NAMESPACE } from './constants';
 
-function getNotiflyUserID(deviceToken: string | null | undefined): string | null {
-    if (!deviceToken) {
-        console.warn('[Notifly] getNotiflyUserID: deviceToken is null');
-        return null;
-    }
-    const externalUserID = localStorage.getItem('__notiflyExternalUserID');
+function generateNotiflyUserID(externalUserID?: string, deviceToken?: string): string | undefined {
     if (externalUserID) {
         return v5(externalUserID, NAMESPACE.REGISTERED_USERID).replace(/-/g, '');
     }
-    return v5(deviceToken, NAMESPACE.UNREGISTERED_USERID).replace(/-/g, '');
+    if (deviceToken) {
+        return v5(deviceToken, NAMESPACE.UNREGISTERED_USERID).replace(/-/g, '');
+    }
+    return undefined;    
+}
+
+function getNotiflyUserID(externalUserID?: string, deviceToken?: string): string | undefined {
+    const storedNotiflyUserID = localStorage.getItem('__notiflyUserID');
+    if (storedNotiflyUserID) {
+        return storedNotiflyUserID;
+    }
+    if (externalUserID) {
+        return generateNotiflyUserID(externalUserID, undefined);
+    }
+    const storedExternalUserID = localStorage.getItem('__notiflyExternalUserID');
+    if (storedExternalUserID) {
+        return generateNotiflyUserID(storedExternalUserID, undefined);
+    }
+    const storedDeviceToken = localStorage.getItem('__notiflyDeviceToken');
+    if (storedDeviceToken) {
+        return generateNotiflyUserID(undefined, storedDeviceToken);
+    }
+    if (deviceToken) {
+        return generateNotiflyUserID(undefined, deviceToken);
+    }
+    return undefined;
+    
 }
 
 function getPlatform(): string {
@@ -28,6 +49,7 @@ function getPlatform(): string {
 }
 
 export {
+    generateNotiflyUserID,
     getNotiflyUserID,
     getPlatform,
 };
