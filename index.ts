@@ -10,7 +10,7 @@ async function initialize(
     projectID: string | null | undefined,
     userName: string | null | undefined,
     password: string | null | undefined,
-    deviceToken: string | null | undefined
+    deviceToken?: string | null | undefined
 ): Promise<boolean> {
     if (!(projectID && userName && password)) {
         console.error('[Notifly] projectID, userName and password must be not null');
