@@ -24,7 +24,6 @@ describe('Notifly SDK', () => {
             expect(await notifly.initialize(null, userName, password, deviceToken)).toBe(false);
             expect(await notifly.initialize(projectID, null, password, deviceToken)).toBe(false);
             expect(await notifly.initialize(projectID, userName, null, deviceToken)).toBe(false);
-            expect(await notifly.initialize(projectID, userName, password, null)).toBe(false);
         });
 
         it('should call saveCognitoIdToken with the correct parameters', async () => {

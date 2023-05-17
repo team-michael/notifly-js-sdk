@@ -11,7 +11,7 @@ function generateNotiflyUserID(externalUserID?: string, deviceToken?: string): s
     return undefined;    
 }
 
-function getNotiflyUserID(externalUserID?: string, deviceToken?: string): string | undefined {
+function getNotiflyUserID(externalUserID?: string, deviceToken?: string | null | undefined): string | undefined {
     const storedNotiflyUserID = localStorage.getItem('__notiflyUserID');
     if (storedNotiflyUserID) {
         return storedNotiflyUserID;
