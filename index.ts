@@ -5,6 +5,7 @@ import { saveCognitoIdToken } from './src/auth';
 import { sessionStart } from './src/logEvent';
 import { setUserId, setUserProperties, removeUserId } from './src/user';
 import { getNotiflyUserID } from './src/utils';
+import { setDeviceToken } from './src/device';
 
 async function initialize(
     projectID: string | null | undefined,
@@ -25,7 +26,7 @@ async function initialize(
         // Utilize cached notiflyUserID if it exists
         notiflyUserID = getNotiflyUserID(undefined, deviceToken);
     }
-    
+
     _saveNotiflyData({
         __notiflyProjectID: projectID,
         __notiflyUserName: userName,
@@ -50,4 +51,5 @@ export default {
     setUserProperties,
     removeUserId,
     setUserId,
+    setDeviceToken,
 };
