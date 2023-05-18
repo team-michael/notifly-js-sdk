@@ -12,7 +12,7 @@ async function logEvent(
     isInternalEvent = false,
     retryCount = 1
 ): Promise<void> {
-    const [projectID, deviceToken, cognitoIDToken, notiflyDeviceID, externalUserID, ] = [
+    const [projectID, deviceToken, cognitoIDToken, notiflyDeviceID, externalUserID] = [
         localStorage.getItem('__notiflyProjectID'),
         localStorage.getItem('__notiflyDeviceToken'),
         localStorage.getItem('__notiflyCognitoIDToken') || '',
@@ -91,7 +91,4 @@ async function sessionStart(): Promise<void> {
     return await logEvent('session_start', {}, null, true);
 }
 
-export {
-    logEvent,
-    sessionStart,
-};
+export { logEvent, sessionStart };

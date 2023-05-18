@@ -18,13 +18,13 @@ describe('Notifly SDK', () => {
         beforeEach(() => {
             (saveCognitoIdToken as jest.MockedFunction<typeof saveCognitoIdToken>).mockClear();
             (sessionStart as jest.MockedFunction<typeof sessionStart>).mockClear();
+            localStorage.clear();
         });
 
         it('should return false if any of the required parameters is null', async () => {
             expect(await notifly.initialize(null, userName, password, deviceToken)).toBe(false);
             expect(await notifly.initialize(projectID, null, password, deviceToken)).toBe(false);
             expect(await notifly.initialize(projectID, userName, null, deviceToken)).toBe(false);
-            expect(await notifly.initialize(projectID, userName, password, null)).toBe(false);
         });
 
         it('should call saveCognitoIdToken with the correct parameters', async () => {
@@ -40,7 +40,19 @@ describe('Notifly SDK', () => {
             expect(localStorage.getItem('__notiflyUserName')).toBe(userName);
             expect(localStorage.getItem('__notiflyPassword')).toBe(password);
             expect(localStorage.getItem('__notiflyDeviceToken')).toBe(deviceToken);
-            expect(localStorage.getItem('__notiflyDeviceID')).toBe(v5(deviceToken, NAMESPACE.DEVICEID).replace(/-/g, ''));
+            expect(localStorage.getItem('__notiflyDeviceID')).toBe(
+                v5(deviceToken, NAMESPACE.DEVICEID).replace(/-/g, '')
+            );
+        });
+
+        it('should not call __notiflyDeviceToken and __notiflyDeviceID when no device token is provided', async () => {
+            await notifly.initialize(projectID, userName, password);
+
+            expect(localStorage.getItem('__notiflyProjectID')).toBe(projectID);
+            expect(localStorage.getItem('__notiflyUserName')).toBe(userName);
+            expect(localStorage.getItem('__notiflyPassword')).toBe(password);
+            expect(localStorage.getItem('__notiflyDeviceToken')).toBe(null);
+            expect(localStorage.getItem('__notiflyDeviceID')).toBe(null);
         });
 
         it('should call sessionStart', async () => {
