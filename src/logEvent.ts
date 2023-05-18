@@ -23,9 +23,13 @@ async function logEvent(
     if (!notiflyUserID) {
         // Use generateNotiflyUserID to not call localStorage again
         if (externalUserID) {
-            notiflyUserID = generateNotiflyUserID(externalUserID, undefined) || null;
+            notiflyUserID = generateNotiflyUserID(externalUserID, undefined, undefined) || null;
         } else if (deviceToken) {
-            notiflyUserID = generateNotiflyUserID(undefined, deviceToken) || null;
+            notiflyUserID = generateNotiflyUserID(undefined, deviceToken, undefined) || null;
+        } else if (notiflyDeviceID) {
+            notiflyUserID = generateNotiflyUserID(undefined, undefined, notiflyDeviceID) || null;
+        } else {
+            notiflyUserID = generateNotiflyUserID(undefined, undefined, undefined) || null;
         }
     }
 
