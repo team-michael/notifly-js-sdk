@@ -1,11 +1,12 @@
 import { v5 } from 'uuid';
 import { NAMESPACE } from './src/constants';
-import { logEvent } from './src/logEvent';
+import { logEvent, sessionStart } from './src/logEvent';
 import { saveCognitoIdToken } from './src/auth';
-import { sessionStart } from './src/logEvent';
 import { setUserId, setUserProperties, removeUserId } from './src/user';
 import { getNotiflyUserID } from './src/utils';
 import { setDeviceToken } from './src/device';
+let isNotiflyInitialized = false;
+
 
 async function initialize(
     projectID: string | null | undefined,
@@ -13,6 +14,10 @@ async function initialize(
     password: string | null | undefined,
     deviceToken?: string | null | undefined
 ): Promise<boolean> {
+    if (isNotiflyInitialized) {
+        return true;
+    }
+
     if (!(projectID && userName && password)) {
         console.error('[Notifly] projectID, userName and password must be not null');
         return false;
@@ -36,6 +41,7 @@ async function initialize(
         ...(notiflyUserID !== undefined && { __notiflyUserID: notiflyUserID }),
     });
     await sessionStart();
+    isNotiflyInitialized = true;
     return true;
 }
 
@@ -45,6 +51,11 @@ function _saveNotiflyData(data: Record<string, string>): void {
     }
 }
 
+// For testing purposes only
+function resetInitialization(): void {
+    isNotiflyInitialized = false;
+}
+
 export default {
     initialize,
     trackEvent: logEvent,
@@ -52,4 +63,5 @@ export default {
     removeUserId,
     setUserId,
     setDeviceToken,
+    resetInitialization,
 };
