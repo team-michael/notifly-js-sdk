@@ -5,8 +5,8 @@ import { saveCognitoIdToken } from './src/auth';
 import { setUserId, setUserProperties, removeUserId } from './src/user';
 import { getNotiflyUserID } from './src/utils';
 import { setDeviceToken } from './src/device';
-let isNotiflyInitialized = false;
 
+let isNotiflyInitialized = false;
 
 async function initialize(
     projectID: string | null | undefined,
@@ -22,6 +22,14 @@ async function initialize(
         console.error('[Notifly] projectID, userName and password must be not null');
         return false;
     }
+
+    if (typeof window === 'undefined') {
+        console.error(
+            '[Notifly] The SDK requires a browser environment to function properly. Please ensure that you are using the SDK within a supported browser environment.'
+        );
+        return false;
+    }
+
     await saveCognitoIdToken(userName, password);
 
     let notiflyDeviceID = undefined;
