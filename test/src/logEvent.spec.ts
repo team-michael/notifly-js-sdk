@@ -79,6 +79,7 @@ describe('logEvent', () => {
             is_internal_event: isInternalEvent,
             segmentation_event_param_keys: segmentation_event_param_keys,
             sdk_version: SDK_VERSION,
+            sdk_type: 'js',
             time: expect.any(Number),
             platform: expect.any(String),
         });
