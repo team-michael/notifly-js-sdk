@@ -21,6 +21,10 @@ describe('Notifly SDK', () => {
             localStorage.clear();
         });
 
+        afterEach(() => {
+            notifly.resetInitialization();
+        });
+
         it('should return false if any of the required parameters is null', async () => {
             expect(await notifly.initialize(null, userName, password, deviceToken)).toBe(false);
             expect(await notifly.initialize(projectID, null, password, deviceToken)).toBe(false);
