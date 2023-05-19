@@ -45,6 +45,7 @@ async function logEvent(
         is_internal_event: isInternalEvent,
         segmentation_event_param_keys: segmentation_event_param_keys,
         sdk_version: SDK_VERSION,
+        sdk_type: "js",
         time: new Date().valueOf() / 1000,
         platform: getPlatform(),
     });
