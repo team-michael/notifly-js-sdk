@@ -35,7 +35,7 @@ describe('logEvent', () => {
     it('should log an event and return a Promise', async () => {
         const eventName = 'test_event';
         const eventParams = { foo: 'bar' };
-        const segmentation_event_param_keys = ['foo'];
+        const segmentationEventParamKeys = ['foo'];
         const isInternalEvent = false;
         const retryCount = 1;
 
@@ -77,7 +77,7 @@ describe('logEvent', () => {
             external_user_id: externalUserID,
             device_token: deviceToken,
             is_internal_event: isInternalEvent,
-            segmentation_event_param_keys: segmentation_event_param_keys,
+            segmentationEventParamKeys: segmentationEventParamKeys,
             sdk_version: SDK_VERSION,
             sdk_type: 'js',
             time: expect.any(Number),
@@ -103,7 +103,7 @@ describe('logEvent', () => {
         const result = await logEvent(
             eventName,
             eventParams,
-            segmentation_event_param_keys,
+            segmentationEventParamKeys,
             isInternalEvent,
             retryCount
         );

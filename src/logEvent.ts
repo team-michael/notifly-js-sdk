@@ -8,7 +8,7 @@ const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.ama
 async function logEvent(
     eventName: string,
     eventParams: Record<string, any>,
-    segmentation_event_param_keys: string[] | null = null,
+    segmentationEventParamKeys: string[] | null = null,
     isInternalEvent = false,
     retryCount = 1
 ): Promise<void> {
@@ -43,7 +43,7 @@ async function logEvent(
         external_user_id: externalUserID,
         device_token: deviceToken,
         is_internal_event: isInternalEvent,
-        segmentation_event_param_keys: segmentation_event_param_keys,
+        segmentationEventParamKeys: segmentationEventParamKeys,
         sdk_version: SDK_VERSION,
         sdk_type: "js",
         time: new Date().valueOf() / 1000,
@@ -69,7 +69,7 @@ async function logEvent(
             localStorage.getItem('__notiflyPassword') || '',
         ];
         await saveCognitoIdToken(userName, password);
-        await logEvent(eventName, eventParams, segmentation_event_param_keys, isInternalEvent, 0);
+        await logEvent(eventName, eventParams, segmentationEventParamKeys, isInternalEvent, 0);
     }
 }
 

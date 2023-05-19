@@ -4,13 +4,14 @@ declare module 'notifly-js-sdk' {
         trackEvent(
             eventName: string,
             eventParams: Record<string, any>,
-            segmentation_event_param_keys?: string[] | null | undefined,
+            segmentationEventParamKeys?: string[] | null | undefined,
             isInternalEvent?: boolean,
             retryCount?: number
         ): void;
         setUserProperties(userProperties: Record<string, any>): void;
         removeUserId(): void;
         setUserId(userId?: string | null | undefined): void;
+        setDeviceToken(deviceToken: string | null | undefined): void;
     }
     const notifly: NotiflySDK;
     export default notifly;
