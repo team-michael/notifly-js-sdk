@@ -64,9 +64,17 @@ function resetInitialization(): void {
     isNotiflyInitialized = false;
 }
 
+function trackEvent(
+    eventName: string,
+    eventParams: Record<string, any>,
+    segmentationEventParamKeys: string[] | null = null
+): Promise<void> {
+    return logEvent(eventName, eventParams, segmentationEventParamKeys, false, 1);
+}
+
 export default {
     initialize,
-    trackEvent: logEvent,
+    trackEvent,
     setUserProperties,
     removeUserId,
     setUserId,

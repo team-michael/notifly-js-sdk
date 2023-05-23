@@ -4,9 +4,7 @@ declare module 'notifly-js-sdk' {
         trackEvent(
             eventName: string,
             eventParams: Record<string, any>,
-            segmentationEventParamKeys?: string[] | null | undefined,
-            isInternalEvent?: boolean,
-            retryCount?: number
+            segmentationEventParamKeys?: string[] | null | undefined
         ): void;
         setUserProperties(userProperties: Record<string, any>): void;
         removeUserId(): void;
