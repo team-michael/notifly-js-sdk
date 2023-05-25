@@ -5,6 +5,7 @@ import { saveCognitoIdToken } from './src/auth';
 import { setUserId, setUserProperties, removeUserId } from './src/user';
 import { getNotiflyUserID } from './src/utils';
 import { setDeviceToken } from './src/device';
+import { getInitialState } from './src/data';
 
 let isNotiflyInitialized = false;
 
