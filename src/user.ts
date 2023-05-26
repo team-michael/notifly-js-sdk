@@ -1,5 +1,6 @@
-import { logEvent } from "./logEvent";
-import { generateNotiflyUserID } from "./utils";
+import { logEvent } from './logEvent';
+import { generateNotiflyUserID } from './utils';
+import { syncState, updateUserData } from './state';
 
 async function setUserId(userID?: string | null | undefined) {
     if (!userID) {
@@ -10,6 +11,11 @@ async function setUserId(userID?: string | null | undefined) {
         await setUserProperties({
             external_user_id: userID,
         });
+        const projectID = localStorage.getItem('__notiflyProjectID');
+        const notiflyUserID = localStorage.getItem('__notiflyUserID');
+        if (projectID && notiflyUserID) {
+            await syncState(projectID, notiflyUserID);
+        }
     } catch (err) {
         console.warn('[Notifly] setUserId failed');
     }
@@ -36,8 +42,11 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
             params['previous_external_user_id'] = previousExternalUserID;
             localStorage.setItem('__notiflyExternalUserID', params.external_user_id);
             localStorage.setItem('__notiflyUserID', generateNotiflyUserID(params.external_user_id) as string);
-            
         }
+
+        // Update local state
+        updateUserData(params);
+
         return await logEvent('set_user_properties', params, null, true);
     } catch (err) {
         console.warn('[Notifly] Failed to set user properties:', err);
@@ -63,8 +72,4 @@ async function removeUserId(): Promise<void> {
     }
 }
 
-export {
-    setUserProperties,
-    removeUserId,
-    setUserId,
-};
+export { setUserProperties, removeUserId, setUserId };

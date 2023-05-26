@@ -5,7 +5,7 @@ import { saveCognitoIdToken } from './src/auth';
 import { setUserId, setUserProperties, removeUserId } from './src/user';
 import { getNotiflyUserID } from './src/utils';
 import { setDeviceToken } from './src/device';
-import { getInitialState } from './src/data';
+import { syncState } from './src/state';
 
 let isNotiflyInitialized = false;
 
@@ -51,6 +51,11 @@ async function initialize(
     });
     await sessionStart();
     isNotiflyInitialized = true;
+
+    if (notiflyUserID) {
+        await syncState(projectID, notiflyUserID);
+    }
+
     return true;
 }
 
