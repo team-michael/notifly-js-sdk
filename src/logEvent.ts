@@ -2,6 +2,7 @@ import { v4 } from 'uuid';
 import { SDK_VERSION } from './constants';
 import { saveCognitoIdToken } from './auth';
 import { generateNotiflyUserID, getPlatform } from './utils';
+import { updateEventIntermediateCounts, maybeTriggerWebMessage } from './state';
 
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 
@@ -45,7 +46,7 @@ async function logEvent(
         is_internal_event: isInternalEvent,
         segmentationEventParamKeys: segmentationEventParamKeys,
         sdk_version: SDK_VERSION,
-        sdk_type: "js",
+        sdk_type: 'js',
         time: new Date().valueOf() / 1000,
         platform: getPlatform(),
     });
@@ -71,6 +72,11 @@ async function logEvent(
         await saveCognitoIdToken(userName, password);
         await logEvent(eventName, eventParams, segmentationEventParamKeys, isInternalEvent, 0);
     }
+
+    // Update state
+    updateEventIntermediateCounts(eventName);
+    // Handle web message campaigns
+    maybeTriggerWebMessage(eventName);
 }
 
 function _getRequestOptionsForLogEvent(token: string, body: string): RequestInit {
