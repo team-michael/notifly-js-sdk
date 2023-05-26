@@ -105,7 +105,6 @@ function updateEventIntermediateCounts(eventName: string) {
         };
         eventIntermediateCounts = [...eventIntermediateCounts, newRow];
     }
-    console.log('print', eventIntermediateCounts);
 }
 
 function checkCondition(campaign: Campaign): boolean {
