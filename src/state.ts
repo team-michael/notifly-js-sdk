@@ -8,8 +8,10 @@ interface Campaign {
         groups?: {
             conditions?: Condition[];
         }[];
+        group_operator?: string;
     };
     triggering_event: string;
+    delay: number;
 }
 interface EventIntermediateCounts {
     dt: string;
@@ -23,7 +25,7 @@ interface Condition {
     operator: string;
     secondary_value: number;
     unit: string;
-    value: number;
+    value: any;
 }
 interface UserData {
     user_properties?: {
@@ -118,14 +120,33 @@ function checkCondition(campaign: Campaign): boolean {
         return true;
     }
 
-    const conditions = groups[0]?.conditions;
-    if (!conditions || !conditions.length) {
-        console.error('[Notifly] No condition present in group');
-        return false;
+    // TODO (iw1000): Support 'and' operator for groups and 'or operator for conditions
+    let checkResult = false;
+    for (let i = 0; i < groups.length; i++) {
+        if (!checkResult) {
+            const group = groups[i];
+            const conditions = group.conditions;
+            if (!conditions || !conditions.length) {
+                console.error('[Notifly] No condition present in group');
+                return false;
+            }
+
+            let checkResultForSingleGroup = true;
+            for (let j = 0; j < conditions.length; j++) {
+                const condition = conditions[j];
+                // Assume 'and' operator for conditions
+                checkResultForSingleGroup = checkResultForSingleGroup && checkConditionForSingleCondition(condition);
+            }
+
+            // Assume 'or' operator for groups
+            checkResult = checkResult || checkResultForSingleGroup;
+        }
     }
 
-    const condition = conditions[0];
+    return checkResult;
+}
 
+function checkConditionForSingleCondition(condition: Condition) {
     const { attribute, event, event_condition_type, operator, secondary_value, unit, value } = condition;
 
     if (unit === 'event') {
@@ -154,9 +175,9 @@ function checkCondition(campaign: Campaign): boolean {
                     const currentFormattedDate = currentDate.toISOString().slice(0, 10); // Convert currentDate to 'YYYY-MM-DD' format
 
                     return (
-                        rowFormattedDate >= currentFormattedDate &&
-                        rowFormattedDate <=
-                            new Date(currentDate.getTime() + secondary_value * 24 * 60 * 60 * 1000)
+                        rowFormattedDate <= currentFormattedDate &&
+                        currentFormattedDate <=
+                            new Date(rowDate.getTime() + secondary_value * 24 * 60 * 60 * 1000)
                                 .toISOString()
                                 .slice(0, 10)
                     );
@@ -222,7 +243,11 @@ function maybeTriggerWebMessage(eventName: string) {
                 iframe.style.height = '100%';
                 iframe.style.zIndex = '10';
                 iframe.style.position = 'absolute';
-                document.body.appendChild(iframe);
+
+                const delayInSeconds = c.delay;
+                setTimeout(() => {
+                    document.body.appendChild(iframe);
+                }, delayInSeconds * 1000);
             }
         });
 }
