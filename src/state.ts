@@ -244,7 +244,7 @@ function maybeTriggerWebMessage(eventName: string) {
                 iframe.style.zIndex = '10';
                 iframe.style.position = 'absolute';
 
-                const delayInSeconds = c.delay;
+                const delayInSeconds = c.delay ?? 0;
                 setTimeout(() => {
                     document.body.appendChild(iframe);
                 }, delayInSeconds * 1000);
