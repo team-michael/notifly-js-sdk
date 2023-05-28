@@ -120,30 +120,21 @@ function checkCondition(campaign: Campaign): boolean {
         return true;
     }
 
-    // TODO (iw1000): Support 'and' operator for groups and 'or operator for conditions
-    let checkResult = false;
-    for (let i = 0; i < groups.length; i++) {
-        if (!checkResult) {
-            const group = groups[i];
-            const conditions = group.conditions;
-            if (!conditions || !conditions.length) {
-                console.error('[Notifly] No condition present in group');
-                return false;
-            }
+    // Assume 'and' operator for conditions, 'or' operator for groups
+    for (const group of groups) {
+        const { conditions } = group;
 
-            let checkResultForSingleGroup = true;
-            for (let j = 0; j < conditions.length; j++) {
-                const condition = conditions[j];
-                // Assume 'and' operator for conditions
-                checkResultForSingleGroup = checkResultForSingleGroup && checkConditionForSingleCondition(condition);
-            }
+        if (!conditions || conditions.length === 0) {
+            console.error('[Notifly] No condition present in group');
+            return false;
+        }
 
-            // Assume 'or' operator for groups
-            checkResult = checkResult || checkResultForSingleGroup;
+        if (conditions.every(checkConditionForSingleCondition)) {
+            return true;
         }
     }
 
-    return checkResult;
+    return false;
 }
 
 function checkConditionForSingleCondition(condition: Condition) {
