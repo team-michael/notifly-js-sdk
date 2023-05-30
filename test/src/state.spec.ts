@@ -381,7 +381,7 @@ describe('checkCondition', () => {
                                 attribute: 'country',
                                 event: '',
                                 event_condition_type: '',
-                                operator: '!=',
+                                operator: '<>',
                                 secondary_value: 0,
                                 unit: 'user',
                                 value: 'USA',
