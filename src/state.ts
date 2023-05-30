@@ -153,6 +153,10 @@ function checkConditionForSingleCondition(condition: Condition) {
                 return totalCount >= value;
             } else if (operator === '<=') {
                 return totalCount <= value;
+            } else if (operator === '<') {
+                return totalCount < value;
+            } else if (operator === '>') {
+                return totalCount > value;
             } else if (operator === '=') {
                 return totalCount === value;
             }
@@ -206,6 +210,7 @@ function checkConditionForSingleCondition(condition: Condition) {
             case '=':
                 return userValue == value;
             case '!=':
+            case '<>':
                 return userValue != value;
             case '>':
                 return userValue > value;
