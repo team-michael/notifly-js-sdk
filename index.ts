@@ -78,7 +78,7 @@ function trackEvent(
     return logEvent(eventName, eventParams, segmentationEventParamKeys, false, 1);
 }
 
-export default {
+const notifly = {
     initialize,
     trackEvent,
     setUserProperties,
@@ -87,3 +87,7 @@ export default {
     setDeviceToken,
     resetInitialization,
 };
+
+(window as any).notifly = notifly;
+
+export default notifly;

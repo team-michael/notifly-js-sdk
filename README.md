@@ -18,3 +18,11 @@ or
 ```
 yarn add notifly-js-sdk@latest
 ```
+
+## Development
+
+To compile locally:
+
+```
+tsc
+```
