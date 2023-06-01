@@ -1,31 +1,10 @@
-interface Campaign {
-    channel: string;
-    segment_type: string;
-    message: {
-        html_url: string;
-    };
-    segment_info?: {
-        groups?: {
-            conditions?: Condition[];
-        }[];
-        group_operator?: string;
-    };
-    triggering_event: string;
-    delay: number;
-}
+import { Campaign, Condition } from './interface/campaign.interface';
+import { showInWebMessage } from './webMessageUtils';
+
 interface EventIntermediateCounts {
     dt: string;
     name: string;
     count: number;
-}
-interface Condition {
-    attribute: string;
-    event: string;
-    event_condition_type: string;
-    operator: string;
-    secondary_value: number;
-    unit: string;
-    value: any;
 }
 interface UserData {
     user_properties?: {
@@ -233,17 +212,7 @@ function maybeTriggerWebMessage(eventName: string) {
         .filter((c) => c.triggering_event === eventName)
         .map((c) => {
             if (checkCondition(c)) {
-                const iframe = document.createElement('iframe');
-                iframe.src = c.message.html_url;
-                iframe.style.width = '100%';
-                iframe.style.height = '100%';
-                iframe.style.zIndex = '10';
-                iframe.style.position = 'absolute';
-
-                const delayInSeconds = c.delay ?? 0;
-                setTimeout(() => {
-                    document.body.appendChild(iframe);
-                }, delayInSeconds * 1000);
+                showInWebMessage(c);
             }
         });
 }
