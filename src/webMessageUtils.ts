@@ -11,7 +11,7 @@ function showInWebMessage(campaign: Campaign) {
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.zIndex = '10';
-    iframe.style.position = 'absolute';
+    iframe.style.position = 'fixed';
 
     const delayInSeconds = campaign.delay ?? 0;
     setTimeout(() => {
