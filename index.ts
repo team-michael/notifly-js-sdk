@@ -78,7 +78,7 @@ function trackEvent(
     return logEvent(eventName, eventParams, segmentationEventParamKeys, false, 1);
 }
 
-export default {
+const notifly = {
     initialize,
     trackEvent,
     setUserProperties,
@@ -87,3 +87,10 @@ export default {
     setDeviceToken,
     resetInitialization,
 };
+
+// Check if the code is running in a browser environment before assigning to `window`
+if (typeof window !== 'undefined') {
+    (window as any).notifly = notifly;
+}
+
+export default notifly;

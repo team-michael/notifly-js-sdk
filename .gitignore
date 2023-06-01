@@ -30,3 +30,6 @@ next-env.d.ts
 
 # dist
 /dist
+
+# parcel cache
+.parcel-cache/

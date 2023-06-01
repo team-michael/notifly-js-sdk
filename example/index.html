@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Example web app for Notifly JS SDK</title>
+        <link rel="stylesheet" href="css/style.css" type="text/css" />
+        <link rel="shortcut icon" href="#">
+    </head>
+    <body>
+        <div>
+            <h1>Example web app for Notifly JS SDK</h1>
+        </div>
+        <div class="container">
+            <p class="hex-value">Where's my Color</p>
+            <p class="how-to">Click above</p>
+        </div>
+
+        <script type="module">
+            import notifly from '/dist/index.js';
+            
+            notifly.initialize('b80c3f0e2fbd5eb986df4f1d32ea2871', 'minyong', '000000');
+            console.log("Notifly initialized!")
+        </script>
+        <script src="js/app.js"></script>
+    </body>
+</html>

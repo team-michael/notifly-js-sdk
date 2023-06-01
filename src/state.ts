@@ -59,8 +59,10 @@ function updateEventIntermediateCounts(eventName: string) {
 
     // Get the current year, month, and day
     const year = currentDate.getFullYear();
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0'); // Months are zero-based, so we add 1
-    const day = String(currentDate.getDate()).padStart(2, '0');
+    const monthTs = currentDate.getMonth() + 1;  // Months are zero-based, so we add 1
+    const month = monthTs < 10 ? '0' + monthTs : '' + monthTs;
+    const dayTs = currentDate.getDate();
+    const day = dayTs < 10 ? '0' + dayTs : '' + dayTs;
 
     // Create the formatted date string
     const formattedDate = year + '-' + month + '-' + day;
