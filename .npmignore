@@ -21,7 +21,13 @@ CONTRIBUTING.md
 ISSUE_TEMPLATE.md
 PULL_REQUEST_TEMPLATE.md
 
+# example app
+example/
+
 # misc
 *.log
 .DS_Store
 .github/
+
+# parcel cache
+.parcel-cache/

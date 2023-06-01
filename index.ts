@@ -88,6 +88,9 @@ const notifly = {
     resetInitialization,
 };
 
-(window as any).notifly = notifly;
+// Check if the code is running in a browser environment before assigning to `window`
+if (typeof window !== 'undefined') {
+    (window as any).notifly = notifly;
+}
 
 export default notifly;
