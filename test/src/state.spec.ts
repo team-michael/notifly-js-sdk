@@ -129,9 +129,13 @@ describe('checkCondition', () => {
     });
 
     test('should return true for event count condition with matching count', () => {
+        const currentDate = new Date();
+        currentDate.setDate(currentDate.getDate() - 3);
+        const formattedDate = currentDate.toISOString().split('T')[0];
+
         const eventIntermediateCounts = [
-            { dt: '2023-05-26', name: 'Event A', count: 3 },
-            { dt: '2023-05-26', name: 'Event B', count: 5 },
+            { dt: formattedDate, name: 'Event A', count: 3 },
+            { dt: formattedDate, name: 'Event B', count: 5 },
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
@@ -165,9 +169,13 @@ describe('checkCondition', () => {
     });
 
     test('should return false for event count condition with non-matching count', () => {
+        const currentDate = new Date();
+        currentDate.setDate(currentDate.getDate() - 1);
+        const formattedDate = currentDate.toISOString().split('T')[0];
+
         const eventIntermediateCounts = [
-            { dt: '2023-05-26', name: 'Event A', count: 3 },
-            { dt: '2023-05-26', name: 'Event B', count: 5 },
+            { dt: formattedDate, name: 'Event A', count: 3 },
+            { dt: formattedDate, name: 'Event B', count: 5 },
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
@@ -201,9 +209,13 @@ describe('checkCondition', () => {
     });
 
     test('should return false for event count condition with low count', () => {
+        const currentDate = new Date();
+        currentDate.setDate(currentDate.getDate() - 1);
+        const formattedDate = currentDate.toISOString().split('T')[0];
+
         const eventIntermediateCounts = [
-            { dt: '2023-05-26', name: 'Event A', count: 1 },
-            { dt: '2023-05-26', name: 'Event B', count: 5 },
+            { dt: formattedDate, name: 'Event A', count: 1 },
+            { dt: formattedDate, name: 'Event B', count: 5 },
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
@@ -237,9 +249,13 @@ describe('checkCondition', () => {
     });
 
     test('should return true for event count condition with high count', () => {
+        const currentDate = new Date();
+        currentDate.setDate(currentDate.getDate() - 3);
+        const formattedDate = currentDate.toISOString().split('T')[0];
+
         const eventIntermediateCounts = [
-            { dt: '2023-05-26', name: 'Event A', count: 10 },
-            { dt: '2023-05-26', name: 'Event B', count: 5 },
+            { dt: formattedDate, name: 'Event A', count: 10 },
+            { dt: formattedDate, name: 'Event B', count: 5 },
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
@@ -719,7 +735,6 @@ describe('checkCondition', () => {
         const currentDate = new Date();
         currentDate.setDate(currentDate.getDate() - 5);
         const formattedDate = currentDate.toISOString().split('T')[0];
-        console.log(formattedDate);
 
         setUserDataForTest({
             user_properties: {
