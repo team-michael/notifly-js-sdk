@@ -1,0 +1,32 @@
+name: Deploy to CDN
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'example/**'
+      - 'README.md'
+      - '.gitignore'
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+
+jobs:
+  build_and_sync:
+    name: Build and Sync with S3
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Sync with S3
+        run: |
+          aws s3 sync dist s3://notifly-content/notifly-js-sdk/dist --delete
