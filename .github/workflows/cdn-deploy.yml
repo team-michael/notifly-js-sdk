@@ -1,8 +1,8 @@
 name: Deploy to CDN
 on:
   push:
-    #branches:
-    #  - main
+    branches:
+      - main
     paths-ignore:
       - 'example/**'
       - 'README.md'
