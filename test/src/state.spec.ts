@@ -82,7 +82,7 @@ describe('checkCondition', () => {
     test('should return false for non-condition segment type', () => {
         const campaign = {
             channel: 'in-web-message',
-            message: { html_url: '' },
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'some_other_type',
         };
@@ -95,7 +95,7 @@ describe('checkCondition', () => {
     test('should return true when no groups are present', () => {
         const campaign = {
             channel: 'in-web-message',
-            message: { html_url: '' },
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
             segment_info: {
@@ -111,7 +111,7 @@ describe('checkCondition', () => {
     test('should return false when no conditions are present', () => {
         const campaign = {
             channel: 'in-web-message',
-            message: { html_url: '' },
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
             segment_info: {
@@ -141,7 +141,7 @@ describe('checkCondition', () => {
 
         const campaign = {
             channel: 'in-web-message',
-            message: { html_url: '' },
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
             segment_info: {
@@ -181,7 +181,7 @@ describe('checkCondition', () => {
 
         const campaign = {
             channel: 'in-web-message',
-            message: { html_url: '' },
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
             segment_info: {
@@ -221,7 +221,7 @@ describe('checkCondition', () => {
 
         const campaign = {
             channel: 'in-web-message',
-            message: { html_url: '' },
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
             segment_info: {
@@ -261,7 +261,7 @@ describe('checkCondition', () => {
 
         const campaign = {
             channel: 'in-web-message',
-            message: { html_url: '' },
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
             segment_info: {
@@ -298,7 +298,7 @@ describe('checkCondition', () => {
 
         const campaign = {
             channel: 'in-web-message',
-            message: { html_url: '' },
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
             segment_info: {
@@ -335,7 +335,7 @@ describe('checkCondition', () => {
 
         const campaign = {
             channel: 'in-web-message',
-            message: { html_url: '' },
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
             segment_info: {
@@ -373,7 +373,7 @@ describe('checkCondition', () => {
 
         const campaign = {
             channel: 'in-web-message',
-            message: { html_url: '' },
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
             segment_info: {
@@ -424,7 +424,7 @@ describe('checkCondition', () => {
 
         const campaign = {
             channel: 'in-web-message',
-            message: { html_url: '' },
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
             segment_info: {
@@ -488,7 +488,7 @@ describe('checkCondition', () => {
 
         const campaign = {
             channel: 'in-web-message',
-            message: { html_url: '' },
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
             segment_info: {
@@ -571,7 +571,7 @@ describe('checkCondition', () => {
 
         const campaign = {
             channel: 'in-web-message',
-            message: { html_url: '' },
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
             segment_info: {
@@ -659,7 +659,7 @@ describe('checkCondition', () => {
 
         const campaign = {
             channel: 'in-web-message',
-            message: { html_url: '' },
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
             segment_info: {
@@ -751,7 +751,7 @@ describe('checkCondition', () => {
 
         const campaign = {
             channel: 'in-web-message',
-            message: { html_url: '' },
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
             segment_info: {

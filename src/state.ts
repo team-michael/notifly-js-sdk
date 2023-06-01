@@ -94,6 +94,18 @@ function checkCondition(campaign: Campaign): boolean {
         return false;
     }
 
+    const message = campaign.message;
+    const modalProperties = message.modal_properties;
+    const templateName = modalProperties.template_name;
+    if (userData.user_properties) {
+        const currentTimestamp = Math.floor(Date.now() / 1000);
+        const hideUntilTimestamp = userData.user_properties[`hide_in_web_message_${templateName}`];
+        if (currentTimestamp <= hideUntilTimestamp) {
+            // Hidden
+            return false;
+        }
+    }
+
     const groups = campaign.segment_info?.groups;
     if (!groups || !groups.length) {
         return true;

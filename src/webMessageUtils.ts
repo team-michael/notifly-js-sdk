@@ -1,8 +1,13 @@
 import { Campaign } from './interface/campaign.interface';
+import { setUserProperties } from './user';
 
 function showInWebMessage(campaign: Campaign) {
+    const message = campaign.message;
+    const modalProperties = message.modal_properties;
+    const templateName = modalProperties.template_name;
+
     const iframe = document.createElement('iframe');
-    iframe.src = campaign.message.html_url;
+    iframe.src = message.html_url;
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.zIndex = '10';
@@ -14,13 +19,22 @@ function showInWebMessage(campaign: Campaign) {
     }, delayInSeconds * 1000);
 
     // Listen for messages from the iframe
-    window.addEventListener('message', function (event) {
+    window.addEventListener('message', async function (event) {
         if (event.source === iframe.contentWindow) {
             const message = event.data;
-            console.log('Received message from iframe:', message);
-
             if (message.type === 'close') {
                 document.body.removeChild(iframe);
+                const extraData = message.extraData;
+                if (extraData) {
+                    const data = extraData.data;
+                    if (data) {
+                        if (data.hideUntil) {
+                            await setUserProperties({
+                                [`hide_in_web_message_${templateName}`]: data.hideUntil,
+                            });
+                        }
+                    }
+                }
             }
         }
     });
