@@ -6,8 +6,9 @@ import {
     setUserDataForTest,
 } from '../../src/state';
 
-const mockedDate = new Date('2023-05-31');
-jest.spyOn(global, 'Date').mockImplementation(() => mockedDate);
+jest
+  .useFakeTimers()
+  .setSystemTime(new Date('2023-05-31'));
 
 describe('updateEventIntermediateCounts', () => {
     beforeEach(() => {
