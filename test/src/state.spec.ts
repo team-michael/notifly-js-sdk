@@ -6,6 +6,9 @@ import {
     setUserDataForTest,
 } from '../../src/state';
 
+const mockedDate = new Date('2023-05-31');
+jest.spyOn(global, 'Date').mockImplementation(() => mockedDate);
+
 describe('updateEventIntermediateCounts', () => {
     beforeEach(() => {
         setEventIntermediateCountsForTest([]);
@@ -101,6 +104,7 @@ describe('checkCondition', () => {
             segment_info: {
                 groups: [],
             },
+            delay: 0,
         };
 
         const result = checkConditionForTest(campaign);
@@ -121,6 +125,7 @@ describe('checkCondition', () => {
                     },
                 ],
             },
+            delay: 0,
         };
 
         const result = checkConditionForTest(campaign);
@@ -157,6 +162,7 @@ describe('checkCondition', () => {
                     },
                 ],
             },
+            delay: 0,
         };
 
         const result = checkConditionForTest(campaign);
@@ -193,6 +199,7 @@ describe('checkCondition', () => {
                     },
                 ],
             },
+            delay: 0,
         };
 
         const result = checkConditionForTest(campaign);
@@ -229,6 +236,7 @@ describe('checkCondition', () => {
                     },
                 ],
             },
+            delay: 0,
         };
 
         const result = checkConditionForTest(campaign);
@@ -265,6 +273,7 @@ describe('checkCondition', () => {
                     },
                 ],
             },
+            delay: 0,
         };
 
         const result = checkConditionForTest(campaign);
