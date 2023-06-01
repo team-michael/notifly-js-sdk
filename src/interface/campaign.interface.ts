@@ -13,6 +13,7 @@ interface Campaign {
     segment_type: string;
     message: {
         html_url: string;
+        modal_properties: { template_name: string };
     };
     segment_info?: {
         groups?: {
