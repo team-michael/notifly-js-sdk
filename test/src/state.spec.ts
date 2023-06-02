@@ -89,6 +89,7 @@ describe('checkCondition', () => {
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'some_other_type',
+            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -106,6 +107,7 @@ describe('checkCondition', () => {
                 groups: [],
             },
             delay: 0,
+            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -127,6 +129,7 @@ describe('checkCondition', () => {
                 ],
             },
             delay: 0,
+            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -168,6 +171,7 @@ describe('checkCondition', () => {
                 ],
             },
             delay: 0,
+            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -209,6 +213,7 @@ describe('checkCondition', () => {
                 ],
             },
             delay: 0,
+            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -250,6 +255,7 @@ describe('checkCondition', () => {
                 ],
             },
             delay: 0,
+            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -291,6 +297,7 @@ describe('checkCondition', () => {
                 ],
             },
             delay: 0,
+            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -328,6 +335,7 @@ describe('checkCondition', () => {
                     },
                 ],
             },
+            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -365,6 +373,7 @@ describe('checkCondition', () => {
                     },
                 ],
             },
+            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -417,6 +426,7 @@ describe('checkCondition', () => {
                 ],
                 group_operator: 'OR',
             },
+            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -481,6 +491,7 @@ describe('checkCondition', () => {
                 ],
                 group_operator: 'OR',
             },
+            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -564,6 +575,7 @@ describe('checkCondition', () => {
                 ],
                 group_operator: 'OR',
             },
+            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -647,6 +659,7 @@ describe('checkCondition', () => {
                 ],
                 group_operator: 'OR',
             },
+            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -735,6 +748,7 @@ describe('checkCondition', () => {
                 ],
                 group_operator: 'OR',
             },
+            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -827,6 +841,7 @@ describe('checkCondition', () => {
                 ],
                 group_operator: 'OR',
             },
+            status: 1,
         };
 
         const result = checkConditionForTest(campaign);

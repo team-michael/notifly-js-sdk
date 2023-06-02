@@ -23,6 +23,7 @@ interface Campaign {
     };
     triggering_event: string;
     delay?: number;
+    status: number;
 }
 
 export { Campaign, Condition };
