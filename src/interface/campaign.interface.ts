@@ -9,6 +9,7 @@ interface Condition {
 }
 
 interface Campaign {
+    id: string;
     channel: string;
     segment_type: string;
     message: {

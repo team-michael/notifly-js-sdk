@@ -1,5 +1,6 @@
 import { Campaign } from './interface/campaign.interface';
 import { setUserProperties } from './user';
+import { logEvent } from './logEvent';
 
 function showInWebMessage(campaign: Campaign) {
     const message = campaign.message;
@@ -16,6 +17,16 @@ function showInWebMessage(campaign: Campaign) {
     const delayInSeconds = campaign.delay ?? 0;
     setTimeout(() => {
         document.body.appendChild(iframe);
+        logEvent(
+            'in_web_message_show',
+            {
+                type: 'message_event',
+                channel: 'in-web-message',
+                campaign_id: campaign.id,
+            },
+            null,
+            true
+        );
     }, delayInSeconds * 1000);
 
     // Listen for messages from the iframe
@@ -35,6 +46,29 @@ function showInWebMessage(campaign: Campaign) {
                         }
                     }
                 }
+                logEvent(
+                    'close_button_click',
+                    {
+                        type: 'message_event',
+                        channel: 'in-web-message',
+                        button_name: message.buttonName,
+                        campaign_id: campaign.id,
+                    },
+                    null,
+                    true
+                );
+            } else if (message.type === 'main_button') {
+                logEvent(
+                    'main_button_click',
+                    {
+                        type: 'message_event',
+                        channel: 'in-web-message',
+                        button_name: message.buttonName,
+                        campaign_id: campaign.id,
+                    },
+                    null,
+                    true
+                );
             }
         }
     });
