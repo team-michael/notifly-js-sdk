@@ -21,6 +21,12 @@ const CAMPAIGN_STATUS_ACTIVE = 1;
 const CAMPAIGN_STATUS_INACTIVE = 2;
 const CAMPAIGN_STATUS_COMPLETED = 3;
 
+function refreshState() {
+    eventIntermediateCounts = [];
+    inWebMessageCampaigns = [];
+    userData = {};
+}
+
 async function syncState(projectID: string, notiflyUserID: string): Promise<void> {
     const endpoint =
         'https://om97mq7cx4.execute-api.ap-northeast-2.amazonaws.com/default/notifly-js-sdk-user-state-retrieval';
@@ -256,6 +262,7 @@ function setUserDataForTest(newUserData: UserData) {
 const checkConditionForTest = checkCondition;
 
 export {
+    refreshState,
     syncState,
     updateUserData,
     updateEventIntermediateCounts,
