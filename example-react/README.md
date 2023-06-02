@@ -2,15 +2,26 @@
 
 ## Setup
 
+First, run in the root folder
+
+```
+npm pack
+```
+
 In this directory, add `.env` with
 
 ```
 REACT_APP_NOTIFLY_PROJECT_ID=...
 REACT_APP_NOTIFLY_USERNAME=...
 REACT_APP_NOTIFLY_PASSWORD=...
+DISABLE_ESLINT_PLUGIN=true
 ```
 
-Then
+Then update `package.json` with the correct version name. Example:
+
+```
+"notifly-js-sdk-dev": "file:../notifly-js-sdk-dev-1.2.28.tgz",
+```
 
 ```
 npm install

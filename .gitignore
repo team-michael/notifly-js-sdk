@@ -33,3 +33,6 @@ next-env.d.ts
 
 # parcel cache
 .parcel-cache/
+
+# ignore tgz files
+*.tgz
