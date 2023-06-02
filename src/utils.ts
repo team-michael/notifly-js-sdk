@@ -53,10 +53,9 @@ function getPlatform(): string {
         return 'ios';
     } else if (/Android/.test(userAgent)) {
         return 'android';
-    } else if (/webOS|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet|Firefox|Chrome/.test(userAgent)) {
-        return 'web';
     } else {
-        return 'unknown';
+        // If the platform is not ios or android, assume it is web.
+        return 'web';
     }
 }
 
