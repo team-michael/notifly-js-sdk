@@ -16,6 +16,11 @@ let eventIntermediateCounts: EventIntermediateCounts[] = [];
 let inWebMessageCampaigns: Campaign[] = [];
 let userData: UserData = {};
 
+const CAMPAIGN_STATUS_DRAFT = 0;
+const CAMPAIGN_STATUS_ACTIVE = 1;
+const CAMPAIGN_STATUS_INACTIVE = 2;
+const CAMPAIGN_STATUS_COMPLETED = 3;
+
 async function syncState(projectID: string, notiflyUserID: string): Promise<void> {
     const endpoint =
         'https://om97mq7cx4.execute-api.ap-northeast-2.amazonaws.com/default/notifly-js-sdk-user-state-retrieval';
@@ -59,7 +64,7 @@ function updateEventIntermediateCounts(eventName: string) {
 
     // Get the current year, month, and day
     const year = currentDate.getFullYear();
-    const monthTs = currentDate.getMonth() + 1;  // Months are zero-based, so we add 1
+    const monthTs = currentDate.getMonth() + 1; // Months are zero-based, so we add 1
     const month = monthTs < 10 ? '0' + monthTs : '' + monthTs;
     const dayTs = currentDate.getDate();
     const day = dayTs < 10 ? '0' + dayTs : '' + dayTs;
@@ -224,6 +229,7 @@ function checkConditionForSingleCondition(condition: Condition) {
 function maybeTriggerWebMessage(eventName: string) {
     inWebMessageCampaigns
         .filter((c) => c.triggering_event === eventName)
+        .filter((c) => c.status === CAMPAIGN_STATUS_ACTIVE)
         .map((c) => {
             if (checkCondition(c)) {
                 showInWebMessage(c);
