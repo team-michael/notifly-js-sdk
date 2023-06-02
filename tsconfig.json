@@ -15,5 +15,5 @@
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
   "include": ["src/**/*.ts", "index.ts", "src/data.js", "src/data.js"],
-  "exclude": ["node_modules", "test/**/*", "example/**/*"]
+  "exclude": ["node_modules", "test/**/*", "example-vanillajs/**/*", "example-react/**/*"]
 }
