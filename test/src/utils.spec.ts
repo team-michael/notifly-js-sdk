@@ -96,9 +96,9 @@ describe('getPlatform', () => {
         expect(getPlatform()).toEqual('web');
     });
 
-    it('returns unknown platform for unknown user agent', () => {
+    it('returns web platform for unknown user agent', () => {
         const userAgent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
         Object.defineProperty(window.navigator, 'userAgent', { value: userAgent, configurable: true });
-        expect(getPlatform()).toEqual('unknown');
+        expect(getPlatform()).toEqual('web');
     });
 });
