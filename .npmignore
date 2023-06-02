@@ -22,7 +22,8 @@ ISSUE_TEMPLATE.md
 PULL_REQUEST_TEMPLATE.md
 
 # example app
-example/
+example-vanillajs/
+example-react/
 
 # misc
 *.log
@@ -31,3 +32,8 @@ example/
 
 # parcel cache
 .parcel-cache/
+
+node_modules/
+
+# ignore tgz files
+*.tgz

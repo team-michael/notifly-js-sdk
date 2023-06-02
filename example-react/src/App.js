@@ -12,26 +12,7 @@ function App() {
         process.env.REACT_APP_NOTIFLY_PASSWORD,
       );
     }
-  }, []);
-  const [inputValues, setInputValues] = useState({
-    input1: "",
-    input2: "",
-  });
-
-  const handleButtonClick = (buttonName) => {
-    console.log(`Button ${buttonName} clicked`);
-  };
-
-  const handleInputChange = (event) => {
-    setInputValues({
-      ...inputValues,
-      [event.target.name]: event.target.value
-    });
-  };
-
-  const handleSaveButtonClick = (inputName) => {
-    console.log(`Saved value of ${inputName}: ${inputValues[inputName]}`);
-  };
+  }, []);  
 
   return (
     <div className="App">
@@ -40,26 +21,51 @@ function App() {
         <p className="App-link" rel="noopener noreferrer">
           Notifly js SDK example react app
         </p>
-        <button onClick={() => handleButtonClick("Button 1")}>Button 1</button>
-        <button onClick={() => handleButtonClick("Button 2")}>Button 2</button>
-        <input
-          type="text"
-          name="input1"
-          value={inputValues.input1}
-          onChange={handleInputChange}
-          placeholder="Input 1"
-        />
-        <button onClick={() => handleSaveButtonClick("input1")}>Save Input 1</button>
-        <input
-          type="text"
-          name="input2"
-          value={inputValues.input2}
-          onChange={handleInputChange}
-          placeholder="Input 2"
-        />
-        <button onClick={() => handleSaveButtonClick("input2")}>Save Input 2</button>
-
+        <EventButton name="event_react_1" />
+        <EventButton name="event_react_2" />
+        <UserIdSetter />
       </header>
+    </div>
+  );
+}
+
+function EventButton({ name }) {
+  const handleButtonClick = (buttonName) => {
+    notifly.trackEvent(buttonName);
+    console.log(`Button ${buttonName} clicked`);
+  };
+  return (
+    <button
+      style={{ margin: '10px' }}
+      onClick={() => handleButtonClick(name)}
+    >
+      {name}
+    </button>
+  );
+}
+
+function UserIdSetter() {
+  const [userIdInput, setUserIdInput] = useState("");
+
+  const handleInputChange = (event) => {
+    setUserIdInput(event.target.value);
+  };
+
+  const handleSetUserId = () => {
+    notifly.setUserId(userIdInput);
+    console.log(`Set user id to ${userIdInput}`)
+  };
+
+  return (
+    <div style={{ margin: '10px' }}>
+      <input
+        type="text"
+        name="setUserId"
+        value={userIdInput}
+        onChange={handleInputChange}
+        placeholder="user id"
+      />
+      <button onClick={handleSetUserId}>Set User Id</button>
     </div>
   );
 }
