@@ -26,7 +26,7 @@
     "prepublishOnly": "npm run build",
     "watch": "parcel watch",
     "build": "parcel build",
-    "start": "http-server --cors ./example-vanillajs"
+    "start": "http-server --cors"
   },
   "author": "daeseongKim",
   "license": "ISC",
