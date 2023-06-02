@@ -1,14 +1,20 @@
-const hexValueElement = document.querySelector('.hex-value');
+const eventjs1button = document.getElementById('eventjs1');
+const eventjs2button = document.getElementById('eventjs2');
 
-function generateHEX() {
-    let randomHex =
-        Math.random() //random number between 0 and 1
-            .toString(16) //convert that number to hexadecimal string (i.e, base 16)
-            .substr(-6);  //grab last 6 digit string
-    let randomHexColor = `#${randomHex}`;
-    hexValueElement.textContent = randomHexColor;
-    document.body.style.background = randomHexColor;
-}
+eventjs1button.addEventListener('click', function () {
+    window.notifly.trackEvent('eventjs1');
+    console.log('eventjs1 clicked');
+});
 
-//when user clicks on HEX value
-hexValueElement.addEventListener('click', generateHEX);
+eventjs2button.addEventListener('click', function () {
+    window.notifly.trackEvent('eventjs2');
+    console.log('eventjs2 clicked');
+});
+
+const userIdInput = document.getElementById('userIdInput');
+const userIdSaveButton = document.getElementById('userIdSave');
+
+userIdSaveButton.addEventListener('click', function () {
+    window.notifly.setUserId(userIdInput.value);
+    console.log(`User Id set: ${userIdInput.value}`);
+});
