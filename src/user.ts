@@ -1,10 +1,11 @@
 import { logEvent } from './logEvent';
 import { generateNotiflyUserID } from './utils';
-import { syncState, updateUserData } from './state';
+import { refreshState, syncState, updateUserData } from './state';
 
 async function setUserId(userID?: string | null | undefined) {
     if (!userID) {
         await removeUserId();
+        refreshState();
         return;
     }
     try {
