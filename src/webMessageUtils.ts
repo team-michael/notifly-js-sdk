@@ -69,6 +69,9 @@ function showInWebMessage(campaign: Campaign) {
                     null,
                     true
                 );
+                if (message.link) {
+                    window.open(message.link, '_blank');
+                }
             }
         }
     });

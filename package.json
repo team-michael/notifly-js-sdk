@@ -1,6 +1,6 @@
 {
   "name": "notifly-js-sdk-dev",
-  "version": "1.2.34",
+  "version": "1.2.48",
   "description": "Notifly JS SDK for browser.",
   "source": "index.ts",
   "main": "dist/main.js",
