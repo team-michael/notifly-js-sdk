@@ -34,27 +34,35 @@ async function logEvent(
         }
     }
 
-    const data = JSON.stringify({
+    const data: any = {
         id: v4().replace(/-/g, ''),
         project_id: projectID,
         name: eventName,
         event_params: eventParams,
-        notifly_device_id: notiflyDeviceID,
-        notifly_user_id: notiflyUserID,
-        external_user_id: externalUserID,
-        device_token: deviceToken,
         is_internal_event: isInternalEvent,
         segmentationEventParamKeys: segmentationEventParamKeys,
         sdk_version: SDK_VERSION,
         sdk_type: 'js',
         time: new Date().valueOf() / 1000,
         platform: getPlatform(),
-    });
-
+    }
+    if (notiflyUserID) {
+        data.notifly_user_id = notiflyUserID;
+    }
+    if (deviceToken) {
+        data.device_token = deviceToken;
+    }
+    if (notiflyDeviceID) {
+        data.notifly_device_id = notiflyDeviceID;
+    }
+    if (externalUserID) {
+        data.external_user_id = externalUserID;
+    }
+    
     const body = JSON.stringify({
         'records': [
             {
-                'data': data,
+                'data': JSON.stringify(data),
                 'partitionKey': notiflyUserID,
             },
         ],
