@@ -13,47 +13,37 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
-export function registerServiceWorker(VAPID_PUBLIC_KEY) {
-  navigator.serviceWorker.register('/test-NotiflySDKWorker.js');
+export async function registerServiceWorker(VAPID_PUBLIC_KEY) {
+  const registration = await navigator.serviceWorker.register('/test-NotiflySDKWorker.js');
+  const subscription = await getSubscription(registration, VAPID_PUBLIC_KEY);
+  await logSubscription(subscription);
+}
 
-  navigator.serviceWorker.ready
-    .then(function (registration) {
-      // Use the PushManager to get the user's subscription to the push service.
-      return registration.pushManager.getSubscription()
-        .then(async function (subscription) {
-          // If a subscription was found, return it.
-          if (subscription) {
-            return subscription;
-          }
-          /* if(subscription) {
-            // If a subscription was found, unsubscribe
-            subscription.unsubscribe();
-          } */
+async function getSubscription(registration, VAPID_PUBLIC_KEY) {
+  const subscription = await registration.pushManager.getSubscription();
+  if (subscription) {
+    return subscription;
+  }
 
-          // TODO: Get the server's public key
-          // const response = await fetch('./vapidPublicKey');
-          // const vapidPublicKey = await response.text();
-          // Chrome doesn't accept the base64-encoded (string) vapidPublicKey yet
-          const convertedVapidKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-          return registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: convertedVapidKey,
-          });
-        });
-    }).then(function (subscription) {
-      console.log(JSON.stringify({
-        subscription: subscription
-      }));
-      // TODO: Send the subscription details to the server.
-      // Example:
-      /* fetch('./register', {
-        method: 'post',
-        headers: {
-          'Content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          subscription: subscription
-        }),
-      }); */
-    });
+  // Chrome doesn't accept the base64-encoded (string) vapidPublicKey yet
+  const convertedVapidKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+  return registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: convertedVapidKey,
+  });
+}
+
+async function logSubscription(subscription) {
+  console.log(JSON.stringify({ subscription: subscription }));
+  // TODO: Send the subscription details to the server.
+  // Example:
+  /* 
+  await fetch('./register', {
+    method: 'post',
+    headers: {
+      'Content-type': 'application/json'
+    },
+    body: JSON.stringify({ subscription }),
+  });
+  */
 }

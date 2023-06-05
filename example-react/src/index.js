@@ -6,7 +6,7 @@ import reportWebVitals from './reportWebVitals';
 import { registerServiceWorker } from './temporaryNotiflyMethods';
 
 const VAPID_PUBLIC_KEY = "BGkEcbk7nbeozYYvs7EXqWDuqcDPBdxJ5p51jM9vx2ERj5iGSntBXFhIociva1boO9LuCec-ZCCAI_HC82NUIuQ"
-registerServiceWorker(VAPID_PUBLIC_KEY);
+await registerServiceWorker(VAPID_PUBLIC_KEY);
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
