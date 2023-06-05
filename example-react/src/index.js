@@ -3,10 +3,10 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { registerServiceWorker } from './temporaryNotiflyMethods';
+import notifly from 'notifly-js-sdk-dev';
 
 const VAPID_PUBLIC_KEY = "BGkEcbk7nbeozYYvs7EXqWDuqcDPBdxJ5p51jM9vx2ERj5iGSntBXFhIociva1boO9LuCec-ZCCAI_HC82NUIuQ"
-registerServiceWorker(VAPID_PUBLIC_KEY);
+notifly.registerServiceWorker(VAPID_PUBLIC_KEY);
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

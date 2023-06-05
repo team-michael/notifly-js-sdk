@@ -6,6 +6,7 @@ import { setUserId, setUserProperties, removeUserId } from './src/user';
 import { getNotiflyUserID } from './src/utils';
 import { setDeviceToken } from './src/device';
 import { syncState } from './src/state';
+import { registerServiceWorker } from './src/push';
 
 let isNotiflyInitialized = false;
 
@@ -86,6 +87,7 @@ const notifly = {
     setUserId,
     setDeviceToken,
     resetInitialization,
+    registerServiceWorker,
 };
 
 // Check if the code is running in a browser environment before assigning to `window`
