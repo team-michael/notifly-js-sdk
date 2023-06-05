@@ -1,3 +1,6 @@
+import { v5 } from 'uuid';
+import { NAMESPACE } from './constants';
+import { logEvent } from './logEvent';
 
 async function registerServiceWorker(
     vapid_public_key: string,
@@ -49,18 +52,26 @@ async function _getSubscription(registration: ServiceWorkerRegistration, VAPID_P
 }
 
 async function _logSubscription(subscription: PushSubscription): Promise<void> {
-    console.log(JSON.stringify({ subscription: subscription }));
-    // TODO: Send the subscription details to the server.
-    // Example:
-    /* 
-    await fetch('./register', {
-      method: 'post',
-      headers: {
-        'Content-type': 'application/json'
-      },
-      body: JSON.stringify({ subscription }),
-    });
-    */
+    const subscriptionStr = JSON.stringify(subscription);
+    console.log(`subscription: ${subscriptionStr}`);
+
+    let notiflyDeviceID;
+    const notiflyDeviceIDLocalStorage = localStorage.getItem('__notiflyDeviceID');
+    if (notiflyDeviceIDLocalStorage) {
+        notiflyDeviceID = notiflyDeviceIDLocalStorage;
+    } else {
+        notiflyDeviceID = v5(subscriptionStr, NAMESPACE.DEVICEID).replace(/-/g, '');
+        localStorage.setItem('__notiflyDeviceID', notiflyDeviceID);
+    }
+
+    return await logEvent(
+        'set_device_properties',
+        {
+            device_token: subscriptionStr, // Use deviceToken to store the subscription
+        },
+        null,
+        true
+    );
 }
 
 export {
