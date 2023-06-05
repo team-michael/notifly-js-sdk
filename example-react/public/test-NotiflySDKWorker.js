@@ -1,7 +1,7 @@
 // NotiflySDKWorker.js
 
 // Version of service worker
-const version = 'v0.1';
+const version = 'v0.2';
 
 // Installing service worker
 self.addEventListener('install', (event) => {
@@ -16,6 +16,7 @@ self.addEventListener('activate', (event) => {
 // Handling push event
 self.addEventListener('push', (event) => {
     const payload = event.data.json();
+    console.log(`Notifly SW version: ${version}`);
     console.log('New notification', payload);
 
     const options = {
