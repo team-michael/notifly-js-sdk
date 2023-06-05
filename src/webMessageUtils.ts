@@ -69,9 +69,10 @@ function showInWebMessage(campaign: Campaign) {
                     null,
                     true
                 );
-                if (message.link) {
-                    window.open(message.link, '_blank');
-                }
+            }
+            if (message.link) {
+                // Navigate to link if necessary
+                window.open(message.link, '_blank');
             }
         }
     });
