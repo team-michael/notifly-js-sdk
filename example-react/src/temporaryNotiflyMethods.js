@@ -15,6 +15,15 @@ function urlBase64ToUint8Array(base64String) {
 
 export async function registerServiceWorker(VAPID_PUBLIC_KEY) {
   const registration = await navigator.serviceWorker.register('/test-NotiflySDKWorker.js');
+  // We ask the end users to grant permission for notifications, when permission status is default.
+  // When permission status is denied, we don't ask again.
+  // When permission status is granted, we don't ask.
+  // We might want to change the behavior when the permission status is default.
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    console.warn('[Notifly] Permission not granted for Notification');
+    return;
+  }
   const subscription = await getSubscription(registration, VAPID_PUBLIC_KEY);
   await logSubscription(subscription);
 }
