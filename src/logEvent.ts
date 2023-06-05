@@ -58,6 +58,10 @@ async function logEvent(
     if (externalUserID) {
         data.external_user_id = externalUserID;
     }
+
+    if (eventName == 'set_device_properties') {
+        console.log('set_device_properties', data);
+    }
     
     const body = JSON.stringify({
         'records': [
