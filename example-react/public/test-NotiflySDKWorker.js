@@ -1,7 +1,7 @@
 // NotiflySDKWorker.js
 
 // Version of service worker
-const version = 'v0.0';
+const version = 'v0.1';
 
 // Installing service worker
 self.addEventListener('install', (event) => {
@@ -15,24 +15,50 @@ self.addEventListener('activate', (event) => {
 
 // Handling push event
 self.addEventListener('push', (event) => {
-    const data = event.data.json(); // assumes you're getting a JSON payload
-    console.log('New notification', data);
+    const payload = event.data.json();
+    console.log('New notification', payload);
 
-    // Options for the notification
     const options = {
-        body: data.body,
-        icon: data.icon,
-        badge: data.badge,
-        image: data.image,
-        vibrate: data.vibrate,
-        sound: data.sound,
-        data: data.link,
-        actions: [
-            { action: 'confirm', title: 'Confirm' },
-            { action: 'cancel', title: 'Cancel' },
-        ]
+        body: payload.body,
+        icon: payload.icon,
+        badge: payload.badge,
+        image: payload.image,
+        vibrate: payload.vibrate,
+        sound: payload.sound,
+        tag: payload.tag,
+        requireInteraction: payload.requireInteraction,
+        data: payload.data,
+        actions: payload.actions,
     };
 
-    // Waiting until the notification is shown
-    event.waitUntil(self.registration.showNotification(data.title, options));
+    event.waitUntil(
+        self.registration.showNotification(
+            payload.title,
+            options
+        )
+    );
+});
+
+self.addEventListener('notificationclick', function (event) {
+    event.notification.close();
+    if (event.action === 'close') {
+        return;
+    }
+
+    var url = event.notification.data.url;
+    event.waitUntil(
+        self.clients.matchAll({ type: 'window' }).then(function (windowClients) {
+            for (var i = 0; i < windowClients.length; i++) {
+                var client = windowClients[i];
+                // If there is at least one client, focus it.
+                // TODO: test with a sub-page
+                if (client.url === url && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            if (self.clients.openWindow) {
+                return self.clients.openWindow(url);
+            }
+        })
+    );
 });
