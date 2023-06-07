@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, Link, Outlet } from 'react-router-dom';
+
 import notifly from 'notifly-js-sdk-dev';
 import logo from './logo.svg';
 import './App.css';
+import Playground from './Playground';
 
 function App() {
   useEffect(() => {
@@ -12,19 +15,34 @@ function App() {
         process.env.REACT_APP_NOTIFLY_PASSWORD,
       );
     }
-  }, []);  
+  }, []);
 
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p className="App-link" rel="noopener noreferrer">
-          Notifly js SDK example react app
-        </p>
-        <EventButton name="event_react_1" />
-        <EventButton name="event_react_2" />
-        <UserIdSetter />
-      </header>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="playground" element={<Playground />} />
+      </Routes>
+    </div>
+  );
+}
+
+function HomePage() {
+  return (
+    <div className="App-header">
+      <img src={logo} className="App-logo" alt="logo" />
+      <p className="App-link" rel="noopener noreferrer">
+        Notifly js SDK example react app
+      </p>
+      <UserIdSetter />
+      <EventButton name="event_react_1" />
+      <EventButton name="event_react_2" />
+      <EventButton name="event_react_3" />
+      <EventButton name="event_react_4" />
+      <EventButton name="event_react_5" />
+      <EventButton name="event_react_6" />
+      <Link to="/playground">Go to playground</Link>
+      <Outlet />
     </div>
   );
 }
