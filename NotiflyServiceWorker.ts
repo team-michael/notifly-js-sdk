@@ -1,22 +1,22 @@
 // NotiflyServiceWorker.js
 
 // Version of service worker
-const version = 'v0.3';
+const NOTIFLY_SERVICE_WORKER_VERSION = 'v0.3';
 
 // Installing service worker
-self.addEventListener('install', (event) => {
-    console.log(`Notifly SDK Worker ${version} is installed!`);
+self.addEventListener('install', () => {
+    console.log(`Notifly SDK Worker ${NOTIFLY_SERVICE_WORKER_VERSION} is installed!`);
 });
 
 // Activating service worker
-self.addEventListener('activate', (event) => {
-    console.log(`Notifly SDK Worker ${version} is activated!`);
+self.addEventListener('activate', () => {
+    console.log(`Notifly SDK Worker ${NOTIFLY_SERVICE_WORKER_VERSION} is activated!`);
 });
 
 // Handling push event
 self.addEventListener('push', (event) => {
     const payload = event.data.json();
-    console.log(`Notifly SW version: ${version}`);
+    console.log(`Notifly SW version: ${NOTIFLY_SERVICE_WORKER_VERSION}`);
     console.log('New notification', payload);
 
     const options = {
@@ -46,11 +46,10 @@ self.addEventListener('notificationclick', function (event) {
         return;
     }
 
-    var url = event.notification.data.url;
+    const url = event.notification.data.url;
     event.waitUntil(
         self.clients.matchAll({ type: 'window' }).then(function (windowClients) {
-            for (var i = 0; i < windowClients.length; i++) {
-                var client = windowClients[i];
+            for (const client of windowClients) {
                 // If there is at least one client, focus it.
                 // TODO: test with a sub-page
                 if (client.url === url && 'focus' in client) {
