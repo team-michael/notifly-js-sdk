@@ -2,11 +2,16 @@
   "name": "notifly-js-sdk-dev",
   "version": "1.2.50",
   "description": "Notifly JS SDK for browser.",
-  "source": "index.ts",
+  "source": [
+    "index.ts"
+  ],
   "main": "dist/main.js",
   "browser": "dist/index.js",
   "types": "dist/index.d.ts",
   "targets": {
+    "main": {
+      "distDir": "dist"
+    },
     "browser": {
       "context": "browser",
       "includeNodeModules": {
@@ -16,6 +21,10 @@
         "browsers": "> 0.25%"
       },
       "outputFormat": "esmodule"
+    },
+    "sw": {
+      "distDir": "dist",
+      "source": "NotiflyServiceWorker.ts"
     }
   },
   "scripts": {
