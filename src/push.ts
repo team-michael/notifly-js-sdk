@@ -4,9 +4,8 @@ import { logEvent } from './logEvent';
 
 async function registerServiceWorker(
     vapid_public_key: string,
-    path = '/test-NotiflySDKWorker.js',
+    path = '/notifly-service-worker.js',
 ): Promise<void> {
-    // TODO: update the service worker file name
     const registration = await navigator.serviceWorker.register(path);
     // We ask the end users to grant permission for notifications, when permission status is default.
     // When permission status is denied, we don't ask again.
