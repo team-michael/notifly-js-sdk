@@ -1,7 +1,7 @@
 // NotiflyServiceWorker.js
 
 // Version of service worker
-const NOTIFLY_SERVICE_WORKER_VERSION = 'v0.3';
+const NOTIFLY_SERVICE_WORKER_VERSION = 'v0.4';
 
 // Installing service worker
 self.addEventListener('install', () => {
