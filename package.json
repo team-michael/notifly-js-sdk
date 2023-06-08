@@ -35,7 +35,8 @@
     "prepublishOnly": "npm run build",
     "watch": "parcel watch",
     "build": "parcel build --no-source-maps",
-    "start": "http-server --cors"
+    "start": "http-server --cors",
+    "deploy-cdn": "aws s3 sync dist s3://notifly-content/notifly-js-sdk/dist"
   },
   "author": "daeseongKim",
   "license": "ISC",
