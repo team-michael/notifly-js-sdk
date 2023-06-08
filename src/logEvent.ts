@@ -1,4 +1,5 @@
 import { v4 } from 'uuid';
+import * as localForage from 'localforage';
 import { SDK_VERSION } from './constants';
 import { saveCognitoIdToken } from './auth';
 import { generateNotiflyUserID, getPlatform } from './utils';
@@ -13,24 +14,24 @@ async function logEvent(
     isInternalEvent = false,
     retryCount = 1
 ): Promise<void> {
-    const [projectID, deviceToken, cognitoIDToken, notiflyDeviceID, externalUserID] = [
-        localStorage.getItem('__notiflyProjectID'),
-        localStorage.getItem('__notiflyDeviceToken'),
-        localStorage.getItem('__notiflyCognitoIDToken') || '',
-        localStorage.getItem('__notiflyDeviceID'),
-        localStorage.getItem('__notiflyExternalUserID'),
-    ];
-    let notiflyUserID = localStorage.getItem('__notiflyUserID');
+    const [projectID, deviceToken, cognitoIDToken, notiflyDeviceID, externalUserID] = await Promise.all([
+        localForage.getItem<string>('__notiflyProjectID'),
+        localForage.getItem<string>('__notiflyDeviceToken'),
+        localForage.getItem<string>('__notiflyCognitoIDToken') || '',
+        localForage.getItem<string>('__notiflyDeviceID'),
+        localForage.getItem<string>('__notiflyExternalUserID'),
+    ]);
+    let notiflyUserID = await localForage.getItem('__notiflyUserID');
     if (!notiflyUserID) {
-        // Use generateNotiflyUserID to not call localStorage again
+        // Use generateNotiflyUserID to not call localForage again
         if (externalUserID) {
-            notiflyUserID = generateNotiflyUserID(externalUserID, undefined, undefined) || null;
+            notiflyUserID = await generateNotiflyUserID(externalUserID, undefined, undefined) || null;
         } else if (deviceToken) {
-            notiflyUserID = generateNotiflyUserID(undefined, deviceToken, undefined) || null;
+            notiflyUserID = await generateNotiflyUserID(undefined, deviceToken, undefined) || null;
         } else if (notiflyDeviceID) {
-            notiflyUserID = generateNotiflyUserID(undefined, undefined, notiflyDeviceID) || null;
+            notiflyUserID = await generateNotiflyUserID(undefined, undefined, notiflyDeviceID) || null;
         } else {
-            notiflyUserID = generateNotiflyUserID(undefined, undefined, undefined) || null;
+            notiflyUserID = await generateNotiflyUserID(undefined, undefined, undefined) || null;
         }
     }
 
@@ -58,7 +59,7 @@ async function logEvent(
     if (externalUserID) {
         data.external_user_id = externalUserID;
     }
-    
+
     const body = JSON.stringify({
         'records': [
             {
@@ -67,16 +68,19 @@ async function logEvent(
             },
         ],
     });
-    const requestOptions = _getRequestOptionsForLogEvent(cognitoIDToken, body);
+    // TODO: Handle null cognitoIDToken
+    const requestOptions = _getRequestOptionsForLogEvent(cognitoIDToken || '', body);
     const response = await _apiCall(NOTIFLY_LOG_EVENT_URL, requestOptions);
     const result = JSON.parse(response);
 
     // If the token is expired, get a new token and retry the logEvent.
     if (result.message == 'The incoming token has expired' && retryCount) {
-        const [userName, password] = [
-            localStorage.getItem('__notiflyUserName') || '',
-            localStorage.getItem('__notiflyPassword') || '',
-        ];
+        const [userNameLocalStore, passwordLocalStore] = await Promise.all([
+            localForage.getItem<string>('__notiflyUserName'),
+            localForage.getItem<string>('__notiflyPassword'),
+        ]);
+        const userName = userNameLocalStore || '';
+        const password = passwordLocalStore || '';
         await saveCognitoIdToken(userName, password);
         await logEvent(eventName, eventParams, segmentationEventParamKeys, isInternalEvent, 0);
     }
