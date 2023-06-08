@@ -36,3 +36,6 @@ next-env.d.ts
 
 # ignore tgz files
 *.tgz
+
+# ignore service worker in the root
+notifly-service-worker.js
