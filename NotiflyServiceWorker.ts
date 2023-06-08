@@ -1,7 +1,7 @@
 // NotiflyServiceWorker.js
 
 // Version of service worker
-const NOTIFLY_SERVICE_WORKER_VERSION = 'v0.4';
+const NOTIFLY_SERVICE_WORKER_VERSION = 'v0.5';
 
 // Installing service worker
 self.addEventListener('install', () => {
@@ -46,7 +46,10 @@ self.addEventListener('notificationclick', function (event) {
         return;
     }
 
-    const url = event.notification.data.url;
+    const url = event.notification.data?.url;
+    if (!url) {
+        return;
+    }
     event.waitUntil(
         self.clients.matchAll({ type: 'window' }).then(function (windowClients) {
             for (const client of windowClients) {
