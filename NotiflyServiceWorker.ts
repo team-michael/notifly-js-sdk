@@ -46,7 +46,10 @@ self.addEventListener('notificationclick', function (event) {
         return;
     }
 
-    const url = event.notification.data.url;
+    const url = event.notification.data?.url;
+    if (!url) {
+        return;
+    }
     event.waitUntil(
         self.clients.matchAll({ type: 'window' }).then(function (windowClients) {
             for (const client of windowClients) {
