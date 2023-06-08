@@ -9,6 +9,6 @@ const Playground = () => {
             <Link to="/">Go back to home</Link>
         </div>
     );
-}
+};
 
 export default Playground;

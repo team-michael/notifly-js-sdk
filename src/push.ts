@@ -1,4 +1,5 @@
 import { v5 } from 'uuid';
+import * as localForage from 'localforage';
 import { NAMESPACE } from './constants';
 import { logEvent } from './logEvent';
 
@@ -55,12 +56,12 @@ async function _logSubscription(subscription: PushSubscription): Promise<void> {
     console.log(`subscription: ${subscriptionStr}`);
 
     let notiflyDeviceID;
-    const notiflyDeviceIDLocalStorage = localStorage.getItem('__notiflyDeviceID');
-    if (notiflyDeviceIDLocalStorage) {
-        notiflyDeviceID = notiflyDeviceIDLocalStorage;
+    const notiflyDeviceIDLocalStore = await localForage.getItem('__notiflyDeviceID');
+    if (notiflyDeviceIDLocalStore) {
+        notiflyDeviceID = notiflyDeviceIDLocalStore;
     } else {
         notiflyDeviceID = v5(subscriptionStr, NAMESPACE.DEVICEID).replace(/-/g, '');
-        localStorage.setItem('__notiflyDeviceID', notiflyDeviceID);
+        await localForage.setItem('__notiflyDeviceID', notiflyDeviceID);
     }
 
     return await logEvent(

@@ -1,4 +1,5 @@
 import { v5 } from 'uuid';
+import localForage from 'localforage';
 import { NAMESPACE } from '../src/constants';
 import { saveCognitoIdToken } from '../src/auth';
 import { sessionStart } from '../src/logEvent';
@@ -7,6 +8,10 @@ import notifly from '../index';
 
 jest.mock('../src/auth');
 jest.mock('../src/logEvent');
+jest.mock('localforage', () => ({
+    getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
+    setItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
+}));
 
 describe('Notifly SDK', () => {
     describe('initialize', () => {
@@ -18,7 +23,6 @@ describe('Notifly SDK', () => {
         beforeEach(() => {
             (saveCognitoIdToken as jest.MockedFunction<typeof saveCognitoIdToken>).mockClear();
             (sessionStart as jest.MockedFunction<typeof sessionStart>).mockClear();
-            localStorage.clear();
         });
 
         afterEach(() => {
@@ -40,11 +44,12 @@ describe('Notifly SDK', () => {
         it('should call _saveNotiflyData with the correct parameters', async () => {
             await notifly.initialize(projectID, userName, password, deviceToken);
 
-            expect(localStorage.getItem('__notiflyProjectID')).toBe(projectID);
-            expect(localStorage.getItem('__notiflyUserName')).toBe(userName);
-            expect(localStorage.getItem('__notiflyPassword')).toBe(password);
-            expect(localStorage.getItem('__notiflyDeviceToken')).toBe(deviceToken);
-            expect(localStorage.getItem('__notiflyDeviceID')).toBe(
+            expect(localForage.setItem).toHaveBeenCalledWith('__notiflyProjectID', projectID);
+            expect(localForage.setItem).toHaveBeenCalledWith('__notiflyUserName', userName);
+            expect(localForage.setItem).toHaveBeenCalledWith('__notiflyPassword', password);
+            expect(localForage.setItem).toHaveBeenCalledWith('__notiflyDeviceToken', deviceToken);
+            expect(localForage.setItem).toHaveBeenCalledWith(
+                '__notiflyDeviceID',
                 v5(deviceToken, NAMESPACE.DEVICEID).replace(/-/g, '')
             );
         });
@@ -52,11 +57,9 @@ describe('Notifly SDK', () => {
         it('should not call __notiflyDeviceToken and __notiflyDeviceID when no device token is provided', async () => {
             await notifly.initialize(projectID, userName, password);
 
-            expect(localStorage.getItem('__notiflyProjectID')).toBe(projectID);
-            expect(localStorage.getItem('__notiflyUserName')).toBe(userName);
-            expect(localStorage.getItem('__notiflyPassword')).toBe(password);
-            expect(localStorage.getItem('__notiflyDeviceToken')).toBe(null);
-            expect(localStorage.getItem('__notiflyDeviceID')).toBe(null);
+            expect(localForage.setItem).toHaveBeenCalledWith('__notiflyProjectID', projectID);
+            expect(localForage.setItem).toHaveBeenCalledWith('__notiflyUserName', userName);
+            expect(localForage.setItem).toHaveBeenCalledWith('__notiflyPassword', password);
         });
 
         it('should call sessionStart', async () => {

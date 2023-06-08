@@ -1,18 +1,17 @@
+import localForage from 'localforage';
 import { SDK_VERSION } from '../../src/constants';
 import { logEvent } from '../../src/logEvent';
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 
+jest.mock('localforage', () => ({
+    getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
+    setItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
+}));
 
 describe('logEvent', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let mockLocalStorage: any;
     let mockFetch: jest.Mock;
 
     beforeEach(() => {
-        mockLocalStorage = {
-            getItem: jest.fn(),
-        };
-
         mockFetch = jest.fn().mockImplementation(() =>
             Promise.resolve({
                 text: jest.fn().mockImplementation(() =>
@@ -20,10 +19,6 @@ describe('logEvent', () => {
                 ),
             })
         );
-
-        Object.defineProperty(window, 'localStorage', {
-            value: mockLocalStorage,
-        });
 
         global.fetch = mockFetch;
     });
@@ -46,20 +41,20 @@ describe('logEvent', () => {
         const notiflyDeviceID = 'test_device_id';
         const externalUserID = 'test_external_user_id';
 
-        mockLocalStorage.getItem.mockImplementation((key: string) => {
+        jest.spyOn(localForage, 'getItem').mockImplementation((key: string) => {
             switch (key) {
                 case '__notiflyProjectID':
-                    return projectID;
+                    return Promise.resolve(projectID);
                 case '__notiflyDeviceToken':
-                    return deviceToken;
+                    return Promise.resolve(deviceToken);
                 case '__notiflyCognitoIDToken':
-                    return cognitoIDToken;
+                    return Promise.resolve(cognitoIDToken);
                 case '__notiflyDeviceID':
-                    return notiflyDeviceID;
+                    return Promise.resolve(notiflyDeviceID);
                 case '__notiflyExternalUserID':
-                    return externalUserID;
+                    return Promise.resolve(externalUserID);
                 default:
-                    return null;
+                    return Promise.resolve(null);
             }
         });
 
@@ -108,23 +103,23 @@ describe('logEvent', () => {
             retryCount
         );
 
-        expect(mockLocalStorage.getItem).toHaveBeenCalledTimes(6);
-        expect(mockLocalStorage.getItem).toHaveBeenCalledWith(
+        expect(localForage.getItem).toHaveBeenCalledTimes(6);
+        expect(localForage.getItem).toHaveBeenCalledWith(
             '__notiflyProjectID'
         );
-        expect(mockLocalStorage.getItem).toHaveBeenCalledWith(
+        expect(localForage.getItem).toHaveBeenCalledWith(
             '__notiflyDeviceToken'
         );
-        expect(mockLocalStorage.getItem).toHaveBeenCalledWith(
+        expect(localForage.getItem).toHaveBeenCalledWith(
             '__notiflyCognitoIDToken'
         );
-        expect(mockLocalStorage.getItem).toHaveBeenCalledWith(
+        expect(localForage.getItem).toHaveBeenCalledWith(
             '__notiflyDeviceID'
         );
-        expect(mockLocalStorage.getItem).toHaveBeenCalledWith(
+        expect(localForage.getItem).toHaveBeenCalledWith(
             '__notiflyExternalUserID'
         );
-        expect(mockLocalStorage.getItem).toHaveBeenCalledWith(
+        expect(localForage.getItem).toHaveBeenCalledWith(
             '__notiflyUserID'
         );
 

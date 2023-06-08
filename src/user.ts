@@ -1,3 +1,4 @@
+import * as localForage from 'localforage';
 import { logEvent } from './logEvent';
 import { generateNotiflyUserID } from './utils';
 import { refreshState, syncState, updateUserData } from './state';
@@ -12,8 +13,10 @@ async function setUserId(userID?: string | null | undefined) {
         await setUserProperties({
             external_user_id: userID,
         });
-        const projectID = localStorage.getItem('__notiflyProjectID');
-        const notiflyUserID = localStorage.getItem('__notiflyUserID');
+        const [projectID, notiflyUserID] = await Promise.all([
+            localForage.getItem<string>('__notiflyProjectID'),
+            localForage.getItem<string>('__notiflyUserID'),
+        ]);
         if (projectID && notiflyUserID) {
             await syncState(projectID, notiflyUserID);
         }
@@ -36,13 +39,16 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
     try {
         if (params.external_user_id) {
             const [previousNotiflyUserID, previousExternalUserID] = await Promise.all([
-                localStorage.getItem('__notiflyUserID'),
-                localStorage.getItem('__notiflyExternalUserID'),
+                localForage.getItem('__notiflyUserID'),
+                localForage.getItem('__notiflyExternalUserID'),
             ]);
             params['previous_notifly_user_id'] = previousNotiflyUserID;
             params['previous_external_user_id'] = previousExternalUserID;
-            localStorage.setItem('__notiflyExternalUserID', params.external_user_id);
-            localStorage.setItem('__notiflyUserID', generateNotiflyUserID(params.external_user_id) as string);
+            const notiflyUserID = await generateNotiflyUserID(params.external_user_id);
+            await Promise.all([
+                localForage.setItem('__notiflyUserID', notiflyUserID),
+                localForage.setItem('__notiflyExternalUserID', params.external_user_id),
+            ])
         }
 
         // Update local state
@@ -55,7 +61,7 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
 }
 
 /**
- * Removes the external user ID and Notifly user ID from storage.
+ * Removes the external user ID and Notifly user ID from localForage.
  *
  * @async
  * @returns {Promise<void>} A promise that resolves when the user IDs have been removed, or rejects with an error.
@@ -65,8 +71,10 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
  */
 async function removeUserId(): Promise<void> {
     try {
-        localStorage.removeItem('__notiflyExternalUserID');
-        localStorage.removeItem('__notiflyUserID');
+        await Promise.all([
+            localForage.removeItem('__notiflyExternalUserID'),
+            localForage.removeItem('__notiflyUserID'),
+        ]);
         return await logEvent('remove_external_user_id', {}, null, true);
     } catch (err) {
         console.warn('[Notifly] Failed to remove userID');

@@ -1,4 +1,5 @@
 import { v5 } from 'uuid';
+import * as localForage from 'localforage';
 import { NAMESPACE } from './src/constants';
 import { logEvent, sessionStart } from './src/logEvent';
 import { saveCognitoIdToken } from './src/auth';
@@ -39,10 +40,10 @@ async function initialize(
     if (deviceToken) {
         notiflyDeviceID = v5(deviceToken, NAMESPACE.DEVICEID).replace(/-/g, '');
         // Utilize cached notiflyUserID if it exists
-        notiflyUserID = getNotiflyUserID(undefined, deviceToken);
+        notiflyUserID = await getNotiflyUserID(undefined, deviceToken);
     }
 
-    _saveNotiflyData({
+    await _saveNotiflyData({
         __notiflyProjectID: projectID,
         __notiflyUserName: userName,
         __notiflyPassword: password,
@@ -60,10 +61,12 @@ async function initialize(
     return true;
 }
 
-function _saveNotiflyData(data: Record<string, string>): void {
-    for (const [key, val] of Object.entries(data)) {
-        localStorage.setItem(key, val as string);
-    }
+async function _saveNotiflyData(data: Record<string, string>): Promise<void> {
+    const promises = Object.entries(data).map(([key, val]) => {
+        return localForage.setItem(key, val as string);
+    });
+
+    await Promise.all(promises);
 }
 
 // For testing purposes only

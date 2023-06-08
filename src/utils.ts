@@ -1,7 +1,8 @@
 import { v5 } from 'uuid';
+import * as localForage from 'localforage';
 import { NAMESPACE } from './constants';
 
-function generateNotiflyUserID(externalUserID?: string, deviceToken?: string, deviceID?: string): string | undefined {
+async function generateNotiflyUserID(externalUserID?: string, deviceToken?: string, deviceID?: string): Promise<string | undefined> {
     if (externalUserID) {
         return v5(externalUserID, NAMESPACE.REGISTERED_USERID).replace(/-/g, '');
     }
@@ -13,30 +14,30 @@ function generateNotiflyUserID(externalUserID?: string, deviceToken?: string, de
     }
 
     // If externalUserID, deviceToken, and deviceID do not exist, generate a random ID
-    // based on a seed string that persists throughout the lifecycle of localStorage,
-    const storedSeedString = localStorage.getItem('__notiflySeedString');
+    // based on a seed string that persists throughout the lifecycle of localForage.,
+    const storedSeedString = await localForage.getItem<string>('__notiflySeedString');
     if (storedSeedString) {
         return v5(storedSeedString, NAMESPACE.REGISTERED_USERID).replace(/-/g, '');
     } else {
         const seedString = generateRandomString(8);
-        localStorage.setItem('__notiflySeedString', seedString);
+        await localForage.setItem('__notiflySeedString', seedString);
         return v5(seedString, NAMESPACE.REGISTERED_USERID).replace(/-/g, '');
     }
 }
 
-function getNotiflyUserID(externalUserID?: string, deviceToken?: string | null | undefined): string | undefined {
-    const storedNotiflyUserID = localStorage.getItem('__notiflyUserID');
+async function getNotiflyUserID(externalUserID?: string, deviceToken?: string | null | undefined): Promise<string | undefined> {
+    const storedNotiflyUserID = await localForage.getItem<string>('__notiflyUserID');
     if (storedNotiflyUserID) {
         return storedNotiflyUserID;
     }
     if (externalUserID) {
         return generateNotiflyUserID(externalUserID, undefined);
     }
-    const storedExternalUserID = localStorage.getItem('__notiflyExternalUserID');
+    const storedExternalUserID = await localForage.getItem<string>('__notiflyExternalUserID');
     if (storedExternalUserID) {
         return generateNotiflyUserID(storedExternalUserID, undefined);
     }
-    const storedDeviceToken = localStorage.getItem('__notiflyDeviceToken');
+    const storedDeviceToken = await localForage.getItem<string>('__notiflyDeviceToken');
     if (storedDeviceToken) {
         return generateNotiflyUserID(undefined, storedDeviceToken);
     }
