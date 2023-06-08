@@ -28,6 +28,8 @@
                 // const { default: notifly } = await import('https://cdn.notifly.tech/notifly-js-sdk/dist/index.js');
                 notifly.initialize('b80c3f0e2fbd5eb986df4f1d32ea2871', 'minyong', '000000');
                 window.notifly = notifly;
+                // Make sure to have notifly-service-worker.js in the root directory
+                notifly.registerServiceWorker('BGkEcbk7nbeozYYvs7EXqWDuqcDPBdxJ5p51jM9vx2ERj5iGSntBXFhIociva1boO9LuCec-ZCCAI_HC82NUIuQ');
             }
             initializeNotifly();
         </script>
