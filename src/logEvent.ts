@@ -14,79 +14,83 @@ async function logEvent(
     isInternalEvent = false,
     retryCount = 1
 ): Promise<void> {
-    const [projectID, deviceToken, cognitoIDToken, notiflyDeviceID, externalUserID] = await Promise.all([
-        localForage.getItem<string>('__notiflyProjectID'),
-        localForage.getItem<string>('__notiflyDeviceToken'),
-        localForage.getItem<string>('__notiflyCognitoIDToken') || '',
-        localForage.getItem<string>('__notiflyDeviceID'),
-        localForage.getItem<string>('__notiflyExternalUserID'),
-    ]);
-
-    if (!projectID) {
-        console.error('[Notifly] Project ID should be set before logging an event.');
-        return;
-    }
-
-    let notiflyUserID = await localForage.getItem('__notiflyUserID');
-    if (!notiflyUserID) {
-        // Use generateNotiflyUserID to not call localForage again
-        notiflyUserID = await generateNotiflyUserID(projectID, externalUserID, deviceToken, notiflyDeviceID);
-    }
-
-    const data: any = {
-        id: v4().replace(/-/g, ''),
-        project_id: projectID,
-        name: eventName,
-        event_params: eventParams,
-        is_internal_event: isInternalEvent,
-        segmentationEventParamKeys: segmentationEventParamKeys,
-        sdk_version: SDK_VERSION,
-        sdk_type: 'js',
-        time: Math.floor(new Date().valueOf() / 1000),
-        platform: getPlatform(),
-    };
-    if (notiflyUserID) {
-        data.notifly_user_id = notiflyUserID;
-    }
-    if (deviceToken) {
-        data.device_token = deviceToken;
-    }
-    if (notiflyDeviceID) {
-        data.notifly_device_id = notiflyDeviceID;
-    }
-    if (externalUserID) {
-        data.external_user_id = externalUserID;
-    }
-
-    const body = JSON.stringify({
-        'records': [
-            {
-                'data': JSON.stringify(data),
-                'partitionKey': notiflyUserID,
-            },
-        ],
-    });
-    // TODO: Handle null cognitoIDToken
-    const requestOptions = _getRequestOptionsForLogEvent(cognitoIDToken || '', body);
-    const response = await _apiCall(NOTIFLY_LOG_EVENT_URL, requestOptions);
-    const result = JSON.parse(response);
-
-    // If the token is expired, get a new token and retry the logEvent.
-    if (result.message == 'The incoming token has expired' && retryCount) {
-        const [userNameLocalStore, passwordLocalStore] = await Promise.all([
-            localForage.getItem<string>('__notiflyUserName'),
-            localForage.getItem<string>('__notiflyPassword'),
+    try {
+        const [projectID, deviceToken, cognitoIDToken, notiflyDeviceID, externalUserID] = await Promise.all([
+            localForage.getItem<string>('__notiflyProjectID'),
+            localForage.getItem<string>('__notiflyDeviceToken'),
+            localForage.getItem<string>('__notiflyCognitoIDToken') || '',
+            localForage.getItem<string>('__notiflyDeviceID'),
+            localForage.getItem<string>('__notiflyExternalUserID'),
         ]);
-        const userName = userNameLocalStore || '';
-        const password = passwordLocalStore || '';
-        await saveCognitoIdToken(userName, password);
-        await logEvent(eventName, eventParams, segmentationEventParamKeys, isInternalEvent, 0);
-    }
 
-    // Update state
-    updateEventIntermediateCounts(eventName);
-    // Handle web message campaigns
-    maybeTriggerWebMessage(eventName);
+        if (!projectID) {
+            console.error('[Notifly] Project ID should be set before logging an event.');
+            return;
+        }
+
+        let notiflyUserID = await localForage.getItem('__notiflyUserID');
+        if (!notiflyUserID) {
+            // Use generateNotiflyUserID to not call localForage again
+            notiflyUserID = await generateNotiflyUserID(projectID, externalUserID, deviceToken, notiflyDeviceID);
+        }
+
+        const data: any = {
+            id: v4().replace(/-/g, ''),
+            project_id: projectID,
+            name: eventName,
+            event_params: eventParams,
+            is_internal_event: isInternalEvent,
+            segmentationEventParamKeys: segmentationEventParamKeys,
+            sdk_version: SDK_VERSION,
+            sdk_type: 'js',
+            time: Math.floor(new Date().valueOf() / 1000),
+            platform: getPlatform(),
+        };
+        if (notiflyUserID) {
+            data.notifly_user_id = notiflyUserID;
+        }
+        if (deviceToken) {
+            data.device_token = deviceToken;
+        }
+        if (notiflyDeviceID) {
+            data.notifly_device_id = notiflyDeviceID;
+        }
+        if (externalUserID) {
+            data.external_user_id = externalUserID;
+        }
+
+        const body = JSON.stringify({
+            'records': [
+                {
+                    'data': JSON.stringify(data),
+                    'partitionKey': notiflyUserID,
+                },
+            ],
+        });
+        // TODO: Handle null cognitoIDToken
+        const requestOptions = _getRequestOptionsForLogEvent(cognitoIDToken || '', body);
+        const response = await _apiCall(NOTIFLY_LOG_EVENT_URL, requestOptions);
+        const result = JSON.parse(response);
+
+        // If the token is expired, get a new token and retry the logEvent.
+        if (result.message == 'The incoming token has expired' && retryCount) {
+            const [userNameLocalStore, passwordLocalStore] = await Promise.all([
+                localForage.getItem<string>('__notiflyUserName'),
+                localForage.getItem<string>('__notiflyPassword'),
+            ]);
+            const userName = userNameLocalStore || '';
+            const password = passwordLocalStore || '';
+            await saveCognitoIdToken(userName, password);
+            await logEvent(eventName, eventParams, segmentationEventParamKeys, isInternalEvent, 0);
+        }
+
+        // Update state
+        updateEventIntermediateCounts(eventName);
+        // Handle web message campaigns
+        maybeTriggerWebMessage(eventName);
+    } catch (err) {
+        console.error('[Notifly] Error logging event', err);
+    }
 }
 
 function _getRequestOptionsForLogEvent(token: string, body: string): RequestInit {
