@@ -1,23 +1,13 @@
-// NotiflyServiceWorker.js
+// NotiflyServiceWorker.ts
 
-// Version of service worker
-const NOTIFLY_SERVICE_WORKER_VERSION = 'v0.15';
+const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.0.0';
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 
-// Installing service worker
-self.addEventListener('install', () => {
-    console.log(`Notifly SDK Worker ${NOTIFLY_SERVICE_WORKER_VERSION} is installed!`);
-});
-
-// Activating service worker
 self.addEventListener('activate', (event) => {
     event.waitUntil(swActivate());
 });
 
-// Handling push event
 self.addEventListener('push', (event) => {
-    console.log(`Push delivery - Notifly SW version: ${NOTIFLY_SERVICE_WORKER_VERSION}`);
-    console.log('New notification payload', event.data.json());
     const { notifly } = event.data.json();
     if (!notifly) return;
 
@@ -87,18 +77,7 @@ self.addEventListener('notificationclick', function (event) {
 });
 
 async function swActivate() {
-    console.log(`Notifly SDK Worker ${NOTIFLY_SERVICE_WORKER_VERSION} is activated!`);
-
-    let token = await getItemFromIndexedDB('localforage', '__notiflyCognitoIDToken');
-    // mock refresh logic
-    if (!token) {
-        token = await getCognitoIdTokenInSw();
-        await saveCognitoIdTokenInSW(token);
-    }
-    // set current timestamp to indexeddb
-    await setItemToIndexedDB('localforage', '__notiflySWActivatedTimestamp', Date.now().toString());
-    const timestamp = await getItemFromIndexedDB('localforage', '__notiflySWActivatedTimestamp');
-    console.log('__notiflySWActivatedTimestamp:', timestamp);
+    await setItemToIndexedDB('localforage', '__notiflySWVersion', NOTIFLY_SERVICE_WORKER_VERSION);
 }
 
 async function getItemFromIndexedDB(dbName, key) {

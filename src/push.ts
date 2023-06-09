@@ -18,7 +18,7 @@ async function registerServiceWorker(
         }
     }
     if (permission !== 'granted') {
-        console.warn('[Notifly] Permission not granted for Notification');
+        console.warn('[Notifly] Notification permission has not been granted to the current domain.');
         return;
     }
     const subscription = await _getSubscription(registration, vapidPublicKey);
@@ -47,7 +47,6 @@ async function _getSubscription(registration: ServiceWorkerRegistration, VAPID_P
         return subscription;
     }
 
-    // Chrome doesn't accept the base64-encoded (string) vapidPublicKey yet
     const convertedVapidKey = _urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
     return registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -57,7 +56,6 @@ async function _getSubscription(registration: ServiceWorkerRegistration, VAPID_P
 
 async function _logSubscription(subscription: PushSubscription): Promise<void> {
     const subscriptionStr = JSON.stringify(subscription);
-    console.log(`subscription: ${subscriptionStr}`);
 
     let notiflyDeviceID;
     const notiflyDeviceIDLocalStore = await localForage.getItem('__notiflyDeviceID');
