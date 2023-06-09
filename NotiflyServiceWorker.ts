@@ -1,7 +1,5 @@
 // NotiflyServiceWorker.js
 
-import { get } from "http";
-
 // Version of service worker
 const NOTIFLY_SERVICE_WORKER_VERSION = 'v0.11';
 
