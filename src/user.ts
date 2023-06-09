@@ -38,17 +38,26 @@ async function setUserId(userID?: string | null | undefined) {
 async function setUserProperties(params: Record<string, any>): Promise<void> {
     try {
         if (params.external_user_id) {
-            const [previousNotiflyUserID, previousExternalUserID] = await Promise.all([
-                localForage.getItem('__notiflyUserID'),
-                localForage.getItem('__notiflyExternalUserID'),
+            const [projectID, previousNotiflyUserID, previousExternalUserID] = await Promise.all([
+                localForage.getItem<string>('__notiflyProjectID'),
+                localForage.getItem<string>('__notiflyUserID'),
+                localForage.getItem<string>('__notiflyExternalUserID'),
             ]);
+
+            if (!projectID) {
+                console.error('[Notifly] Project ID should be set before setting user properties.');
+                return;
+            }
+
             params['previous_notifly_user_id'] = previousNotiflyUserID;
             params['previous_external_user_id'] = previousExternalUserID;
-            const notiflyUserID = await generateNotiflyUserID(params.external_user_id);
+
+            const notiflyUserID = await generateNotiflyUserID(projectID, params.external_user_id);
+
             await Promise.all([
                 localForage.setItem('__notiflyUserID', notiflyUserID),
                 localForage.setItem('__notiflyExternalUserID', params.external_user_id),
-            ])
+            ]);
         }
 
         // Update local state
