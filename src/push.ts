@@ -2,22 +2,26 @@ import { v5 } from 'uuid';
 import * as localForage from 'localforage';
 import { NAMESPACE } from './constants';
 import { logEvent } from './logEvent';
+import { showPopup } from './popup/popup';
 
 async function registerServiceWorker(
-    vapid_public_key: string,
+    vapidPublicKey: string,
+    askPermission = true,
     path = '/notifly-service-worker.js',
 ): Promise<void> {
     const registration = await navigator.serviceWorker.register(path);
-    // We ask the end users to grant permission for notifications, when permission status is default.
-    // When permission status is denied, we don't ask again.
-    // When permission status is granted, we don't ask.
-    // We might want to change the behavior when the permission status is default.
-    const permission = await Notification.requestPermission();
+    let permission = Notification.permission;
+    if (askPermission && permission === 'default') {
+        const notiflyNotificationPermission = await localForage.getItem('__notiflyNotificationPermission');
+        if (notiflyNotificationPermission != 'denied') {
+            permission = await showPopup();
+        }
+    }
     if (permission !== 'granted') {
         console.warn('[Notifly] Permission not granted for Notification');
         return;
     }
-    const subscription = await _getSubscription(registration, vapid_public_key);
+    const subscription = await _getSubscription(registration, vapidPublicKey);
     await _logSubscription(subscription);
 }
 

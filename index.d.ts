@@ -10,7 +10,7 @@ declare module 'notifly-js-sdk' {
         removeUserId(): void;
         setUserId(userId?: string | null | undefined): void;
         setDeviceToken(deviceToken: string | null | undefined): void;
-        registerServiceWorker(vapid_public_key: string, path: string): void;
+        registerServiceWorker(vapidPublicKey: string, askPermission: boolean, path: string): void;
     }
     const notifly: NotiflySDK;
     export default notifly;
