@@ -55,7 +55,11 @@ self.addEventListener('notificationclick', function (event) {
     if (event.action === 'close') {
         return;
     }
-    const { campaign_id, notifly_message_id } = event.notification?.data;
+    const messageData = event.notification?.data;
+    if(!messageData) {
+        return;
+    }
+    const { campaign_id, notifly_message_id } = messageData;
     event.waitUntil(
         logNotiflyInternalEvent('push_click', {
             type: 'message_event',
@@ -65,7 +69,7 @@ self.addEventListener('notificationclick', function (event) {
         })
     );
 
-    const url = event.notification.data?.url || self.origin;
+    const url = messageData.url || self.origin;
     if (!url) {
         return;
     }
