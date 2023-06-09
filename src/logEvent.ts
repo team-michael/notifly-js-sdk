@@ -25,13 +25,13 @@ async function logEvent(
     if (!notiflyUserID) {
         // Use generateNotiflyUserID to not call localForage again
         if (externalUserID) {
-            notiflyUserID = await generateNotiflyUserID(externalUserID, undefined, undefined) || null;
+            notiflyUserID = (await generateNotiflyUserID(externalUserID, undefined, undefined)) || null;
         } else if (deviceToken) {
-            notiflyUserID = await generateNotiflyUserID(undefined, deviceToken, undefined) || null;
+            notiflyUserID = (await generateNotiflyUserID(undefined, deviceToken, undefined)) || null;
         } else if (notiflyDeviceID) {
-            notiflyUserID = await generateNotiflyUserID(undefined, undefined, notiflyDeviceID) || null;
+            notiflyUserID = (await generateNotiflyUserID(undefined, undefined, notiflyDeviceID)) || null;
         } else {
-            notiflyUserID = await generateNotiflyUserID(undefined, undefined, undefined) || null;
+            notiflyUserID = (await generateNotiflyUserID(undefined, undefined, undefined)) || null;
         }
     }
 
@@ -46,7 +46,7 @@ async function logEvent(
         sdk_type: 'js',
         time: new Date().valueOf() / 1000,
         platform: getPlatform(),
-    }
+    };
     if (notiflyUserID) {
         data.notifly_user_id = notiflyUserID;
     }
@@ -111,7 +111,22 @@ async function _apiCall(apiUrl: string, requestOptions: RequestInit): Promise<st
 }
 
 async function sessionStart(): Promise<void> {
-    return await logEvent('session_start', {}, null, true);
+    const notificationPermission: NotificationPermission = Notification.permission;
+    const notifAuthStatus: number = mapNotificationPermissionToEnum(notificationPermission);
+
+    return await logEvent('session_start', { notif_auth_status: notifAuthStatus }, null, true);
+}
+
+function mapNotificationPermissionToEnum(permission: NotificationPermission): number {
+    if (permission === 'denied') {
+        return 0; // DENIED
+    }
+
+    if (permission === 'granted') {
+        return 1; // AUTHORIZED
+    }
+
+    return -1; // NOT_DETERMINED
 }
 
 export { logEvent, sessionStart };
