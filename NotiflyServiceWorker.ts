@@ -29,6 +29,7 @@ self.addEventListener('push', (event) => {
         vibrate: notifly.vb,
         sound: notifly.sd,
         tag: notifly.tg,
+        renotify: notifly.rn || true,
         requireInteraction: notifly.ri,
         data: { 
             ...notifly.data,
