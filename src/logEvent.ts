@@ -108,7 +108,17 @@ function _getRequestOptionsForLogEvent(token: string, body: string): RequestInit
 }
 
 async function _apiCall(apiUrl: string, requestOptions: RequestInit): Promise<string> {
-    const result = fetch(apiUrl, requestOptions).then((response) => response.text());
+    const result = fetch(apiUrl, requestOptions)
+        .then((response) => {
+            if (!response.ok) {
+                throw Error(response.statusText || "Error in fetch");
+            }
+            return response.text();
+        })
+        .catch((err) => {
+            console.error(err)
+            return '';
+        });
     return result;
 }
 
