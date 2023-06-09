@@ -1,6 +1,6 @@
 {
   "name": "notifly-js-sdk-dev",
-  "version": "1.2.50",
+  "version": "1.2.51",
   "description": "Notifly JS SDK for browser.",
   "source": [
     "index.ts"
@@ -36,7 +36,7 @@
     "watch": "parcel watch",
     "build": "parcel build --no-source-maps",
     "start": "http-server --cors",
-    "deploy-cdn": "aws s3 sync dist s3://notifly-content/notifly-js-sdk/dist"
+    "deploy-cdn": "aws s3 sync dist s3://notifly-content/notifly-js-sdk/dist && aws cloudfront create-invalidation --distribution-id E2M7VD2WC9S1MI --paths \"/notifly-js-sdk/dist/*\""
   },
   "author": "daeseongKim",
   "license": "ISC",
