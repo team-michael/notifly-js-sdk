@@ -2,15 +2,20 @@ import { v5 } from 'uuid';
 import * as localForage from 'localforage';
 import { NAMESPACE } from './constants';
 
-async function generateNotiflyUserID(externalUserID?: string, deviceToken?: string, deviceID?: string): Promise<string | undefined> {
+async function generateNotiflyUserID(
+    projectID: string,
+    externalUserID?: string | null,
+    deviceToken?: string | null,
+    deviceID?: string | null
+) {
     if (externalUserID) {
-        return v5(externalUserID, NAMESPACE.REGISTERED_USERID).replace(/-/g, '');
+        return v5(`${projectID}${externalUserID}`, NAMESPACE.REGISTERED_USERID).replace(/-/g, '');
     }
     if (deviceToken) {
-        return v5(deviceToken, NAMESPACE.UNREGISTERED_USERID).replace(/-/g, '');
+        return v5(`${projectID}${deviceToken}`, NAMESPACE.UNREGISTERED_USERID).replace(/-/g, '');
     }
     if (deviceID) {
-        return v5(deviceID, NAMESPACE.UNREGISTERED_USERID).replace(/-/g, '');
+        return v5(`${projectID}${deviceID}`, NAMESPACE.UNREGISTERED_USERID).replace(/-/g, '');
     }
 
     // If externalUserID, deviceToken, and deviceID do not exist, generate a random ID
@@ -25,26 +30,16 @@ async function generateNotiflyUserID(externalUserID?: string, deviceToken?: stri
     }
 }
 
-async function getNotiflyUserID(externalUserID?: string, deviceToken?: string | null | undefined): Promise<string | undefined> {
+async function getNotiflyUserID(projectID: string, externalUserID?: string, deviceToken?: string) {
     const storedNotiflyUserID = await localForage.getItem<string>('__notiflyUserID');
     if (storedNotiflyUserID) {
         return storedNotiflyUserID;
     }
-    if (externalUserID) {
-        return generateNotiflyUserID(externalUserID, undefined);
-    }
-    const storedExternalUserID = await localForage.getItem<string>('__notiflyExternalUserID');
-    if (storedExternalUserID) {
-        return generateNotiflyUserID(storedExternalUserID, undefined);
-    }
-    const storedDeviceToken = await localForage.getItem<string>('__notiflyDeviceToken');
-    if (storedDeviceToken) {
-        return generateNotiflyUserID(undefined, storedDeviceToken);
-    }
-    if (deviceToken) {
-        return generateNotiflyUserID(undefined, deviceToken);
-    }
-    return undefined;
+
+    const id = externalUserID || (await localForage.getItem<string>('__notiflyExternalUserID'));
+    const token = (await localForage.getItem<string>('__notiflyDeviceToken')) || deviceToken;
+
+    return generateNotiflyUserID(projectID, id, token);
 }
 
 function getPlatform(): string {

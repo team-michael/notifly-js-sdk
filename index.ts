@@ -12,10 +12,10 @@ import { registerServiceWorker } from './src/push';
 let isNotiflyInitialized = false;
 
 async function initialize(
-    projectID: string | null | undefined,
-    userName: string | null | undefined,
-    password: string | null | undefined,
-    deviceToken?: string | null | undefined
+    projectID: string,
+    userName: string,
+    password: string,
+    deviceToken?: string
 ): Promise<boolean> {
     if (isNotiflyInitialized) {
         return true;
@@ -40,7 +40,7 @@ async function initialize(
     if (deviceToken) {
         notiflyDeviceID = v5(deviceToken, NAMESPACE.DEVICEID).replace(/-/g, '');
         // Utilize cached notiflyUserID if it exists
-        notiflyUserID = await getNotiflyUserID(undefined, deviceToken);
+        notiflyUserID = await getNotiflyUserID(projectID, undefined, deviceToken);
     }
 
     await _saveNotiflyData({
@@ -51,6 +51,7 @@ async function initialize(
         ...(notiflyDeviceID !== undefined && { __notiflyDeviceID: notiflyDeviceID }),
         ...(notiflyUserID !== undefined && { __notiflyUserID: notiflyUserID }),
     });
+
     await sessionStart();
     isNotiflyInitialized = true;
 

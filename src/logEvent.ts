@@ -21,18 +21,16 @@ async function logEvent(
         localForage.getItem<string>('__notiflyDeviceID'),
         localForage.getItem<string>('__notiflyExternalUserID'),
     ]);
+
+    if (!projectID) {
+        console.error('[Notifly] Project ID should be set before logging an event.');
+        return;
+    }
+
     let notiflyUserID = await localForage.getItem('__notiflyUserID');
     if (!notiflyUserID) {
         // Use generateNotiflyUserID to not call localForage again
-        if (externalUserID) {
-            notiflyUserID = (await generateNotiflyUserID(externalUserID, undefined, undefined)) || null;
-        } else if (deviceToken) {
-            notiflyUserID = (await generateNotiflyUserID(undefined, deviceToken, undefined)) || null;
-        } else if (notiflyDeviceID) {
-            notiflyUserID = (await generateNotiflyUserID(undefined, undefined, notiflyDeviceID)) || null;
-        } else {
-            notiflyUserID = (await generateNotiflyUserID(undefined, undefined, undefined)) || null;
-        }
+        notiflyUserID = await generateNotiflyUserID(projectID, externalUserID, deviceToken, notiflyDeviceID);
     }
 
     const data: any = {

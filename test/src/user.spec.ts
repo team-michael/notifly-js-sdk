@@ -10,14 +10,22 @@ jest.mock('localforage', () => ({
 
 describe('setUserProperties', () => {
     beforeEach(() => {
-        jest.clearAllMocks();  // Clears the mock.calls and mock.instances properties of all mocks.
+        jest.clearAllMocks(); // Clears the mock.calls and mock.instances properties of all mocks.
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();  // Restores all mocks back to their original value.
+        jest.restoreAllMocks(); // Restores all mocks back to their original value.
     });
 
     test('sets external_user_id in localForage and logs the event', async () => {
+        jest.spyOn(localForage, 'getItem').mockImplementation((key: string) => {
+            if (key === '__notiflyProjectID') {
+                return Promise.resolve('test');
+            } else {
+                return Promise.resolve(null);
+            }
+        });
+
         const params = {
             external_user_id: '1234567890',
         };
@@ -29,8 +37,9 @@ describe('setUserProperties', () => {
 
         await setUserProperties(params);
 
-        expect(localForage.getItem).toHaveBeenCalledWith('__notiflyExternalUserID');
+        expect(localForage.getItem).toHaveBeenCalledWith('__notiflyProjectID');
         expect(localForage.getItem).toHaveBeenCalledWith('__notiflyUserID');
+        expect(localForage.getItem).toHaveBeenCalledWith('__notiflyExternalUserID');
         expect(localForage.setItem).toHaveBeenCalledWith('__notiflyExternalUserID', '1234567890');
         expect(logEvent).toHaveBeenCalledWith('set_user_properties', expectedParams, null, true);
     });
