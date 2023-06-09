@@ -55,7 +55,7 @@ self.addEventListener('notificationclick', function (event) {
     if (event.action === 'close') {
         return;
     }
-    const { campaign_id, notifly_message_id } = event?.notification?.data;
+    const { campaign_id, notifly_message_id } = event.notification?.data;
     event.waitUntil(
         logNotiflyInternalEvent('push_click', {
             type: 'message_event',
