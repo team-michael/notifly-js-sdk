@@ -1,7 +1,7 @@
 // NotiflyServiceWorker.js
 
 // Version of service worker
-const NOTIFLY_SERVICE_WORKER_VERSION = 'v0.8';
+const NOTIFLY_SERVICE_WORKER_VERSION = 'v0.10';
 
 // Installing service worker
 self.addEventListener('install', () => {
@@ -71,6 +71,10 @@ async function swActivate() {
 
     const token = await getItemFromIndexedDB('localforage', '__notiflyCognitoIDToken');
     console.log('__notiflyCognitoIDToken:', token);
+    // set current timestamp to indexeddb
+    await setItemToIndexedDB('localforage', '__notiflySWActivatedTimestamp', Date.now().toString());
+    const timestamp = await getItemFromIndexedDB('localforage', '__notiflySWActivatedTimestamp');
+    console.log('__notiflySWActivatedTimestamp:', timestamp);
 }
 
 async function getItemFromIndexedDB(dbName, key) {
@@ -94,5 +98,20 @@ function getValue(store, key) {
         const getReq = store.get(key);
         getReq.onerror = () => reject(getReq.error);
         getReq.onsuccess = () => resolve(getReq.result);
+    });
+}
+
+async function setItemToIndexedDB(dbName, key, value) {
+    const db = await openDB(dbName);
+    const transaction = db.transaction('keyvaluepairs', 'readwrite');
+    const store = transaction.objectStore('keyvaluepairs');
+    await setValue(store, key, value);
+}
+
+function setValue(store, key, value) {
+    return new Promise<void>((resolve, reject) => {
+        const putReq = store.put(value, key);
+        putReq.onerror = () => reject(putReq.error);
+        putReq.onsuccess = () => resolve();
     });
 }
