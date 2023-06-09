@@ -67,6 +67,7 @@ function UserIdSetter() {
     };
 
     const handleSetUserId = () => {
+        console.log(userIdInput)
         notifly.setUserId(userIdInput);
         console.log(`Set user id to ${userIdInput}`);
     };
