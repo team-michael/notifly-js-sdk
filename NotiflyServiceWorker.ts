@@ -1,7 +1,7 @@
 // NotiflyServiceWorker.js
 
 // Version of service worker
-const NOTIFLY_SERVICE_WORKER_VERSION = 'v0.7';
+const NOTIFLY_SERVICE_WORKER_VERSION = 'v0.8';
 
 // Installing service worker
 self.addEventListener('install', () => {
@@ -9,8 +9,8 @@ self.addEventListener('install', () => {
 });
 
 // Activating service worker
-self.addEventListener('activate', () => {
-    console.log(`Notifly SDK Worker ${NOTIFLY_SERVICE_WORKER_VERSION} is activated!`);
+self.addEventListener('activate', (event) => {
+    event.waitUntil(swActivate());
 });
 
 // Handling push event
@@ -65,3 +65,34 @@ self.addEventListener('notificationclick', function (event) {
         })
     );
 });
+
+async function swActivate() {
+    console.log(`Notifly SDK Worker ${NOTIFLY_SERVICE_WORKER_VERSION} is activated!`);
+
+    const token = await getItemFromIndexedDB('localforage', '__notiflyCognitoIDToken');
+    console.log('__notiflyCognitoIDToken:', token);
+}
+
+async function getItemFromIndexedDB(dbName, key) {
+    const db = await openDB(dbName);
+    const transaction = db.transaction('keyvaluepairs');
+    const store = transaction.objectStore('keyvaluepairs');
+    const value = await getValue(store, key);
+    return value;
+}
+
+function openDB(name) {
+    return new Promise((resolve, reject) => {
+        const openReq = indexedDB.open(name);
+        openReq.onerror = () => reject(openReq.error);
+        openReq.onsuccess = () => resolve(openReq.result);
+    });
+}
+
+function getValue(store, key) {
+    return new Promise((resolve, reject) => {
+        const getReq = store.get(key);
+        getReq.onerror = () => reject(getReq.error);
+        getReq.onsuccess = () => resolve(getReq.result);
+    });
+}
