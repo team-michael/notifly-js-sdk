@@ -42,7 +42,7 @@ async function logEvent(
         segmentationEventParamKeys: segmentationEventParamKeys,
         sdk_version: SDK_VERSION,
         sdk_type: 'js',
-        time: new Date().valueOf() / 1000,
+        time: Math.floor(new Date().valueOf() / 1000),
         platform: getPlatform(),
     };
     if (notiflyUserID) {
