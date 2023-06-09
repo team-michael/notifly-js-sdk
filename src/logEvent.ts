@@ -109,7 +109,22 @@ async function _apiCall(apiUrl: string, requestOptions: RequestInit): Promise<st
 }
 
 async function sessionStart(): Promise<void> {
-    return await logEvent('session_start', {}, null, true);
+    const notificationPermission: NotificationPermission = Notification.permission;
+    const notifAuthStatus: number = mapNotificationPermissionToEnum(notificationPermission);
+
+    return await logEvent('session_start', { notif_auth_status: notifAuthStatus }, null, true);
+}
+
+function mapNotificationPermissionToEnum(permission: NotificationPermission): number {
+    if (permission === 'denied') {
+        return 0; // DENIED
+    }
+
+    if (permission === 'granted') {
+        return 1; // AUTHORIZED
+    }
+
+    return -1; // NOT_DETERMINED
 }
 
 export { logEvent, sessionStart };

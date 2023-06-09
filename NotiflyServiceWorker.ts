@@ -1,7 +1,7 @@
 // NotiflyServiceWorker.js
 
 // Version of service worker
-const NOTIFLY_SERVICE_WORKER_VERSION = 'v0.11';
+const NOTIFLY_SERVICE_WORKER_VERSION = 'v0.14';
 
 // Installing service worker
 self.addEventListener('install', () => {
@@ -15,26 +15,32 @@ self.addEventListener('activate', (event) => {
 
 // Handling push event
 self.addEventListener('push', (event) => {
-    const payload = event.data.json();
-    console.log(`Notifly SW version: ${NOTIFLY_SERVICE_WORKER_VERSION}`);
-    console.log('New notification', payload);
+    console.log(`Push delivery - Notifly SW version: ${NOTIFLY_SERVICE_WORKER_VERSION}`);
+    console.log('New notification payload', event.data.json());
+    const { notifly } = event.data.json();
+    if (!notifly) return;
 
     const options = {
-        body: payload.body,
-        icon: payload.icon,
-        badge: payload.badge,
-        image: payload.image,
-        vibrate: payload.vibrate,
-        sound: payload.sound,
-        tag: payload.tag,
-        requireInteraction: payload.requireInteraction,
-        data: payload.data,
-        actions: payload.actions,
+        body: notifly.bd,
+        icon: notifly.ic,
+        badge: notifly.bg,
+        image: notifly.im,
+        vibrate: notifly.vb,
+        sound: notifly.sd,
+        tag: notifly.tg,
+        requireInteraction: notifly.ri,
+        data: { 
+            ...notifly.data,
+            url: notifly.u,
+            campaign_id: notifly.cid,
+            notifly_message_id: notifly.mid,
+        },
+        actions: notifly.ac,
     };
 
     event.waitUntil(
         self.registration.showNotification(
-            payload.title,
+            notifly.ti,
             options
         )
     );
