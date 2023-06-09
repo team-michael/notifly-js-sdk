@@ -1,7 +1,7 @@
 // NotiflyServiceWorker.js
 
 // Version of service worker
-const NOTIFLY_SERVICE_WORKER_VERSION = 'v0.10';
+const NOTIFLY_SERVICE_WORKER_VERSION = 'v0.11';
 
 // Installing service worker
 self.addEventListener('install', () => {
@@ -69,8 +69,14 @@ self.addEventListener('notificationclick', function (event) {
 async function swActivate() {
     console.log(`Notifly SDK Worker ${NOTIFLY_SERVICE_WORKER_VERSION} is activated!`);
 
-    const token = await getItemFromIndexedDB('localforage', '__notiflyCognitoIDToken');
-    console.log('__notiflyCognitoIDToken:', token);
+    let token = await getItemFromIndexedDB('localforage', '__notiflyCognitoIDToken');
+    console.log('__notiflyCognitoIDToken in IndexedDB:', token);
+    // mock refresh logic
+    if (!token) {
+        token = await getCognitoIdTokenInSw();
+        await saveCognitoIdTokenInSW(token);
+        console.log('__notiflyCognitoIDToken refreshed:', token);
+    }
     // set current timestamp to indexeddb
     await setItemToIndexedDB('localforage', '__notiflySWActivatedTimestamp', Date.now().toString());
     const timestamp = await getItemFromIndexedDB('localforage', '__notiflySWActivatedTimestamp');
@@ -82,7 +88,7 @@ async function getItemFromIndexedDB(dbName, key) {
     const transaction = db.transaction('keyvaluepairs');
     const store = transaction.objectStore('keyvaluepairs');
     const value = await getValue(store, key);
-    return value;
+    return value !== undefined ? value : null; // localForage returns null if key is not found
 }
 
 function openDB(name) {
@@ -114,4 +120,48 @@ function setValue(store, key, value) {
         putReq.onerror = () => reject(putReq.error);
         putReq.onsuccess = () => resolve();
     });
+}
+
+async function getCognitoIdTokenInSw(): Promise<string | null> {
+    const [userName, password] = [
+        await getItemFromIndexedDB('localforage', '__notiflyUserName'),
+        await getItemFromIndexedDB('localforage', '__notiflyPassword'),
+    ];
+    if (!userName || !password) {
+        return null;
+    }
+    const headers = new Headers({
+        'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth',
+        'Content-Type': 'application/x-amz-json-1.1',
+    });
+
+    const body = JSON.stringify({
+        AuthFlow: 'USER_PASSWORD_AUTH',
+        AuthParameters: {
+            PASSWORD: password,
+            USERNAME: userName,
+        },
+        ClientId: '2pc5pce21ec53csf8chafknqve',
+    });
+
+    const requestOptions: RequestInit = {
+        method: 'POST',
+        headers,
+        body,
+        redirect: 'follow',
+    };
+
+    try {
+        const response = await fetch('https://cognito-idp.ap-northeast-2.amazonaws.com/', requestOptions);
+        const result = await response.text();
+        const token = JSON.parse(result).AuthenticationResult.IdToken;
+        return token;
+    } catch (error) {
+        console.warn('[Notifly]: ', error);
+        return '';
+    }
+}
+
+async function saveCognitoIdTokenInSW(cognitoIdToken): Promise<void> {
+    setItemToIndexedDB('localforage', '__notiflyCognitoIDToken', cognitoIdToken);
 }
