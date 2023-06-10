@@ -103,7 +103,7 @@ function openDB(name) {
         openReq.onerror = () => reject(openReq.error);
         openReq.onsuccess = () => resolve(openReq.result);
         openReq.onupgradeneeded = (event) => {
-            var db = event.target.result;
+            const db = event.target.result;
             if (!db.objectStoreNames.contains('notiflyconfig')) {
                 db.createObjectStore('notiflyconfig');
             }
