@@ -6,6 +6,10 @@ import {
     setUserDataForTest,
 } from '../../src/state';
 
+jest.mock('localforage', () => ({
+    config: jest.fn(),
+}));
+
 jest
   .useFakeTimers()
   .setSystemTime(new Date('2023-05-31'));

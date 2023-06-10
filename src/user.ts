@@ -1,4 +1,4 @@
-import * as localForage from 'localforage';
+import localForage from './localforage';
 import { logEvent } from './logEvent';
 import { generateNotiflyUserID } from './utils';
 import { refreshState, syncState, updateUserData } from './state';

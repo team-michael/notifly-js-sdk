@@ -1,5 +1,5 @@
 import { v5 } from 'uuid';
-import * as localForage from 'localforage';
+import localForage from './localforage';
 import { NAMESPACE } from './constants';
 import { logEvent } from './logEvent';
 import { showPopup } from './popup/popup';

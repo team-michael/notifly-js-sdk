@@ -1,5 +1,6 @@
 import { v5 } from 'uuid';
-import * as localForage from 'localforage';
+import localForage from './src/localforage';
+
 import { NAMESPACE } from './src/constants';
 import { logEvent, sessionStart } from './src/logEvent';
 import { saveCognitoIdToken } from './src/auth';

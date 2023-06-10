@@ -1,5 +1,5 @@
 import { v4 } from 'uuid';
-import * as localForage from 'localforage';
+import localForage from './localforage';
 import { SDK_VERSION } from './constants';
 import { saveCognitoIdToken } from './auth';
 import { generateNotiflyUserID, getPlatform } from './utils';

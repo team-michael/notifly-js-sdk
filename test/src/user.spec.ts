@@ -4,6 +4,7 @@ import { logEvent } from '../../src/logEvent';
 
 jest.mock('../../src/logEvent');
 jest.mock('localforage', () => ({
+    config: jest.fn(),
     getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
     setItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
 }));

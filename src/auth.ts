@@ -1,4 +1,4 @@
-import * as localForage from 'localforage';
+import localForage from "./localforage";
 
 /**
  * Fetches a Cognito ID token for the given user name and password.
