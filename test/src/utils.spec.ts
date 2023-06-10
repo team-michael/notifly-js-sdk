@@ -4,6 +4,7 @@ import { NAMESPACE } from '../../src/constants';
 import { getNotiflyUserID, getPlatform } from '../../src/utils';
 
 jest.mock('localforage', () => ({
+    config: jest.fn(),
     getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
 }));
 

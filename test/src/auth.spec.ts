@@ -1,5 +1,9 @@
 import { getCognitoIdToken } from '../../src/auth';
 
+jest.mock('localforage', () => ({
+    config: jest.fn(),
+}));
+
 describe('getCognitoIdToken', () => {
     const mockToken = 'mock-token';
     const mockResponse = {

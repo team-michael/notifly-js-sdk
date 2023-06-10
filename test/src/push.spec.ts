@@ -4,6 +4,9 @@ import {
 } from '../../src/push';
 
 global.PushSubscription = jest.fn();
+jest.mock('localforage', () => ({
+    config: jest.fn(),
+}));
 
 describe('push', () => {
     test('_urlBase64ToUint8Array: should convert base64 to Uint8Array', () => {

@@ -1,5 +1,5 @@
 import { v5 } from 'uuid';
-import * as localForage from 'localforage';
+import localForage from './localforage';
 import { NAMESPACE } from './constants';
 
 export async function setDeviceToken(deviceToken: string | null | undefined): Promise<void> {

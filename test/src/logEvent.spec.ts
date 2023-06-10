@@ -4,6 +4,7 @@ import { logEvent } from '../../src/logEvent';
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 
 jest.mock('localforage', () => ({
+    config: jest.fn(),
     getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
     setItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
 }));

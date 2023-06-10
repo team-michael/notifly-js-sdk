@@ -1,6 +1,6 @@
 // NotiflyServiceWorker.ts
 
-const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.0.0';
+const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.0.2';
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 
 self.addEventListener('activate', (event) => {
@@ -21,7 +21,7 @@ self.addEventListener('push', (event) => {
         tag: notifly.tg,
         renotify: notifly.rn || true,
         requireInteraction: notifly.ri,
-        data: { 
+        data: {
             ...notifly.data,
             url: notifly.u,
             campaign_id: notifly.cid,
@@ -47,7 +47,7 @@ self.addEventListener('notificationclick', function (event) {
         return;
     }
     const messageData = event.notification?.data;
-    if(!messageData) {
+    if (!messageData) {
         return;
     }
     const { campaign_id, notifly_message_id } = messageData;
@@ -77,22 +77,37 @@ self.addEventListener('notificationclick', function (event) {
 });
 
 async function swActivate() {
-    await setItemToIndexedDB('localforage', '__notiflySWVersion', NOTIFLY_SERVICE_WORKER_VERSION);
+    try {
+        await setItemToIndexedDB('notifly', '__notiflySWVersion', NOTIFLY_SERVICE_WORKER_VERSION);
+    } catch (error) {
+        console.warn('[Notifly] Failed to activate Service Worker: ', error);
+    }
 }
 
 async function getItemFromIndexedDB(dbName, key) {
-    const db = await openDB(dbName);
-    const transaction = db.transaction('keyvaluepairs');
-    const store = transaction.objectStore('keyvaluepairs');
-    const value = await getValue(store, key);
-    return value !== undefined ? value : null; // localForage returns null if key is not found
+    try {
+        const db = await openDB(dbName);
+        const transaction = db.transaction('notiflyconfig');
+        const store = transaction.objectStore('notiflyconfig');
+        const value = await getValue(store, key);
+        return value !== undefined ? value : null; // localForage returns null if key is not found
+    } catch (error) {
+        console.warn('[Notifly] Failed to get item from IndexedDB: ', error);
+        return null;
+    }
 }
 
 function openDB(name) {
     return new Promise((resolve, reject) => {
-        const openReq = indexedDB.open(name);
+        const openReq = indexedDB.open(name, 2);
         openReq.onerror = () => reject(openReq.error);
         openReq.onsuccess = () => resolve(openReq.result);
+        openReq.onupgradeneeded = (event) => {
+            var db = event.target.result;
+            if (!db.objectStoreNames.contains('notiflyconfig')) {
+                db.createObjectStore('notiflyconfig');
+            }
+        };
     });
 }
 
@@ -105,10 +120,14 @@ function getValue(store, key) {
 }
 
 async function setItemToIndexedDB(dbName, key, value) {
-    const db = await openDB(dbName);
-    const transaction = db.transaction('keyvaluepairs', 'readwrite');
-    const store = transaction.objectStore('keyvaluepairs');
-    await setValue(store, key, value);
+    try {
+        const db = await openDB(dbName);
+        const transaction = db.transaction('notiflyconfig', 'readwrite');
+        const store = transaction.objectStore('notiflyconfig');
+        await setValue(store, key, value);
+    } catch (error) {
+        console.warn('[Notifly] Failed to set item to IndexedDB: ', error);
+    }
 }
 
 function setValue(store, key, value) {
@@ -121,8 +140,8 @@ function setValue(store, key, value) {
 
 async function getCognitoIdTokenInSw(): Promise<string | null> {
     const [userName, password] = [
-        await getItemFromIndexedDB('localforage', '__notiflyUserName'),
-        await getItemFromIndexedDB('localforage', '__notiflyPassword'),
+        await getItemFromIndexedDB('notifly', '__notiflyUserName'),
+        await getItemFromIndexedDB('notifly', '__notiflyPassword'),
     ];
     if (!userName || !password) {
         return null;
@@ -160,17 +179,17 @@ async function getCognitoIdTokenInSw(): Promise<string | null> {
 }
 
 async function saveCognitoIdTokenInSW(cognitoIdToken): Promise<void> {
-    setItemToIndexedDB('localforage', '__notiflyCognitoIDToken', cognitoIdToken);
+    setItemToIndexedDB('notifly', '__notiflyCognitoIDToken', cognitoIdToken);
 }
 
 async function logNotiflyInternalEvent(eventName, eventParams = null, segmentationEventParamKeys = null) {
     try {
         const [cognitoToken, notiflyUserID, externalUserID, projectID, notiflyDeviceID] = await Promise.all([
-            getItemFromIndexedDB('localforage', '__notiflyCognitoIDToken'),
-            getItemFromIndexedDB('localforage', '__notiflyUserID'),
-            getItemFromIndexedDB('localforage', '__notiflyExternalUserID'),
-            getItemFromIndexedDB('localforage', '__notiflyProjectID'),
-            getItemFromIndexedDB('localforage', '__notiflyDeviceID'),
+            getItemFromIndexedDB('notifly', '__notiflyCognitoIDToken'),
+            getItemFromIndexedDB('notifly', '__notiflyUserID'),
+            getItemFromIndexedDB('notifly', '__notiflyExternalUserID'),
+            getItemFromIndexedDB('notifly', '__notiflyProjectID'),
+            getItemFromIndexedDB('notifly', '__notiflyDeviceID'),
         ]);
         if (!(cognitoToken && notiflyUserID && externalUserID && projectID && notiflyDeviceID)) {
             console.warn('[Notifly]: Fail to trackEvent because of invalid LocalForage setup.');
