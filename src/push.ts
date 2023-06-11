@@ -9,6 +9,10 @@ async function registerServiceWorker(
     askPermission = true,
     path = '/notifly-service-worker.js',
 ): Promise<void> {
+    if (typeof navigator === 'undefined') {
+        console.warn('[Notifly] Not running in a client-side environment. Aborting service worker registration.');
+        return;
+    }
     const registration = await navigator.serviceWorker.register(path);
     let permission = Notification.permission;
     if (askPermission && permission === 'default') {
