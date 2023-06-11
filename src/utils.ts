@@ -43,6 +43,10 @@ async function getNotiflyUserID(projectID: string, externalUserID?: string, devi
 }
 
 function getPlatform(): string {
+    if (typeof navigator === 'undefined') {
+        console.warn('[Notifly] Not running in a client-side environment. Cannot determine platform.');
+        return 'unknown';
+    }
     const userAgent = navigator.userAgent;
 
     if (/iPad|iPhone|iPod/.test(userAgent)) {
