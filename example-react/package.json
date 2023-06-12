@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "notifly-js-sdk-dev": "file:../notifly-js-sdk-dev-1.2.65.tgz",
+    "notifly-js-sdk-dev": "file:../notifly-js-sdk-dev-1.2.66.tgz",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.12.0",
