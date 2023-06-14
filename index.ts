@@ -4,7 +4,7 @@ import localForage from './src/localforage';
 import { NAMESPACE } from './src/constants';
 import { logEvent, sessionStart } from './src/logEvent';
 import { saveCognitoIdToken } from './src/auth';
-import { setUserId, setUserProperties, removeUserId } from './src/user';
+import { setUserId, setUserProperties, deleteUser } from './src/user';
 import { getNotiflyUserID } from './src/utils';
 import { setDeviceToken } from './src/device';
 import { syncState } from './src/state';
@@ -88,7 +88,7 @@ const notifly = {
     initialize,
     trackEvent,
     setUserProperties,
-    removeUserId,
+    deleteUser,
     setUserId,
     setDeviceToken,
     resetInitialization,

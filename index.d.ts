@@ -7,7 +7,7 @@ declare module 'notifly-js-sdk' {
             segmentationEventParamKeys?: string[] | null | undefined
         ): void;
         setUserProperties(userProperties: Record<string, any>): void;
-        removeUserId(): void;
+        deleteUser(): void;
         setUserId(userId?: string | null | undefined): void;
         setDeviceToken(deviceToken: string | null | undefined): void;
         registerServiceWorker(vapidPublicKey: string, askPermission: boolean, path: string): void;
