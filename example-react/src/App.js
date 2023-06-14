@@ -41,6 +41,8 @@ function HomePage() {
             <EventButton name="event_react_4" />
             <EventButton name="event_react_5" />
             <EventButton name="event_react_6" />
+            <RemoveUserIdButton />
+            <DeleteUserIdButton />
             <Link to="/playground">Go to playground</Link>
             <Outlet />
         </div>
@@ -81,6 +83,32 @@ function UserIdSetter() {
                 placeholder="user id"
             />
             <button onClick={handleSetUserId}>Set User Id</button>
+        </div>
+    );
+}
+
+function RemoveUserIdButton() {
+
+    const handleClick = () => {
+        notifly.setUserId();
+    };
+    
+    return (
+        <div style={{ margin: '10px' }}>
+            <button onClick={handleClick}>Remove User Id</button>
+        </div>
+    );
+}
+
+function DeleteUserIdButton() {
+
+    const handleClick = () => {
+        notifly.deleteUser();
+    };
+
+    return (
+        <div style={{ margin: '10px' }}>
+            <button onClick={handleClick}>Delete User Id</button>
         </div>
     );
 }

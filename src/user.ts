@@ -1,27 +1,21 @@
 import localForage from './localforage';
 import { logEvent } from './logEvent';
 import { generateNotiflyUserID } from './utils';
-import { refreshState, syncState, updateUserData } from './state';
+import { refreshState, updateUserData } from './state';
 
 async function setUserId(userID?: string | null | undefined) {
-    if (!userID) {
-        await removeUserId();
-        refreshState();
-        return;
-    }
     try {
-        await setUserProperties({
-            external_user_id: userID,
-        });
-        const [projectID, notiflyUserID] = await Promise.all([
-            localForage.getItem<string>('__notiflyProjectID'),
-            localForage.getItem<string>('__notiflyUserID'),
-        ]);
-        if (projectID && notiflyUserID) {
-            await syncState(projectID, notiflyUserID);
+        if (!userID) {
+            await removeUserId();
+        } else {
+            await setUserProperties({
+                external_user_id: userID,
+            });
         }
     } catch (err) {
         console.warn('[Notifly] setUserId failed');
+    } finally {
+        await refreshState();
     }
 }
 
@@ -80,14 +74,31 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
  */
 async function removeUserId(): Promise<void> {
     try {
-        await Promise.all([
-            localForage.removeItem('__notiflyExternalUserID'),
-            localForage.removeItem('__notiflyUserID'),
-        ]);
-        return await logEvent('remove_external_user_id', {}, null, true);
+        await _cleanUserIDInLocalForage();
+        await logEvent('remove_external_user_id', {}, null, true);
+        return;
     } catch (err) {
         console.warn('[Notifly] Failed to remove userID');
     }
 }
 
-export { setUserProperties, removeUserId, setUserId };
+async function deleteUser(): Promise<void> {
+    try {
+        await logEvent('delete_user', {}, null, true);
+        await _cleanUserIDInLocalForage();
+        await logEvent('remove_external_user_id', {}, null, true);
+        await refreshState();
+        return;
+    } catch (err) {
+        console.warn('[Notifly] Failed to delete user');
+    }
+}
+
+async function _cleanUserIDInLocalForage() {
+    return await Promise.all([
+        localForage.removeItem('__notiflyExternalUserID'),
+        localForage.removeItem('__notiflyUserID'),
+    ]);
+}
+
+export { setUserProperties, setUserId, deleteUser };

@@ -1,5 +1,6 @@
 import { Campaign, Condition } from './interface/campaign.interface';
 import { showInWebMessage } from './webMessageUtils';
+import localForage from './localforage';
 
 interface EventIntermediateCounts {
     dt: string;
@@ -21,10 +22,18 @@ const CAMPAIGN_STATUS_ACTIVE = 1;
 const CAMPAIGN_STATUS_INACTIVE = 2;
 const CAMPAIGN_STATUS_COMPLETED = 3;
 
-function refreshState() {
-    eventIntermediateCounts = [];
-    inWebMessageCampaigns = [];
-    userData = {};
+async function refreshState() {
+    try {
+        const [projectID, notiflyUserID] = await Promise.all([
+            localForage.getItem<string>('__notiflyProjectID'),
+            localForage.getItem<string>('__notiflyUserID'),
+        ]);
+        if (projectID && notiflyUserID) {
+            await syncState(projectID, notiflyUserID);
+        }
+    } catch (err) {
+        console.warn('[Notifly] refreshState failed: ', err);
+    }
 }
 
 async function syncState(projectID: string, notiflyUserID: string): Promise<void> {
