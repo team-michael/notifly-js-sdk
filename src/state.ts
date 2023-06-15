@@ -1,4 +1,4 @@
-import { Campaign, Condition } from './interface/campaign.interface';
+import { Campaign, Condition } from './types/campaign';
 import { showInWebMessage } from './webMessageUtils';
 import localForage from './localforage';
 

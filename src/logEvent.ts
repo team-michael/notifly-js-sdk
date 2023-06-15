@@ -6,13 +6,14 @@ import { generateNotiflyUserID, getPlatform } from './utils';
 import { updateEventIntermediateCounts, maybeTriggerWebMessage } from './state';
 
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
+const MAX_RETRY_COUNT = 3;
 
 async function logEvent(
     eventName: string,
     eventParams: Record<string, any>,
     segmentationEventParamKeys: string[] | null = null,
     isInternalEvent = false,
-    retryCount = 1
+    retryCount = 0
 ): Promise<void> {
     try {
         const [projectID, deviceToken, cognitoIDToken, notiflyDeviceID, externalUserID] = await Promise.all([
@@ -69,25 +70,31 @@ async function logEvent(
         });
         // TODO: Handle null cognitoIDToken
         const requestOptions = _getRequestOptionsForLogEvent(cognitoIDToken || '', body);
-        const response = await _apiCall(NOTIFLY_LOG_EVENT_URL, requestOptions);
-        const result = JSON.parse(response);
+        const response = await fetch(NOTIFLY_LOG_EVENT_URL, requestOptions);
 
-        // If the token is expired, get a new token and retry the logEvent.
-        if (result.message == 'The incoming token has expired' && retryCount) {
-            const [userNameLocalStore, passwordLocalStore] = await Promise.all([
-                localForage.getItem<string>('__notiflyUserName'),
-                localForage.getItem<string>('__notiflyPassword'),
-            ]);
-            const userName = userNameLocalStore || '';
-            const password = passwordLocalStore || '';
-            await saveCognitoIdToken(userName, password);
-            await logEvent(eventName, eventParams, segmentationEventParamKeys, isInternalEvent, 0);
+        if (response.ok) {
+            // Update state
+            updateEventIntermediateCounts(eventName);
+            // Handle web message campaigns
+            maybeTriggerWebMessage(eventName);
+        } else {
+            if (retryCount < MAX_RETRY_COUNT) {
+                if (response.status === 401) {
+                    // Token has been expired
+                    const [userNameLocalStore, passwordLocalStore] = await Promise.all([
+                        localForage.getItem<string>('__notiflyUserName'),
+                        localForage.getItem<string>('__notiflyPassword'),
+                    ]);
+                    const userName = userNameLocalStore || '';
+                    const password = passwordLocalStore || '';
+                    await saveCognitoIdToken(userName, password);
+                }
+
+                await logEvent(eventName, eventParams, segmentationEventParamKeys, isInternalEvent, retryCount + 1);
+            } else {
+                throw new Error(response.statusText);
+            }
         }
-
-        // Update state
-        updateEventIntermediateCounts(eventName);
-        // Handle web message campaigns
-        maybeTriggerWebMessage(eventName);
     } catch (err) {
         console.error('[Notifly] Error logging event', err);
     }
@@ -105,21 +112,6 @@ function _getRequestOptionsForLogEvent(token: string, body: string): RequestInit
         redirect: 'follow' as RequestRedirect,
     };
     return requestOptions;
-}
-
-async function _apiCall(apiUrl: string, requestOptions: RequestInit): Promise<string> {
-    const result = fetch(apiUrl, requestOptions)
-        .then((response) => {
-            if (!response.ok) {
-                throw Error(response.statusText || "Error in fetch");
-            }
-            return response.text();
-        })
-        .catch((err) => {
-            console.error(err)
-            return '';
-        });
-    return result;
 }
 
 async function sessionStart(): Promise<void> {

@@ -1,4 +1,4 @@
-import localForage from "./localforage";
+import localForage from './localforage';
 
 /**
  * Fetches a Cognito ID token for the given user name and password.
@@ -35,9 +35,8 @@ async function getCognitoIdToken(userName: string, password: string): Promise<st
 
     try {
         const response = await fetch('https://cognito-idp.ap-northeast-2.amazonaws.com/', requestOptions);
-        const result = await response.text();
-        const token = JSON.parse(result).AuthenticationResult.IdToken;
-        return token;
+        const result = await response.json();
+        return result.AuthenticationResult?.IdToken ?? '';
     } catch (error) {
         console.warn('[Notifly]: ', error);
         return '';

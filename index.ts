@@ -81,7 +81,7 @@ function trackEvent(
     eventParams: Record<string, any>,
     segmentationEventParamKeys: string[] | null = null
 ): Promise<void> {
-    return logEvent(eventName, eventParams, segmentationEventParamKeys, false, 1);
+    return logEvent(eventName, eventParams, segmentationEventParamKeys, false);
 }
 
 const notifly = {
