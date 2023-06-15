@@ -57,9 +57,17 @@ async function syncState(projectID: string, notiflyUserID: string): Promise<void
 
         eventIntermediateCounts = data.eventIntermediateCountsData;
         inWebMessageCampaigns = data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message');
-        userData = data.userData;
-
-        return data;
+        if (typeof data.userData === 'object' && data.userData !== null) {
+            userData = data.userData;
+            return data;
+        } else {
+            console.error(
+                `Error: fetched user data ${
+                    data.userData
+                } is of type ${typeof data.userData} which is not compatible with expected object type`
+            );
+            return;
+        }
     } catch (error) {
         console.error('Error:', error);
     }
