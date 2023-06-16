@@ -1,4 +1,4 @@
-import { v5 } from 'uuid';
+import { v4, v5 } from 'uuid';
 import localForage from './localforage';
 import { NAMESPACE } from './constants';
 
@@ -42,6 +42,19 @@ async function getNotiflyUserID(projectID: string, externalUserID?: string, devi
     return generateNotiflyUserID(projectID, id, token);
 }
 
+async function getNotiflyDeviceID(projectID: string, deviceToken?: string) {
+    const storedNotiflyDeviceID = await localForage.getItem<string>('__notiflyDeviceID');
+    if (storedNotiflyDeviceID) {
+        return storedNotiflyDeviceID;
+    }
+
+    const token = deviceToken || (await localForage.getItem<string>('__notiflyDeviceToken'));
+    if (token) {
+        return v5(token, NAMESPACE.DEVICEID).replace(/-/g, '');
+    }
+    return v4();
+}
+
 function getPlatform(): string {
     if (typeof navigator === 'undefined') {
         console.warn('[Notifly] Not running in a client-side environment. Cannot determine platform.');
@@ -72,4 +85,4 @@ function generateRandomString(length: number): string {
     return result;
 }
 
-export { generateNotiflyUserID, getNotiflyUserID, getPlatform };
+export { generateNotiflyUserID, getNotiflyUserID, getNotiflyDeviceID, getPlatform };

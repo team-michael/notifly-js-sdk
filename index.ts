@@ -5,7 +5,7 @@ import { NAMESPACE } from './src/constants';
 import { logEvent, sessionStart } from './src/logEvent';
 import { saveCognitoIdToken } from './src/auth';
 import { setUserId, setUserProperties, deleteUser } from './src/user';
-import { getNotiflyUserID } from './src/utils';
+import { getNotiflyUserID, getNotiflyDeviceID } from './src/utils';
 import { setDeviceToken } from './src/device';
 import { syncState } from './src/state';
 import { registerServiceWorker } from './src/push';
@@ -36,19 +36,18 @@ async function initialize(
 
     await saveCognitoIdToken(userName, password);
 
-    let notiflyDeviceID = undefined;
-    if (deviceToken) {
-        notiflyDeviceID = v5(deviceToken, NAMESPACE.DEVICEID).replace(/-/g, '');
-    }
-    const notiflyUserID = await getNotiflyUserID(projectID, undefined, deviceToken);
+    const [notiflyUserID, notiflyDeviceID] = await Promise.all([
+        getNotiflyUserID(projectID, undefined, deviceToken),
+        getNotiflyDeviceID(projectID, deviceToken)
+    ]);
 
     await _saveNotiflyData({
         __notiflyProjectID: projectID,
         __notiflyUserName: userName,
         __notiflyPassword: password,
+        __notiflyDeviceID: notiflyDeviceID,
+        __notiflyUserID: notiflyUserID,
         ...(deviceToken !== null && deviceToken !== undefined && { __notiflyDeviceToken: deviceToken }),
-        ...(notiflyDeviceID !== undefined && { __notiflyDeviceID: notiflyDeviceID }),
-        ...(notiflyUserID !== undefined && { __notiflyUserID: notiflyUserID }),
     });
 
     await sessionStart();
