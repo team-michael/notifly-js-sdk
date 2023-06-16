@@ -74,9 +74,10 @@ async function logEvent(
 
         if (response.ok) {
             // Update state
-            updateEventIntermediateCounts(eventName);
+            const eventNameForState = isInternalEvent ? `notifly__${eventName}` : eventName;
+            updateEventIntermediateCounts(eventNameForState);
             // Handle web message campaigns
-            maybeTriggerWebMessage(eventName);
+            maybeTriggerWebMessage(eventNameForState);
         } else {
             if (retryCount < MAX_RETRY_COUNT) {
                 if (response.status === 401) {
