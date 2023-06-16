@@ -15,9 +15,9 @@ describe('logEvent', () => {
     beforeEach(() => {
         mockFetch = jest.fn().mockImplementation(() =>
             Promise.resolve({
-                text: jest.fn().mockImplementation(() =>
-                    Promise.resolve(JSON.stringify({ message: 'OK' }))
-                ),
+                ok: true,
+                status: 200,
+                json: jest.fn().mockImplementation(() => Promise.resolve({ message: 'OK' })),
             })
         );
 
@@ -33,7 +33,6 @@ describe('logEvent', () => {
         const eventParams = { foo: 'bar' };
         const segmentationEventParamKeys = ['foo'];
         const isInternalEvent = false;
-        const retryCount = 1;
 
         const notiflyUserID = 'test_user_id';
         const projectID = 'test_project_id';
@@ -96,33 +95,15 @@ describe('logEvent', () => {
             redirect: 'follow' as RequestRedirect,
         };
 
-        const result = await logEvent(
-            eventName,
-            eventParams,
-            segmentationEventParamKeys,
-            isInternalEvent,
-            retryCount
-        );
+        const result = await logEvent(eventName, eventParams, segmentationEventParamKeys, isInternalEvent);
 
         expect(localForage.getItem).toHaveBeenCalledTimes(6);
-        expect(localForage.getItem).toHaveBeenCalledWith(
-            '__notiflyProjectID'
-        );
-        expect(localForage.getItem).toHaveBeenCalledWith(
-            '__notiflyDeviceToken'
-        );
-        expect(localForage.getItem).toHaveBeenCalledWith(
-            '__notiflyCognitoIDToken'
-        );
-        expect(localForage.getItem).toHaveBeenCalledWith(
-            '__notiflyDeviceID'
-        );
-        expect(localForage.getItem).toHaveBeenCalledWith(
-            '__notiflyExternalUserID'
-        );
-        expect(localForage.getItem).toHaveBeenCalledWith(
-            '__notiflyUserID'
-        );
+        expect(localForage.getItem).toHaveBeenCalledWith('__notiflyProjectID');
+        expect(localForage.getItem).toHaveBeenCalledWith('__notiflyDeviceToken');
+        expect(localForage.getItem).toHaveBeenCalledWith('__notiflyCognitoIDToken');
+        expect(localForage.getItem).toHaveBeenCalledWith('__notiflyDeviceID');
+        expect(localForage.getItem).toHaveBeenCalledWith('__notiflyExternalUserID');
+        expect(localForage.getItem).toHaveBeenCalledWith('__notiflyUserID');
 
         expect(mockFetch).toHaveBeenCalledTimes(1);
         expect(mockFetch).toHaveBeenCalledWith(
@@ -131,7 +112,7 @@ describe('logEvent', () => {
                 method: expectedRequestOptions.method,
                 headers: expectedRequestOptions.headers,
                 redirect: expectedRequestOptions.redirect,
-            }) 
+            })
         );
 
         expect(result).toEqual(undefined);

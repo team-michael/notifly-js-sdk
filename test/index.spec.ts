@@ -30,10 +30,10 @@ describe('Notifly SDK', () => {
             notifly.resetInitialization();
         });
 
-        it('should return false if any of the required parameters is null', async () => {
-            expect(await notifly.initialize(null, userName, password, deviceToken)).toBe(false);
-            expect(await notifly.initialize(projectID, null, password, deviceToken)).toBe(false);
-            expect(await notifly.initialize(projectID, userName, null, deviceToken)).toBe(false);
+        it('should return false if any of the required parameters is empty', async () => {
+            expect(await notifly.initialize('', userName, password, deviceToken)).toBe(false);
+            expect(await notifly.initialize(projectID, '', password, deviceToken)).toBe(false);
+            expect(await notifly.initialize(projectID, userName, '', deviceToken)).toBe(false);
         });
 
         it('should call saveCognitoIdToken with the correct parameters', async () => {

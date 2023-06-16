@@ -1,4 +1,4 @@
-interface Condition {
+export interface Condition {
     attribute: string;
     event: string;
     event_condition_type: string;
@@ -8,7 +8,7 @@ interface Condition {
     value: any;
 }
 
-interface Campaign {
+export interface Campaign {
     id: string;
     channel: string;
     segment_type: string;
@@ -26,5 +26,3 @@ interface Campaign {
     delay?: number;
     status: number;
 }
-
-export { Campaign, Condition };

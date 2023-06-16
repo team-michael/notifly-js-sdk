@@ -7,14 +7,12 @@ jest.mock('localforage', () => ({
 describe('getCognitoIdToken', () => {
     const mockToken = 'mock-token';
     const mockResponse = {
-        text: jest.fn(() =>
-            Promise.resolve(
-                JSON.stringify({
-                    AuthenticationResult: {
-                        IdToken: mockToken,
-                    },
-                })
-            )
+        json: jest.fn(() =>
+            Promise.resolve({
+                AuthenticationResult: {
+                    IdToken: mockToken,
+                },
+            })
         ),
     };
     const mockFetch = jest.fn(() => Promise.resolve(mockResponse));
@@ -49,7 +47,7 @@ describe('getCognitoIdToken', () => {
             }),
             redirect: 'follow',
         });
-        expect(mockResponse.text).toHaveBeenCalledTimes(1);
+        expect(mockResponse.json).toHaveBeenCalledTimes(1);
     });
 
     it('should handle errors', async () => {
@@ -58,6 +56,6 @@ describe('getCognitoIdToken', () => {
         const token = await getCognitoIdToken('testUser', 'testPassword');
         expect(token).toEqual('');
         expect(mockFetch).toHaveBeenCalledTimes(2);
-        expect(mockResponse.text).toHaveBeenCalledTimes(1);
+        expect(mockResponse.json).toHaveBeenCalledTimes(1);
     });
 });
