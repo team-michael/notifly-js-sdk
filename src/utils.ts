@@ -42,7 +42,7 @@ async function getNotiflyUserID(projectID: string, externalUserID?: string, devi
     return generateNotiflyUserID(projectID, id, token);
 }
 
-async function getNotiflyDeviceID(projectID: string, deviceToken?: string) {
+async function getNotiflyDeviceID(deviceToken?: string) {
     const storedNotiflyDeviceID = await localForage.getItem<string>('__notiflyDeviceID');
     if (storedNotiflyDeviceID) {
         return storedNotiflyDeviceID;

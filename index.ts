@@ -38,7 +38,7 @@ async function initialize(
 
     const [notiflyUserID, notiflyDeviceID] = await Promise.all([
         getNotiflyUserID(projectID, undefined, deviceToken),
-        getNotiflyDeviceID(projectID, deviceToken)
+        getNotiflyDeviceID(deviceToken)
     ]);
 
     await _saveNotiflyData({
