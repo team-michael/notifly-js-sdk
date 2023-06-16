@@ -37,7 +37,6 @@ async function refreshState() {
 }
 
 async function syncState(projectID: string, notiflyUserID: string): Promise<void> {
-    console.warn(`DEBUG: syncState called with projectID: ${projectID} and notiflyUserID: ${notiflyUserID}`)
     const endpoint =
         'https://om97mq7cx4.execute-api.ap-northeast-2.amazonaws.com/default/notifly-js-sdk-user-state-retrieval';
     const queryParams = {
@@ -60,14 +59,12 @@ async function syncState(projectID: string, notiflyUserID: string): Promise<void
         }
 
         const data = await response.json();
-        console.warn(`DEBUG: data: ${JSON.stringify(data)}`)
 
         if (data.eventIntermediateCountsData != null) {
             eventIntermediateCounts = data.eventIntermediateCountsData;
         }
         if (data.campaignData != null) {
             inWebMessageCampaigns = data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message');
-            console.warn(`DEBUG: inWebMessageCampaigns: ${JSON.stringify(inWebMessageCampaigns)}`)
         }
         if (data.userData != null) {
             userData = data.userData;
@@ -122,7 +119,6 @@ function updateEventIntermediateCounts(eventName: string) {
         };
         eventIntermediateCounts = [...eventIntermediateCounts, newRow];
     }
-    console.warn(`DEBUG: eventIntermediateCounts: ${JSON.stringify(eventIntermediateCounts)}`)
 }
 
 function checkCondition(campaign: Campaign): boolean {

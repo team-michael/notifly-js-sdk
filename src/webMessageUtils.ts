@@ -5,9 +5,8 @@ import { logEvent } from './logEvent';
 let isWebMessageOpen = false;
 
 function showInWebMessage(campaign: Campaign) {
-    console.warn('[Notifly] showInWebMessage');
     if (isWebMessageOpen) {
-        console.warn('[Notifly] Web message is already open');
+        console.log('[Notifly] Web message is already open');
         return;
     }
     const message = campaign.message;
