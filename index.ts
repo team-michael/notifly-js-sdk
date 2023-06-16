@@ -37,12 +37,10 @@ async function initialize(
     await saveCognitoIdToken(userName, password);
 
     let notiflyDeviceID = undefined;
-    let notiflyUserID = undefined;
     if (deviceToken) {
         notiflyDeviceID = v5(deviceToken, NAMESPACE.DEVICEID).replace(/-/g, '');
-        // Utilize cached notiflyUserID if it exists
-        notiflyUserID = await getNotiflyUserID(projectID, undefined, deviceToken);
     }
+    const notiflyUserID = await getNotiflyUserID(projectID, undefined, deviceToken);
 
     await _saveNotiflyData({
         __notiflyProjectID: projectID,
