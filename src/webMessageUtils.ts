@@ -2,7 +2,14 @@ import { Campaign } from './types/campaign';
 import { setUserProperties } from './user';
 import { logEvent } from './logEvent';
 
+let isWebMessageOpen = false;
+
 function showInWebMessage(campaign: Campaign) {
+    console.warn('[Notifly] showInWebMessage');
+    if (isWebMessageOpen) {
+        console.warn('[Notifly] Web message is already open');
+        return;
+    }
     const message = campaign.message;
     const modalProperties = message.modal_properties;
     const templateName = modalProperties.template_name;
@@ -16,6 +23,7 @@ function showInWebMessage(campaign: Campaign) {
 
     const delayInSeconds = campaign.delay ?? 0;
     setTimeout(() => {
+        isWebMessageOpen = true;
         document.body.appendChild(iframe);
         logEvent(
             'in_web_message_show',
@@ -34,7 +42,10 @@ function showInWebMessage(campaign: Campaign) {
         if (event.source === iframe.contentWindow) {
             const message = event.data;
             if (message.type === 'close') {
-                document.body.removeChild(iframe);
+                isWebMessageOpen = false;
+                try {
+                    document.body.removeChild(iframe);
+                } catch (error) { /* empty */ }
                 const extraData = message.extraData;
                 if (extraData) {
                     const data = extraData.data;
@@ -58,6 +69,7 @@ function showInWebMessage(campaign: Campaign) {
                     true
                 );
             } else if (message.type === 'main_button') {
+                isWebMessageOpen = false;
                 logEvent(
                     'main_button_click',
                     {
