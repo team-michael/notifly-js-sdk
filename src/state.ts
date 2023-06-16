@@ -253,7 +253,6 @@ function checkConditionForSingleCondition(condition: Condition) {
 }
 
 function maybeTriggerWebMessage(eventName: string) {
-    console.warn(`DEBUG: maybeTriggerWebMessage: ${eventName}`)
     inWebMessageCampaigns
         .filter((c) => c.triggering_event === eventName)
         .filter((c) => c.status === CAMPAIGN_STATUS_ACTIVE)
