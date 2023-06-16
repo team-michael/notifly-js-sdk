@@ -60,9 +60,15 @@ async function syncState(projectID: string, notiflyUserID: string): Promise<void
 
         const data = await response.json();
 
-        eventIntermediateCounts = data.eventIntermediateCountsData;
-        inWebMessageCampaigns = data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message');
-        userData = data.userData;
+        if (data.eventIntermediateCountsData != null) {
+            eventIntermediateCounts = data.eventIntermediateCountsData;
+        }
+        if (data.campaignData != null) {
+            inWebMessageCampaigns = data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message');
+        }
+        if (data.userData != null) {
+            userData = data.userData;
+        }
 
         return data;
     } catch (error) {
