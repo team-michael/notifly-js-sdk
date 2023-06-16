@@ -49,10 +49,11 @@ async function initialize(
         ...(deviceToken !== null && deviceToken !== undefined && { __notiflyDeviceToken: deviceToken }),
     });
 
+    await syncState(projectID, notiflyUserID);
+
     await sessionStart();
     isNotiflyInitialized = true;
 
-    await syncState(projectID, notiflyUserID);
 
     return true;
 }
