@@ -34,11 +34,10 @@ async function initialize(
         return false;
     }
 
-    await saveCognitoIdToken(userName, password);
-
-    const [notiflyUserID, notiflyDeviceID] = await Promise.all([
+    const [notiflyUserID, notiflyDeviceID, _] = await Promise.all([
         getNotiflyUserID(projectID, undefined, deviceToken),
-        getNotiflyDeviceID(deviceToken)
+        getNotiflyDeviceID(deviceToken),
+        saveCognitoIdToken(userName, password),
     ]);
 
     await _saveNotiflyData({
@@ -53,9 +52,7 @@ async function initialize(
     await sessionStart();
     isNotiflyInitialized = true;
 
-    if (notiflyUserID) {
-        await syncState(projectID, notiflyUserID);
-    }
+    await syncState(projectID, notiflyUserID);
 
     return true;
 }
