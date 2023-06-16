@@ -19,7 +19,7 @@ function showInWebMessage(campaign: Campaign) {
         iframe.src = message.html_url;
         iframe.style.width = '100%';
         iframe.style.height = '100%';
-        iframe.style.zIndex = '10';
+        iframe.style.zIndex = '900';
         iframe.style.position = 'fixed';
     } catch (error) {
         console.error('[Notifly] Error creating iframe: ', error);
