@@ -76,7 +76,27 @@ export function showPopup(): Promise<NotificationPermission> {
             message.style.fontSize = '16px';
             grantButton.style.fontSize = '16px';
             denyButton.style.fontSize = '16px';
-
+            header.style.setProperty(
+                'font-family',
+                "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+                'important'
+            );
+            message.style.setProperty(
+                'font-family',
+                "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+                'important'
+            );
+            grantButton.style.setProperty(
+                'font-family',
+                "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+                'important'
+            );
+            denyButton.style.setProperty(
+                'font-family',
+                "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+                'important'
+            );
+            
             const language = navigator.language;
             if (language.startsWith('ko')) {
                 header.textContent = '\uD83D\uDD14 푸시 알림 받기';
