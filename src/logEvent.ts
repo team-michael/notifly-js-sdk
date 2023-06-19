@@ -116,9 +116,7 @@ function _getRequestOptionsForLogEvent(token: string, body: string): RequestInit
 }
 
 async function sessionStart(): Promise<void> {
-    const notificationPermission: NotificationPermission = Notification.permission;
-    const notifAuthStatus: number = mapNotificationPermissionToEnum(notificationPermission);
-
+    const notifAuthStatus = (typeof Notification) === 'undefined' ? -1 : mapNotificationPermissionToEnum(Notification.permission);
     return await logEvent('session_start', { notif_auth_status: notifAuthStatus }, null, true);
 }
 
