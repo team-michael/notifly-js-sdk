@@ -53,11 +53,22 @@ async function syncState(projectID: string, notiflyUserID: string): Promise<void
 
     try {
         const response = await fetch(url.toString());
+
+        if (!response.ok) {
+            throw new Error(`[Notifly] HTTP error in syncing user state -- status: ${response.status}`);
+        }
+
         const data = await response.json();
 
-        eventIntermediateCounts = data.eventIntermediateCountsData;
-        inWebMessageCampaigns = data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message');
-        userData = data.userData;
+        if (data.eventIntermediateCountsData != null) {
+            eventIntermediateCounts = data.eventIntermediateCountsData;
+        }
+        if (data.campaignData != null) {
+            inWebMessageCampaigns = data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message');
+        }
+        if (data.userData != null) {
+            userData = data.userData;
+        }
 
         return data;
     } catch (error) {
@@ -67,7 +78,7 @@ async function syncState(projectID: string, notiflyUserID: string): Promise<void
 
 function updateUserData(params: Record<string, any>) {
     Object.keys(params).map((key) => {
-        if (userData.user_properties) {
+        if (userData && userData.user_properties) {
             userData.user_properties[key] = params[key];
         }
     });
@@ -119,7 +130,7 @@ function checkCondition(campaign: Campaign): boolean {
     const message = campaign.message;
     const modalProperties = message.modal_properties;
     const templateName = modalProperties.template_name;
-    if (userData.user_properties) {
+    if (userData && userData.user_properties) {
         const currentTimestamp = Math.floor(Date.now() / 1000);
         const hideUntilTimestamp = userData.user_properties[`hide_in_web_message_${templateName}`];
         if (currentTimestamp <= hideUntilTimestamp) {

@@ -1,6 +1,4 @@
-import { v5 } from 'uuid';
 import localForage from './localforage';
-import { NAMESPACE } from './constants';
 
 export async function setDeviceToken(deviceToken: string | null | undefined): Promise<void> {
     if (!deviceToken) {
@@ -8,9 +6,5 @@ export async function setDeviceToken(deviceToken: string | null | undefined): Pr
         return;
     }
 
-    const notiflyDeviceID = v5(deviceToken, NAMESPACE.DEVICEID).replace(/-/g, '');
-    await Promise.all([
-        localForage.setItem('__notiflyDeviceID', notiflyDeviceID),
-        localForage.setItem('__notiflyDeviceToken', deviceToken),
-    ])
+    await localForage.setItem('__notiflyDeviceToken', deviceToken);
 }

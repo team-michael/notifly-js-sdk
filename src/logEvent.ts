@@ -74,9 +74,10 @@ async function logEvent(
 
         if (response.ok) {
             // Update state
-            updateEventIntermediateCounts(eventName);
+            const eventNameForState = isInternalEvent ? `notifly__${eventName}` : eventName;
+            updateEventIntermediateCounts(eventNameForState);
             // Handle web message campaigns
-            maybeTriggerWebMessage(eventName);
+            maybeTriggerWebMessage(eventNameForState);
         } else {
             if (retryCount < MAX_RETRY_COUNT) {
                 if (response.status === 401) {
@@ -115,9 +116,7 @@ function _getRequestOptionsForLogEvent(token: string, body: string): RequestInit
 }
 
 async function sessionStart(): Promise<void> {
-    const notificationPermission: NotificationPermission = Notification.permission;
-    const notifAuthStatus: number = mapNotificationPermissionToEnum(notificationPermission);
-
+    const notifAuthStatus = (typeof Notification) === 'undefined' ? -1 : mapNotificationPermissionToEnum(Notification.permission);
     return await logEvent('session_start', { notif_auth_status: notifAuthStatus }, null, true);
 }
 
