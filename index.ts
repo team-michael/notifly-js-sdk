@@ -23,7 +23,7 @@ async function initialize(
     }
 
     if (!(projectID && userName && password)) {
-        console.error('[Notifly] projectID, userName and password must be not null');
+        console.error('[Notifly] projectID, userName and password must not be empty');
         return false;
     }
 

@@ -1,4 +1,4 @@
-import { Campaign } from './types/campaign';
+import type { Campaign } from './types';
 import { setUserProperties } from './user';
 import { logEvent } from './logEvent';
 
