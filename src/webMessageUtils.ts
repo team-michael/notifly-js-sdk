@@ -17,10 +17,13 @@ function showInWebMessage(campaign: Campaign) {
     try {
         iframe = document.createElement('iframe');
         iframe.src = message.html_url;
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.zIndex = '900';
-        iframe.style.position = 'fixed';
+        iframe.style.width = modalProperties.width ?? '100%';
+        iframe.style.height = modalProperties.height ?? '100%';
+        iframe.style.zIndex = modalProperties.zIndex ?? '900';
+        iframe.style.position = modalProperties.position ?? 'fixed';
+        if (Object.prototype.hasOwnProperty.call(modalProperties, 'bottom')) {
+            iframe.style.bottom = modalProperties.bottom;
+        }
     } catch (error) {
         console.error('[Notifly] Error creating iframe: ', error);
     }
