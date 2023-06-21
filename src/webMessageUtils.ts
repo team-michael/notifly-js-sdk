@@ -4,6 +4,14 @@ import { logEvent } from './logEvent';
 
 let isWebMessageOpen = false;
 
+function _convertToValidCSSStyle(value: string | number | undefined): string | undefined {
+    if (typeof value === 'number') {
+        return `${value}px`;
+    } else {
+        return value;
+    }
+}
+
 function showInWebMessage(campaign: Campaign) {
     if (isWebMessageOpen) {
         console.log('[Notifly] Web message is already open');
@@ -17,10 +25,13 @@ function showInWebMessage(campaign: Campaign) {
     try {
         iframe = document.createElement('iframe');
         iframe.src = message.html_url;
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.zIndex = '900';
-        iframe.style.position = 'fixed';
+        iframe.style.width = _convertToValidCSSStyle(modalProperties.width) ?? '100%';
+        iframe.style.height = _convertToValidCSSStyle(modalProperties.height) ?? '100%';
+        iframe.style.zIndex = _convertToValidCSSStyle(modalProperties.zIndex) ?? '900';
+        iframe.style.position = _convertToValidCSSStyle(modalProperties.position) ?? 'fixed';
+        if (modalProperties.bottom !== undefined) {
+            iframe.style.bottom = _convertToValidCSSStyle(modalProperties.bottom) ?? '0';
+        }
 
         // Override user agent stylesheet (css reset)
         iframe.style.top = '0';

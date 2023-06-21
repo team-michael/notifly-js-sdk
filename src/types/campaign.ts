@@ -14,7 +14,14 @@ export interface Campaign {
     segment_type: string;
     message: {
         html_url: string;
-        modal_properties: { template_name: string };
+        modal_properties: {
+            template_name: string;
+            width?: string | number;
+            height?: string | number;
+            zIndex?: string | number;
+            position?: string;
+            bottom?: string | number;
+        };
     };
     segment_info?: {
         groups?: {
