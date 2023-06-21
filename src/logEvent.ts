@@ -81,7 +81,7 @@ async function logEvent(
         } else {
             if (retryCount < MAX_RETRY_COUNT) {
                 if (response.status === 401) {
-                    // Token has been expired
+                    // Invalid token
                     const [userNameLocalStore, passwordLocalStore] = await Promise.all([
                         localForage.getItem<string>('__notiflyUserName'),
                         localForage.getItem<string>('__notiflyPassword'),
