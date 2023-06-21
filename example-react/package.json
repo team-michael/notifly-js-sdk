@@ -15,7 +15,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "clean": "rm -rf node_modules && rm -rf package-lock.json"
+    "clean": "rm -rf node_modules && rm -rf package-lock.json",
+    "start-prod": "http-server -p 3006 ./build"
   },
   "browserslist": {
     "production": [
