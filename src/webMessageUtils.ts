@@ -34,8 +34,6 @@ function showInWebMessage(campaign: Campaign) {
         }
 
         // Override user agent stylesheet (css reset)
-        iframe.style.top = '0';
-        iframe.style.left = '0';
         iframe.style.border = 'none';
         iframe.style.overflow = 'hidden !important';
         iframe.style.margin = '0';
