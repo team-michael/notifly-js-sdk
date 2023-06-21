@@ -16,11 +16,11 @@ export interface Campaign {
         html_url: string;
         modal_properties: {
             template_name: string;
-            width?: any;
-            height?: any;
-            zIndex?: any;
-            position?: any;
-            bottom?: any;
+            width?: string | number;
+            height?: string | number;
+            zIndex?: string | number;
+            position?: string;
+            bottom?: string | number;
         };
     };
     segment_info?: {

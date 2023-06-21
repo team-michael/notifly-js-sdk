@@ -7,6 +7,7 @@ on:
       - 'example-vanillajs/**'
       - 'example-react/**'
       - 'test/**'
+      - 'scripts/**'
       - 'README.md'
       - '.gitignore'
 

@@ -1,8 +1,16 @@
-import { Campaign } from './types/campaign';
+import type { Campaign } from './types';
 import { setUserProperties } from './user';
 import { logEvent } from './logEvent';
 
 let isWebMessageOpen = false;
+
+function _convertToValidCSSStyle(value: string | number | undefined): string | undefined {
+    if (typeof value === 'number') {
+        return `${value}px`;
+    } else {
+        return value;
+    }
+}
 
 function showInWebMessage(campaign: Campaign) {
     if (isWebMessageOpen) {
@@ -17,13 +25,22 @@ function showInWebMessage(campaign: Campaign) {
     try {
         iframe = document.createElement('iframe');
         iframe.src = message.html_url;
-        iframe.style.width = modalProperties.width ?? '100%';
-        iframe.style.height = modalProperties.height ?? '100%';
-        iframe.style.zIndex = modalProperties.zIndex ?? '900';
-        iframe.style.position = modalProperties.position ?? 'fixed';
-        if (Object.prototype.hasOwnProperty.call(modalProperties, 'bottom')) {
-            iframe.style.bottom = modalProperties.bottom;
+        iframe.style.width = _convertToValidCSSStyle(modalProperties.width) ?? '100%';
+        iframe.style.height = _convertToValidCSSStyle(modalProperties.height) ?? '100%';
+        iframe.style.zIndex = _convertToValidCSSStyle(modalProperties.zIndex) ?? '900';
+        iframe.style.position = _convertToValidCSSStyle(modalProperties.position) ?? 'fixed';
+        if (modalProperties.bottom !== undefined) {
+            iframe.style.bottom = _convertToValidCSSStyle(modalProperties.bottom) ?? '0';
         }
+
+        // Override user agent stylesheet (css reset)
+        iframe.style.top = '0';
+        iframe.style.left = '0';
+        iframe.style.border = 'none';
+        iframe.style.overflow = 'hidden !important';
+        iframe.style.margin = '0';
+        iframe.style.padding = '0';
+        iframe.style.display = 'block';
     } catch (error) {
         console.error('[Notifly] Error creating iframe: ', error);
     }

@@ -40,3 +40,6 @@ node_modules/
 
 # ignore service worker in the root
 notifly-service-worker.js
+
+# scripts
+scripts/
