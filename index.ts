@@ -1,7 +1,5 @@
-import { v5 } from 'uuid';
 import localForage from './src/localforage';
 
-import { NAMESPACE } from './src/constants';
 import { logEvent, sessionStart } from './src/logEvent';
 import { saveCognitoIdToken } from './src/auth';
 import { setUserId, setUserProperties, deleteUser } from './src/user';
@@ -53,7 +51,6 @@ async function initialize(
 
     await sessionStart();
     isNotiflyInitialized = true;
-
 
     return true;
 }

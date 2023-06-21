@@ -21,6 +21,15 @@ function showInWebMessage(campaign: Campaign) {
         iframe.style.height = '100%';
         iframe.style.zIndex = '900';
         iframe.style.position = 'fixed';
+
+        // Override user agent stylesheet (css reset)
+        iframe.style.top = '0';
+        iframe.style.left = '0';
+        iframe.style.border = 'none';
+        iframe.style.overflow = 'hidden !important';
+        iframe.style.margin = '0';
+        iframe.style.padding = '0';
+        iframe.style.display = 'block';
     } catch (error) {
         console.error('[Notifly] Error creating iframe: ', error);
     }
