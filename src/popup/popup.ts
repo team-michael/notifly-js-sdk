@@ -1,5 +1,12 @@
 import * as localForage from 'localforage';
-export function showPopup(): Promise<NotificationPermission> {
+
+export function showPopup(promptDelayMillis = 5000): Promise<NotificationPermission> {
+    let delay = promptDelayMillis;
+    if (delay < 0) {
+        console.warn('[Notifly] Invalid prompt delay. Defaulting to 5000 milliseconds.');
+        delay = 5000;
+    }
+
     return new Promise((resolve) => {
         setTimeout(() => {
             const overlay = document.createElement('div');
@@ -96,7 +103,7 @@ export function showPopup(): Promise<NotificationPermission> {
                 "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
                 'important'
             );
-            
+
             const language = navigator.language;
             if (language.startsWith('ko')) {
                 header.textContent = '\uD83D\uDD14 푸시 알림 받기';
@@ -145,6 +152,6 @@ export function showPopup(): Promise<NotificationPermission> {
                 document.body.removeChild(overlay);
                 resolve('default');
             };
-        }, 5000);
+        }, delay);
     });
 }

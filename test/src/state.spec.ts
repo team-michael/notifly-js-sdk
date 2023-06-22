@@ -1,3 +1,5 @@
+import type { Campaign } from '../../src/types';
+
 import {
     updateEventIntermediateCounts,
     getEventIntermediateCountsForTest,
@@ -10,9 +12,7 @@ jest.mock('localforage', () => ({
     config: jest.fn(),
 }));
 
-jest
-  .useFakeTimers()
-  .setSystemTime(new Date('2023-05-31'));
+jest.useFakeTimers().setSystemTime(new Date('2023-05-31'));
 
 describe('updateEventIntermediateCounts', () => {
     beforeEach(() => {
@@ -88,12 +88,13 @@ describe('checkCondition', () => {
     });
 
     test('should return false for non-condition segment type', () => {
-        const campaign = {
+        const campaign: Campaign = {
+            id: 'test-id',
             channel: 'in-web-message',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            last_updated_timestamp: 0,
             triggering_event: 'test-event',
             segment_type: 'some_other_type',
-            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -102,16 +103,18 @@ describe('checkCondition', () => {
     });
 
     test('should return true when no groups are present', () => {
-        const campaign = {
+        const campaign: Campaign = {
+            id: 'test-id',
             channel: 'in-web-message',
+            last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
             segment_info: {
                 groups: [],
+                group_operator: null,
             },
             delay: 0,
-            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -120,8 +123,10 @@ describe('checkCondition', () => {
     });
 
     test('should return false when no conditions are present', () => {
-        const campaign = {
+        const campaign: Campaign = {
+            id: 'test-id',
             channel: 'in-web-message',
+            last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
@@ -129,11 +134,12 @@ describe('checkCondition', () => {
                 groups: [
                     {
                         conditions: [],
+                        condition_operator: null,
                     },
                 ],
+                group_operator: null,
             },
             delay: 0,
-            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -152,8 +158,10 @@ describe('checkCondition', () => {
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
-        const campaign = {
+        const campaign: Campaign = {
+            id: 'test-id',
             channel: 'in-web-message',
+            last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
@@ -171,11 +179,12 @@ describe('checkCondition', () => {
                                 value: 3,
                             },
                         ],
+                        condition_operator: null,
                     },
                 ],
+                group_operator: null,
             },
             delay: 0,
-            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -194,8 +203,10 @@ describe('checkCondition', () => {
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
-        const campaign = {
+        const campaign: Campaign = {
+            id: 'test-id',
             channel: 'in-web-message',
+            last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
@@ -213,11 +224,12 @@ describe('checkCondition', () => {
                                 value: 5,
                             },
                         ],
+                        condition_operator: null,
                     },
                 ],
+                group_operator: null,
             },
             delay: 0,
-            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -236,8 +248,10 @@ describe('checkCondition', () => {
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
-        const campaign = {
+        const campaign: Campaign = {
+            id: 'test-id',
             channel: 'in-web-message',
+            last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
@@ -255,11 +269,12 @@ describe('checkCondition', () => {
                                 value: 2,
                             },
                         ],
+                        condition_operator: null,
                     },
                 ],
+                group_operator: null,
             },
             delay: 0,
-            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -278,8 +293,10 @@ describe('checkCondition', () => {
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
-        const campaign = {
+        const campaign: Campaign = {
+            id: 'test-id',
             channel: 'in-web-message',
+            last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
@@ -297,11 +314,12 @@ describe('checkCondition', () => {
                                 value: 2,
                             },
                         ],
+                        condition_operator: null,
                     },
                 ],
+                group_operator: null,
             },
             delay: 0,
-            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -317,8 +335,10 @@ describe('checkCondition', () => {
             },
         });
 
-        const campaign = {
+        const campaign: Campaign = {
+            id: 'test-id',
             channel: 'in-web-message',
+            last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
@@ -336,10 +356,11 @@ describe('checkCondition', () => {
                                 value: 25,
                             },
                         ],
+                        condition_operator: null,
                     },
                 ],
+                group_operator: null,
             },
-            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -355,8 +376,10 @@ describe('checkCondition', () => {
             },
         });
 
-        const campaign = {
+        const campaign: Campaign = {
+            id: 'test-id',
             channel: 'in-web-message',
+            last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
@@ -374,10 +397,11 @@ describe('checkCondition', () => {
                                 value: 25,
                             },
                         ],
+                        condition_operator: null,
                     },
                 ],
+                group_operator: null,
             },
-            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -394,8 +418,10 @@ describe('checkCondition', () => {
             },
         });
 
-        const campaign = {
+        const campaign: Campaign = {
+            id: 'test-id',
             channel: 'in-web-message',
+            last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
@@ -413,6 +439,7 @@ describe('checkCondition', () => {
                                 value: 25,
                             },
                         ],
+                        condition_operator: null,
                     },
                     {
                         conditions: [
@@ -426,11 +453,11 @@ describe('checkCondition', () => {
                                 value: 'USA',
                             },
                         ],
+                        condition_operator: null,
                     },
                 ],
                 group_operator: 'OR',
             },
-            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -446,8 +473,10 @@ describe('checkCondition', () => {
             },
         });
 
-        const campaign = {
+        const campaign: Campaign = {
+            id: 'test-id',
             channel: 'in-web-message',
+            last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
@@ -465,6 +494,7 @@ describe('checkCondition', () => {
                                 value: 25,
                             },
                         ],
+                        condition_operator: null,
                     },
                     {
                         conditions: [
@@ -478,6 +508,7 @@ describe('checkCondition', () => {
                                 value: 'USA',
                             },
                         ],
+                        condition_operator: null,
                     },
                     {
                         conditions: [
@@ -491,11 +522,11 @@ describe('checkCondition', () => {
                                 value: 'female',
                             },
                         ],
+                        condition_operator: null,
                     },
                 ],
                 group_operator: 'OR',
             },
-            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -511,8 +542,10 @@ describe('checkCondition', () => {
             },
         });
 
-        const campaign = {
+        const campaign: Campaign = {
+            id: 'test-id',
             channel: 'in-web-message',
+            last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
@@ -562,6 +595,7 @@ describe('checkCondition', () => {
                                 value: 'USA',
                             },
                         ],
+                        condition_operator: null,
                     },
                     {
                         conditions: [
@@ -575,11 +609,11 @@ describe('checkCondition', () => {
                                 value: 'female',
                             },
                         ],
+                        condition_operator: null,
                     },
                 ],
                 group_operator: 'OR',
             },
-            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -595,8 +629,10 @@ describe('checkCondition', () => {
             },
         });
 
-        const campaign = {
+        const campaign: Campaign = {
+            id: 'test-id',
             channel: 'in-web-message',
+            last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
@@ -646,6 +682,7 @@ describe('checkCondition', () => {
                                 value: 'USA',
                             },
                         ],
+                        condition_operator: null,
                     },
                     {
                         conditions: [
@@ -659,11 +696,11 @@ describe('checkCondition', () => {
                                 value: 'male',
                             },
                         ],
+                        condition_operator: null,
                     },
                 ],
                 group_operator: 'OR',
             },
-            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -684,8 +721,10 @@ describe('checkCondition', () => {
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
-        const campaign = {
+        const campaign: Campaign = {
+            id: 'test-id',
             channel: 'in-web-message',
+            last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
@@ -735,6 +774,7 @@ describe('checkCondition', () => {
                                 value: 'USA',
                             },
                         ],
+                        condition_operator: null,
                     },
                     {
                         conditions: [
@@ -748,11 +788,11 @@ describe('checkCondition', () => {
                                 value: 'female',
                             },
                         ],
+                        condition_operator: null,
                     },
                 ],
                 group_operator: 'OR',
             },
-            status: 1,
         };
 
         const result = checkConditionForTest(campaign);
@@ -777,8 +817,10 @@ describe('checkCondition', () => {
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
-        const campaign = {
+        const campaign: Campaign = {
+            id: 'test-id',
             channel: 'in-web-message',
+            last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             triggering_event: 'test-event',
             segment_type: 'condition',
@@ -828,6 +870,7 @@ describe('checkCondition', () => {
                                 value: 'USA',
                             },
                         ],
+                        condition_operator: null,
                     },
                     {
                         conditions: [
@@ -841,11 +884,11 @@ describe('checkCondition', () => {
                                 value: 'female',
                             },
                         ],
+                        condition_operator: null,
                     },
                 ],
                 group_operator: 'OR',
             },
-            status: 1,
         };
 
         const result = checkConditionForTest(campaign);

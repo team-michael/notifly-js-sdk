@@ -1,5 +1,6 @@
 import localForage from './src/localforage';
 
+import type { NotiflyInitializeOptions } from './src/types';
 import { logEvent, sessionStart } from './src/logEvent';
 import { saveCognitoIdToken } from './src/auth';
 import { setUserId, setUserProperties, deleteUser } from './src/user';
@@ -10,17 +11,19 @@ import { registerServiceWorker } from './src/push';
 
 let isNotiflyInitialized = false;
 
-async function initialize(
-    projectID: string,
-    userName: string,
-    password: string,
-    deviceToken?: string
-): Promise<boolean> {
+/**
+ * Initializes the Notifly SDK. This should be called as early as possible in your application to function properly.
+ * @param {NotiflyInitializeOptions} options - An object containing the project ID, username, password, device token, and push subscription options.
+ * @returns {Promise<boolean>} A promise that resolves with a boolean value indicating whether the SDK was initialized successfully.
+ */
+async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
     if (isNotiflyInitialized) {
         return true;
     }
 
-    if (!(projectID && userName && password)) {
+    const { projectId, username, password, deviceToken, pushSubscriptionOptions } = options;
+
+    if (!(projectId && username && password)) {
         console.error('[Notifly] projectID, userName and password must not be empty');
         return false;
     }
@@ -32,22 +35,27 @@ async function initialize(
         return false;
     }
 
-    const [notiflyUserID, notiflyDeviceID, _] = await Promise.all([
-        getNotiflyUserID(projectID, undefined, deviceToken),
+    const [notiflyUserID, notiflyDeviceID] = await Promise.all([
+        getNotiflyUserID(projectId, undefined, deviceToken),
         getNotiflyDeviceID(deviceToken),
-        saveCognitoIdToken(userName, password),
+        saveCognitoIdToken(username, password),
     ]);
 
     await _saveNotiflyData({
-        __notiflyProjectID: projectID,
-        __notiflyUserName: userName,
+        __notiflyProjectID: projectId,
+        __notiflyUserName: username,
         __notiflyPassword: password,
         __notiflyDeviceID: notiflyDeviceID,
         __notiflyUserID: notiflyUserID,
         ...(deviceToken !== null && deviceToken !== undefined && { __notiflyDeviceToken: deviceToken }),
     });
 
-    await syncState(projectID, notiflyUserID);
+    if (pushSubscriptionOptions) {
+        const { vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis } = pushSubscriptionOptions;
+        await registerServiceWorker(vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis);
+    }
+
+    await syncState(projectId, notiflyUserID);
 
     await sessionStart();
     isNotiflyInitialized = true;
@@ -63,11 +71,12 @@ async function _saveNotiflyData(data: Record<string, string>): Promise<void> {
     await Promise.all(promises);
 }
 
-// For testing purposes only
-function resetInitialization(): void {
-    isNotiflyInitialized = false;
-}
-
+/**
+ * @param {string} eventName - The name of the event to track.
+ * @param {Record<string, any>} eventParams - An object containing the event parameters corresponding to the provided event.
+ * @param {string[]} segmentationEventParamKeys - An array of event parameter keys to track as segmentation parameters.
+ * @returns {Promise<void>}
+ */
 function trackEvent(
     eventName: string,
     eventParams: Record<string, any>,
@@ -83,8 +92,10 @@ const notifly = {
     deleteUser,
     setUserId,
     setDeviceToken,
-    resetInitialization,
-    registerServiceWorker,
+    // For testing purposes only
+    resetInitialization: () => {
+        isNotiflyInitialized = false;
+    },
 };
 
 // Check if the code is running in a browser environment before assigning to `window`

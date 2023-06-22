@@ -7,7 +7,8 @@ import { showPopup } from './popup/popup';
 async function registerServiceWorker(
     vapidPublicKey: string,
     askPermission = true,
-    path = '/notifly-service-worker.js'
+    path = '/notifly-service-worker.js',
+    promptDelayMillis = 5000
 ): Promise<void> {
     if (
         typeof navigator === 'undefined' ||
@@ -23,7 +24,7 @@ async function registerServiceWorker(
         if (askPermission && permission === 'default') {
             const notiflyNotificationPermission = await localForage.getItem('__notiflyNotificationPermission');
             if (notiflyNotificationPermission != 'denied') {
-                permission = await showPopup();
+                permission = await showPopup(promptDelayMillis);
             }
         }
         if (permission !== 'granted') {

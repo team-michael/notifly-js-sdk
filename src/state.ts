@@ -17,8 +17,6 @@ let eventIntermediateCounts: EventIntermediateCounts[] = [];
 let inWebMessageCampaigns: Campaign[] = [];
 let userData: UserData = {};
 
-const CAMPAIGN_STATUS_ACTIVE = 1;
-
 async function refreshState() {
     try {
         const [projectID, notiflyUserID] = await Promise.all([
@@ -42,10 +40,7 @@ async function syncState(projectID: string, notiflyUserID: string): Promise<void
     };
 
     const url = new URL(endpoint);
-    const searchParams = new URLSearchParams();
-    Object.entries(queryParams).forEach(([key, value]) => {
-        searchParams.append(key, value);
-    });
+    const searchParams = new URLSearchParams(queryParams);
     url.search = searchParams.toString();
 
     try {
@@ -250,9 +245,10 @@ function checkConditionForSingleCondition(condition: Condition) {
 }
 
 function maybeTriggerWebMessage(eventName: string) {
+    // Sort campaigns by last_updated_timestamp in descending order
     const validCampaigns = inWebMessageCampaigns
         .filter((c) => c.triggering_event === eventName)
-        .filter((c) => c.status === CAMPAIGN_STATUS_ACTIVE);
+        .sort((a, b) => (a.last_updated_timestamp > b.last_updated_timestamp ? -1 : 1))
 
     for (const campaign of validCampaigns) {
         if (checkCondition(campaign)) {
