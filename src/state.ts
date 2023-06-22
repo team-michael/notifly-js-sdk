@@ -17,10 +17,7 @@ let eventIntermediateCounts: EventIntermediateCounts[] = [];
 let inWebMessageCampaigns: Campaign[] = [];
 let userData: UserData = {};
 
-const CAMPAIGN_STATUS_DRAFT = 0;
 const CAMPAIGN_STATUS_ACTIVE = 1;
-const CAMPAIGN_STATUS_INACTIVE = 2;
-const CAMPAIGN_STATUS_COMPLETED = 3;
 
 async function refreshState() {
     try {
@@ -253,14 +250,16 @@ function checkConditionForSingleCondition(condition: Condition) {
 }
 
 function maybeTriggerWebMessage(eventName: string) {
-    inWebMessageCampaigns
+    const validCampaigns = inWebMessageCampaigns
         .filter((c) => c.triggering_event === eventName)
-        .filter((c) => c.status === CAMPAIGN_STATUS_ACTIVE)
-        .map((c) => {
-            if (checkCondition(c)) {
-                showInWebMessage(c);
-            }
-        });
+        .filter((c) => c.status === CAMPAIGN_STATUS_ACTIVE);
+
+    for (const campaign of validCampaigns) {
+        if (checkCondition(campaign)) {
+            showInWebMessage(campaign);
+            break;
+        }
+    }
 }
 
 // Test-only getter for eventIntermediateCounts

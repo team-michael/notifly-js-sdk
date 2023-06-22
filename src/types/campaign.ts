@@ -21,6 +21,7 @@ export interface Campaign {
             zIndex?: string | number;
             position?: string;
             bottom?: string | number;
+            top?: string | number;
         };
     };
     segment_info?: {
