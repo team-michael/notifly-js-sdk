@@ -40,8 +40,6 @@ async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
         return true;
     };
 
-    console.log('[Notifly] Initializing SDK...');
-
     const { projectId, username, password, deviceToken, pushSubscriptionOptions } = options;
 
     if (!(projectId && username && password)) {

@@ -31,7 +31,7 @@ function _registerMessageEventListenerOnce(task: (e: MessageEvent) => void) {
 
 function _showInWebMessage(campaign: Campaign) {
     if (isWebMessageOpen) {
-        console.log(`[Notifly] Web message is already open. Ignoring this message from campaign ${campaign.id}...`);
+        console.warn(`[Notifly] Web message is already open. Ignoring this message from campaign ${campaign.id}...`);
         return;
     }
 
