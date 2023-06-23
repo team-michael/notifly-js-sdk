@@ -31,19 +31,50 @@ describe('Notifly SDK', () => {
         });
 
         it('should return false if any of the required parameters is empty', async () => {
-            expect(await notifly.initialize('', userName, password, deviceToken)).toBe(false);
-            expect(await notifly.initialize(projectID, '', password, deviceToken)).toBe(false);
-            expect(await notifly.initialize(projectID, userName, '', deviceToken)).toBe(false);
+            expect(
+                await notifly.initialize({
+                    projectId: '',
+                    username: userName,
+                    password,
+                    deviceToken,
+                })
+            ).toBe(false);
+            expect(
+                await notifly.initialize({
+                    projectId: projectID,
+                    username: '',
+                    password,
+                    deviceToken,
+                })
+            ).toBe(false);
+            expect(
+                await notifly.initialize({
+                    projectId: projectID,
+                    username: userName,
+                    password: '',
+                    deviceToken,
+                })
+            ).toBe(false);
         });
 
         it('should call saveCognitoIdToken with the correct parameters', async () => {
-            await notifly.initialize(projectID, userName, password, deviceToken);
+            await notifly.initialize({
+                projectId: projectID,
+                username: userName,
+                password,
+                deviceToken,
+            });
 
             expect(saveCognitoIdToken).toHaveBeenCalledWith(userName, password);
         });
 
         it('should call _saveNotiflyData with the correct parameters', async () => {
-            await notifly.initialize(projectID, userName, password, deviceToken);
+            await notifly.initialize({
+                projectId: projectID,
+                username: userName,
+                password,
+                deviceToken,
+            });
 
             expect(localForage.setItem).toHaveBeenCalledWith('__notiflyProjectID', projectID);
             expect(localForage.setItem).toHaveBeenCalledWith('__notiflyUserName', userName);
@@ -56,7 +87,11 @@ describe('Notifly SDK', () => {
         });
 
         it('should not call __notiflyDeviceToken and __notiflyDeviceID when no device token is provided', async () => {
-            await notifly.initialize(projectID, userName, password);
+            await notifly.initialize({
+                projectId: projectID,
+                username: userName,
+                password,
+            });
 
             expect(localForage.setItem).toHaveBeenCalledWith('__notiflyProjectID', projectID);
             expect(localForage.setItem).toHaveBeenCalledWith('__notiflyUserName', userName);
@@ -64,13 +99,25 @@ describe('Notifly SDK', () => {
         });
 
         it('should call sessionStart', async () => {
-            await notifly.initialize(projectID, userName, password, deviceToken);
+            await notifly.initialize({
+                projectId: projectID,
+                username: userName,
+                password,
+                deviceToken,
+            });
 
             expect(sessionStart).toHaveBeenCalled();
         });
 
         it('should return true if all the required parameters are not null', async () => {
-            expect(await notifly.initialize(projectID, userName, password, deviceToken)).toBe(true);
+            expect(
+                await notifly.initialize({
+                    projectId: projectID,
+                    username: userName,
+                    password,
+                    deviceToken,
+                })
+            ).toBe(true);
         });
     });
 });

@@ -1,6 +1,21 @@
 declare module 'notifly-js-sdk' {
+    type NotiflyPushSubscriptionOptions = {
+        vapidPublicKey: string;
+        askPermission?: boolean;
+        serviceWorkerPath?: string;
+        promptDelayMillis?: number;
+    };
+
+    type NotiflyInitializeOptions = {
+        projectId: string;
+        username: string;
+        password: string;
+        deviceToken?: string;
+        pushSubscriptionOptions?: NotiflyPushSubscriptionOptions;
+    };
+
     interface NotiflySDK {
-        initialize(projectID: string | null | undefined, userName: string | null | undefined, password: string | null | undefined, deviceToken: string | null | undefined): boolean;
+        initialize(options: NotiflyInitializeOptions): boolean;
         trackEvent(
             eventName: string,
             eventParams: Record<string, any>,
@@ -10,8 +25,9 @@ declare module 'notifly-js-sdk' {
         deleteUser(): void;
         setUserId(userId?: string | null | undefined): void;
         setDeviceToken(deviceToken: string | null | undefined): void;
-        registerServiceWorker(vapidPublicKey: string, askPermission: boolean, path: string): void;
     }
+
     const notifly: NotiflySDK;
+
     export default notifly;
 }

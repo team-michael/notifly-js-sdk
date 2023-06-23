@@ -3,6 +3,19 @@ import { logEvent } from './logEvent';
 import { generateNotiflyUserID } from './utils';
 import { refreshState, updateUserData } from './state';
 
+/**
+ * Sets or removes user ID for the current user.
+ *
+ * @async
+ * @param {string | null | undefined} params - A nullable, optional string containing the user ID to set.
+ * @returns {Promise<void>}
+ * @summary If the user ID is null or undefined, the user ID will be removed. Otherwise, the user ID will be set to the provided value.
+ *
+ * @example
+ * await setUserId('myUserID') // Sets the user ID to 'myUserID'
+ * await setUserId(null) // Removes the user ID
+ * await setUserId() // Removes the user ID
+ */
 async function setUserId(userID?: string | null | undefined) {
     try {
         if (!userID) {
@@ -24,7 +37,7 @@ async function setUserId(userID?: string | null | undefined) {
  *
  * @async
  * @param {Object} params - An object containing the user properties to set.
- * @returns {Promise<void>} A promise that resolves when the user properties have been set, or rejects with an error.
+ * @returns {Promise<void>}
  *
  * @example
  * await setUserProperties({ external_user_id: 'myUserID' });
@@ -67,7 +80,7 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
  * Removes the external user ID and Notifly user ID from localForage.
  *
  * @async
- * @returns {Promise<void>} A promise that resolves when the user IDs have been removed, or rejects with an error.
+ * @returns {Promise<void>}
  *
  * @example
  * await removeUserId();
@@ -82,6 +95,15 @@ async function removeUserId(): Promise<void> {
     }
 }
 
+/**
+ * Permanently deletes the current user from Notifly.
+ *
+ * @async
+ * @returns {Promise<void>}
+ *
+ * @example
+ * await deleteUser();
+ */
 async function deleteUser(): Promise<void> {
     try {
         await logEvent('delete_user', {}, null, true);

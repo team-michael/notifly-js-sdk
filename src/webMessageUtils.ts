@@ -29,20 +29,29 @@ function _registerMessageEventListenerOnce(task: (e: MessageEvent) => void) {
     window.addEventListener('message', taskWrapper);
 }
 
-function showInWebMessage(campaign: Campaign) {
+function _showInWebMessage(campaign: Campaign) {
     if (isWebMessageOpen) {
-        console.log('[Notifly] Web message is already open');
+        console.warn(`[Notifly] Web message is already open. Ignoring this message from campaign ${campaign.id}...`);
         return;
     }
+
+    isWebMessageOpen = true;
+
     const message = campaign.message;
     const modalProperties = message.modal_properties;
     const templateName = modalProperties.template_name;
 
     let iframeContainer: HTMLDivElement;
     let iframe: HTMLIFrameElement;
+
     try {
+        // Create iframe container and iframe
         iframeContainer = document.createElement('div');
         iframeContainer.id = `notifly-web-message-container-${new Date().toISOString()}`;
+
+        iframe = document.createElement('iframe');
+        iframe.id = `notifly-web-message-iframe-${new Date().toISOString()}`;
+        iframe.src = message.html_url;
 
         // Override user agent stylesheet (css reset)
         iframeContainer.style.border = 'none';
@@ -51,13 +60,21 @@ function showInWebMessage(campaign: Campaign) {
         iframeContainer.style.padding = '0';
         iframeContainer.style.display = 'block';
 
+        iframe.style.border = 'none';
+        iframe.style.overflow = 'hidden !important';
+        iframe.style.margin = '0';
+        iframe.style.padding = '0';
+        iframe.style.display = 'block';
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+
+        // Apply modal properties
         iframeContainer.style.width = _convertToValidCSSStyle(modalProperties.width, '100%');
         iframeContainer.style.height = _convertToValidCSSStyle(modalProperties.height, '100%');
         iframeContainer.style.zIndex = _convertToValidCSSStyle(modalProperties.zIndex, '9999');
         iframeContainer.style.position = _convertToValidCSSStyle(modalProperties.position, 'fixed');
-
-        // If top and bottom are both defined, bottom will take precedence
         if (iframeContainer.style.position === 'fixed') {
+            // If top and bottom are both defined, bottom will take precedence
             iframeContainer.style.left = '0px';
             if (modalProperties.bottom !== undefined) {
                 iframeContainer.style.bottom = _convertToValidCSSStyle(modalProperties.bottom);
@@ -67,112 +84,102 @@ function showInWebMessage(campaign: Campaign) {
                 iframeContainer.style.top = '0px';
             }
         }
-
-        iframe = document.createElement('iframe');
-        iframe.id = `notifly-web-message-iframe-${new Date().toISOString()}`;
-        iframe.src = message.html_url;
-
-        // Override user agent stylesheet (css reset)
-        iframe.style.border = 'none';
-        iframe.style.overflow = 'hidden !important';
-        iframe.style.margin = '0';
-        iframe.style.padding = '0';
-        iframe.style.display = 'block';
-
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-
         iframeContainer.appendChild(iframe);
-    } catch (error) {
-        console.error('[Notifly] Error creating iframe: ', error);
-    }
 
-    const delayInSeconds = campaign.delay ?? 0;
-    setTimeout(() => {
-        try {
-            if (isWebMessageOpen) return;
+        // Insert iframe container into DOM
+        const firstChild = document.body.firstChild;
+        document.body.insertBefore(iframeContainer, firstChild);
 
-            isWebMessageOpen = true;
-            const firstChild = document.body.firstChild;
-            document.body.insertBefore(iframeContainer, firstChild);
+        logEvent(
+            'in_web_message_show',
+            {
+                type: 'message_event',
+                channel: 'in-web-message',
+                campaign_id: campaign.id,
+            },
+            null,
+            true
+        );
 
-            // Listen for messages from the iframe
-            _registerMessageEventListenerOnce(function (event) {
-                try {
-                    if (event.source === iframe.contentWindow) {
-                        const message = event.data;
-                        if (message.type === 'close') {
-                            isWebMessageOpen = false;
-                            try {
-                                document.body.removeChild(iframeContainer);
-                            } catch (error) {
-                                /* empty */
-                            }
-                            const extraData = message.extraData;
-                            if (extraData) {
-                                const data = extraData.data;
-                                if (data) {
-                                    if (data.hideUntil) {
-                                        setUserProperties({
-                                            [`hide_in_web_message_${templateName}`]: data.hideUntil,
-                                        });
-                                    }
+        // Listen for messages from the iframe
+        _registerMessageEventListenerOnce(async function (event) {
+            try {
+                if (event.source === iframe.contentWindow) {
+                    const message = event.data;
+                    if (message.type === 'close') {
+                        isWebMessageOpen = false;
+                        try {
+                            document.body.removeChild(iframeContainer);
+                        } catch (error) {
+                            /* empty */
+                        }
+                        const extraData = message.extraData;
+                        if (extraData) {
+                            const data = extraData.data;
+                            if (data) {
+                                if (data.hideUntil) {
+                                    await setUserProperties({
+                                        [`hide_in_web_message_${templateName}`]: data.hideUntil,
+                                    });
                                 }
                             }
-                            logEvent(
-                                'close_button_click',
-                                {
-                                    type: 'message_event',
-                                    channel: 'in-web-message',
-                                    button_name: message.buttonName,
-                                    campaign_id: campaign.id,
-                                },
-                                null,
-                                true
-                            );
-                        } else if (message.type === 'main_button') {
-                            isWebMessageOpen = false;
-                            try {
-                                document.body.removeChild(iframeContainer);
-                            } catch (error) {
-                                /* empty */
-                            }
-                            logEvent(
-                                'main_button_click',
-                                {
-                                    type: 'message_event',
-                                    channel: 'in-web-message',
-                                    button_name: message.buttonName,
-                                    campaign_id: campaign.id,
-                                },
-                                null,
-                                true
-                            );
                         }
-                        if (message.link) {
-                            // Navigate to link if necessary
-                            window.open(message.link, '_blank');
+                        await logEvent(
+                            'close_button_click',
+                            {
+                                type: 'message_event',
+                                channel: 'in-web-message',
+                                button_name: message.buttonName,
+                                campaign_id: campaign.id,
+                            },
+                            null,
+                            true
+                        );
+                    } else if (message.type === 'main_button') {
+                        isWebMessageOpen = false;
+                        try {
+                            document.body.removeChild(iframeContainer);
+                        } catch (error) {
+                            /* empty */
                         }
+                        await logEvent(
+                            'main_button_click',
+                            {
+                                type: 'message_event',
+                                channel: 'in-web-message',
+                                button_name: message.buttonName,
+                                campaign_id: campaign.id,
+                            },
+                            null,
+                            true
+                        );
                     }
-                } catch (error) {
-                    console.error('[Notifly] Error handling message from iframe: ', error);
+                    if (message.link) {
+                        // Navigate to link if necessary
+                        window.open(message.link, '_blank');
+                    }
                 }
-            });
-
-            logEvent(
-                'in_web_message_show',
-                {
-                    type: 'message_event',
-                    channel: 'in-web-message',
-                    campaign_id: campaign.id,
-                },
-                null,
-                true
-            );
-        } catch (error) {
-            console.error('[Notifly] Error showing web message: ', error);
-        }
-    }, delayInSeconds * 1000);
+            } catch (error) {
+                console.error('[Notifly] Error handling message from iframe: ', error);
+            }
+        });
+    } catch (error) {
+        isWebMessageOpen = false;
+        console.error('[Notifly] Error creating iframe: ', error);
+    }
 }
 
-export { showInWebMessage };
+function scheduleInWebMessage(campaign: Campaign) {
+    const delayInSeconds = campaign.delay ?? 0;
+    delayInSeconds === 0
+        ? _showInWebMessage(campaign)
+        : setTimeout(() => {
+              try {
+                  _showInWebMessage(campaign);
+              } catch (error) {
+                  console.error('[Notifly] Error showing web message: ', error);
+              }
+          }, delayInSeconds * 1000);
+}
+
+export { scheduleInWebMessage };

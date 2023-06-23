@@ -9,11 +9,16 @@ import Playground from './Playground';
 function App() {
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            notifly.initialize(
-                process.env.REACT_APP_NOTIFLY_PROJECT_ID,
-                process.env.REACT_APP_NOTIFLY_USERNAME,
-                process.env.REACT_APP_NOTIFLY_PASSWORD
-            );
+            notifly.initialize({
+                projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID,
+                username: process.env.REACT_APP_NOTIFLY_USERNAME,
+                password: process.env.REACT_APP_NOTIFLY_PASSWORD,
+                pushSubscriptionOptions: {
+                    vapidPublicKey:
+                        'BGkEcbk7nbeozYYvs7EXqWDuqcDPBdxJ5p51jM9vx2ERj5iGSntBXFhIociva1boO9LuCec-ZCCAI_HC82NUIuQ',
+                    askPermission: true,
+                },
+            });
         }
     }, []);
 
@@ -238,11 +243,10 @@ function UserIdSetter() {
 }
 
 function RemoveUserIdButton() {
-
     const handleClick = () => {
         notifly.setUserId();
     };
-    
+
     return (
         <div style={{ margin: '10px' }}>
             <button onClick={handleClick}>Remove User Id</button>
@@ -251,7 +255,6 @@ function RemoveUserIdButton() {
 }
 
 function DeleteUserIdButton() {
-
     const handleClick = () => {
         notifly.deleteUser();
     };

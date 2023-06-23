@@ -1,3 +1,6 @@
+type GroupOperator = 'OR' | null;
+type ConditionOperator = 'AND' | null;
+
 export interface Condition {
     attribute: string;
     event: string;
@@ -11,6 +14,7 @@ export interface Condition {
 export interface Campaign {
     id: string;
     channel: string;
+    last_updated_timestamp: number;
     segment_type: string;
     message: {
         html_url: string;
@@ -27,10 +31,10 @@ export interface Campaign {
     segment_info?: {
         groups?: {
             conditions?: Condition[];
+            condition_operator: ConditionOperator;
         }[];
-        group_operator?: string;
+        group_operator: GroupOperator;
     };
     triggering_event: string;
     delay?: number;
-    status: number;
 }
