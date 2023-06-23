@@ -1,5 +1,5 @@
 import type { Campaign, Condition } from './types';
-import { showInWebMessage } from './webMessageUtils';
+import { scheduleInWebMessage } from './webMessageUtils';
 import localForage from './localforage';
 
 interface EventIntermediateCounts {
@@ -244,18 +244,61 @@ function checkConditionForSingleCondition(condition: Condition) {
     return false;
 }
 
-function maybeTriggerWebMessage(eventName: string) {
-    // Sort campaigns by last_updated_timestamp in descending order
-    const validCampaigns = inWebMessageCampaigns
-        .filter((c) => c.triggering_event === eventName)
-        .sort((a, b) => (a.last_updated_timestamp > b.last_updated_timestamp ? -1 : 1))
+/**
+ * Compare function for sorting campaigns by delay in ascending order.
+ * If those are equal, sort by last_updated_timestamp in descending order.
+ */
+function _compareCampaigns(a: Campaign, b: Campaign) {
+    const delayA = a.delay || 0;
+    const delayB = b.delay || 0;
 
-    for (const campaign of validCampaigns) {
-        if (checkCondition(campaign)) {
-            showInWebMessage(campaign);
-            break;
+    if (delayA < delayB) {
+        return -1;
+    } else if (delayA > delayB) {
+        return 1;
+    } else {
+        return a.last_updated_timestamp > b.last_updated_timestamp ? -1 : 1;
+    }
+}
+
+/**
+ * This function assumes that all campaigns should be scheduled and sorted with _compareCampaigns function.
+ * This function removes campaigns that are scheduled to be shown at the same time.
+ * When there are multiple campaigns scheduled to be shown at the same time, the one with the latest last_updated_timestamp will be chosen.
+ */
+function _removeConflictingCampaigns(campaigns: Campaign[]) {
+    if (campaigns.length <= 1) {
+        return campaigns;
+    }
+
+    const sortedCampaigns = campaigns.sort(_compareCampaigns);
+    const result: Campaign[] = [sortedCampaigns[0]];
+
+    let seenDelay = sortedCampaigns[0].delay || 0;
+    for (let idx = 1; idx < sortedCampaigns.length; idx++) {
+        const campaign = sortedCampaigns[idx];
+        const delay = campaign.delay || 0;
+
+        if (delay !== seenDelay) {
+            result.push(campaign);
+            seenDelay = delay;
         }
     }
+
+    return result;
+}
+
+/**
+ * Get campaigns to schedule.
+ */
+function _getCampaignsToSchedule(campaigns: Campaign[], eventName: string) {
+    return _removeConflictingCampaigns(
+        campaigns.filter((c) => c.triggering_event === eventName).filter(checkCondition)
+    );
+}
+
+function maybeTriggerWebMessage(eventName: string) {
+    _getCampaignsToSchedule(inWebMessageCampaigns, eventName).forEach(scheduleInWebMessage);
 }
 
 // Test-only getter for eventIntermediateCounts
@@ -287,4 +330,6 @@ export {
     setEventIntermediateCountsForTest,
     checkConditionForTest,
     setUserDataForTest,
+    // Test-only exported
+    _getCampaignsToSchedule,
 };

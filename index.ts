@@ -9,6 +9,7 @@ import { setDeviceToken } from './src/device';
 import { syncState } from './src/state';
 import { registerServiceWorker } from './src/push';
 
+let initializationLock = false;
 let isNotiflyInitialized = false;
 
 /**
@@ -17,50 +18,71 @@ let isNotiflyInitialized = false;
  * @returns {Promise<boolean>} A promise that resolves with a boolean value indicating whether the SDK was initialized successfully.
  */
 async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
+    if (initializationLock) {
+        console.warn('[Notifly] Notifly SDK is being initialized more than once. Ignoring this call.');
+        return false;
+    }
     if (isNotiflyInitialized) {
+        console.warn('[Notifly] Notifly SDK is already initialized. Ignoring this call.');
         return true;
     }
+
+    initializationLock = true;
+
+    const onInitializationFailed = () => {
+        initializationLock = false;
+        isNotiflyInitialized = false;
+        return false;
+    };
+    const onInitializationSuccess = () => {
+        initializationLock = false;
+        isNotiflyInitialized = true;
+        return true;
+    };
+
+    console.log('[Notifly] Initializing SDK...');
 
     const { projectId, username, password, deviceToken, pushSubscriptionOptions } = options;
 
     if (!(projectId && username && password)) {
         console.error('[Notifly] projectID, userName and password must not be empty');
-        return false;
+        return onInitializationFailed();
     }
 
     if (typeof window === 'undefined') {
         console.error(
             '[Notifly] The SDK requires a browser environment to function properly. Please ensure that you are using the SDK within a supported browser environment.'
         );
-        return false;
+        return onInitializationFailed();
     }
 
-    const [notiflyUserID, notiflyDeviceID] = await Promise.all([
-        getNotiflyUserID(projectId, undefined, deviceToken),
-        getNotiflyDeviceID(deviceToken),
-        saveCognitoIdToken(username, password),
-    ]);
+    try {
+        const [notiflyUserID, notiflyDeviceID] = await Promise.all([
+            getNotiflyUserID(projectId, undefined, deviceToken),
+            getNotiflyDeviceID(deviceToken),
+            saveCognitoIdToken(username, password),
+        ]);
+        await _saveNotiflyData({
+            __notiflyProjectID: projectId,
+            __notiflyUserName: username,
+            __notiflyPassword: password,
+            __notiflyDeviceID: notiflyDeviceID,
+            __notiflyUserID: notiflyUserID,
+            ...(deviceToken !== null && deviceToken !== undefined && { __notiflyDeviceToken: deviceToken }),
+        });
 
-    await _saveNotiflyData({
-        __notiflyProjectID: projectId,
-        __notiflyUserName: username,
-        __notiflyPassword: password,
-        __notiflyDeviceID: notiflyDeviceID,
-        __notiflyUserID: notiflyUserID,
-        ...(deviceToken !== null && deviceToken !== undefined && { __notiflyDeviceToken: deviceToken }),
-    });
+        if (pushSubscriptionOptions) {
+            const { vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis } = pushSubscriptionOptions;
+            await registerServiceWorker(vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis);
+        }
+        await syncState(projectId, notiflyUserID);
+        await sessionStart();
 
-    if (pushSubscriptionOptions) {
-        const { vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis } = pushSubscriptionOptions;
-        await registerServiceWorker(vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis);
+        return onInitializationSuccess();
+    } catch (error) {
+        console.error('[Notifly] Error initializing SDK: ', error);
+        return onInitializationFailed();
     }
-
-    await syncState(projectId, notiflyUserID);
-
-    await sessionStart();
-    isNotiflyInitialized = true;
-
-    return true;
 }
 
 async function _saveNotiflyData(data: Record<string, string>): Promise<void> {
@@ -94,6 +116,7 @@ const notifly = {
     setDeviceToken,
     // For testing purposes only
     resetInitialization: () => {
+        initializationLock = false;
         isNotiflyInitialized = false;
     },
 };

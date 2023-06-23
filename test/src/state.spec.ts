@@ -6,6 +6,7 @@ import {
     setEventIntermediateCountsForTest,
     checkConditionForTest,
     setUserDataForTest,
+    _getCampaignsToSchedule,
 } from '../../src/state';
 
 jest.mock('localforage', () => ({
@@ -79,6 +80,78 @@ describe('updateEventIntermediateCounts', () => {
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].dt === '2023-05-26');
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event B')[0].count === 1);
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event B')[0].dt === '2023-05-26');
+    });
+});
+
+describe('getCampaignsToSchedule', () => {
+    beforeAll(() => {
+        jest.clearAllMocks();
+        jest.mock('../../src/state', () => ({
+            checkCondition: jest.fn().mockReturnValue(true),
+        }));
+    });
+    afterAll(() => {
+        jest.restoreAllMocks();
+        jest.unmock('../../src/state');
+    });
+
+    const campaigns: Campaign[] = [
+        {
+            id: 'test-campaign-1',
+            triggering_event: 'event1',
+            channel: 'in-web-message',
+            delay: 0,
+            last_updated_timestamp: 1625800000000,
+            message: { html_url: '', modal_properties: { template_name: '' } },
+            segment_type: 'condition',
+        },
+        {
+            id: 'test-campaign-2',
+            triggering_event: 'event2',
+            channel: 'in-web-message',
+            delay: 10,
+            last_updated_timestamp: 1625700000000,
+            message: { html_url: '', modal_properties: { template_name: '' } },
+            segment_type: 'condition',
+        },
+        {
+            id: 'test-campaign-3',
+            triggering_event: 'event1',
+            channel: 'in-web-message',
+            delay: 20,
+            last_updated_timestamp: 1625900000000,
+            message: { html_url: '', modal_properties: { template_name: '' } },
+            segment_type: 'condition',
+        },
+        {
+            id: 'test-campaign-4',
+            triggering_event: 'event2',
+            channel: 'in-web-message',
+            delay: 5,
+            last_updated_timestamp: 1625600000000,
+            message: { html_url: '', modal_properties: { template_name: '' } },
+            segment_type: 'condition',
+        },
+        {
+            id: 'test-campaign-5',
+            triggering_event: 'event1',
+            channel: 'in-web-message',
+            delay: 20,
+            last_updated_timestamp: 1625700000000,
+            message: { html_url: '', modal_properties: { template_name: '' } },
+            segment_type: 'condition',
+        },
+    ];
+
+    it('Test case 1: Valid event name with matching campaigns', () => {
+        const result = _getCampaignsToSchedule(campaigns, 'event1');
+        expect(result.map((campaign) => campaign.id)).toEqual(['test-campaign-1', 'test-campaign-3']);
+    });
+
+    it('Test case 2: Valid event name with no matching campaigns', () => {
+        const nonExistingEventName = 'event3';
+        const result = _getCampaignsToSchedule(campaigns, nonExistingEventName);
+        expect(result).toEqual([]);
     });
 });
 
