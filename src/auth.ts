@@ -12,31 +12,23 @@ import localForage from './localforage';
  * const token = await getCognitoIdToken('myUserName', 'myPassword');
  */
 async function getCognitoIdToken(userName: string, password: string): Promise<string> {
-    const headers = new Headers({
-        'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth',
-        'Content-Type': 'application/x-amz-json-1.1',
-    });
-
     const body = JSON.stringify({
-        AuthFlow: 'USER_PASSWORD_AUTH',
-        AuthParameters: {
-            PASSWORD: password,
-            USERNAME: userName,
-        },
-        ClientId: '2pc5pce21ec53csf8chafknqve',
+        userName,
+        password,
     });
 
     const requestOptions: RequestInit = {
         method: 'POST',
-        headers,
         body,
-        redirect: 'follow',
     };
 
     try {
-        const response = await fetch('https://cognito-idp.ap-northeast-2.amazonaws.com/', requestOptions);
+        const response = await fetch('https://api.notifly.tech/authorize', requestOptions);
         const result = await response.json();
-        return result.AuthenticationResult?.IdToken ?? '';
+        if (result.error) {
+            throw new Error(result.error);
+        }
+        return result.data ?? '';
     } catch (error) {
         console.warn('[Notifly]: ', error);
         return '';

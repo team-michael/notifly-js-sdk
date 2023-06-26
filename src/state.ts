@@ -1,17 +1,6 @@
-import type { Campaign, Condition } from './types';
+import type { Campaign, Condition, UserData, EventIntermediateCounts } from './types';
 import { scheduleInWebMessage } from './webMessageUtils';
 import localForage from './localforage';
-
-interface EventIntermediateCounts {
-    dt: string;
-    name: string;
-    count: number;
-}
-interface UserData {
-    user_properties?: {
-        [key: string]: any;
-    };
-}
 
 let eventIntermediateCounts: EventIntermediateCounts[] = [];
 let inWebMessageCampaigns: Campaign[] = [];

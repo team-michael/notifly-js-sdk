@@ -9,9 +9,8 @@ describe('getCognitoIdToken', () => {
     const mockResponse = {
         json: jest.fn(() =>
             Promise.resolve({
-                AuthenticationResult: {
-                    IdToken: mockToken,
-                },
+                data: mockToken,
+                error: null,
             })
         ),
     };
@@ -28,24 +27,14 @@ describe('getCognitoIdToken', () => {
 
     it('should return a token', async () => {
         const token = await getCognitoIdToken('testUser', 'testPassword');
-        const expectedHeaders = new Headers({
-            'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth',
-            'Content-Type': 'application/x-amz-json-1.1',
-        });
         expect(token).toEqual(mockToken);
         expect(mockFetch).toHaveBeenCalledTimes(1);
-        expect(mockFetch).toHaveBeenCalledWith('https://cognito-idp.ap-northeast-2.amazonaws.com/', {
+        expect(mockFetch).toHaveBeenCalledWith('https://api.notifly.tech/authorize', {
             method: 'POST',
-            headers: expectedHeaders,
             body: JSON.stringify({
-                AuthFlow: 'USER_PASSWORD_AUTH',
-                AuthParameters: {
-                    PASSWORD: 'testPassword',
-                    USERNAME: 'testUser',
-                },
-                ClientId: '2pc5pce21ec53csf8chafknqve',
+                userName: 'testUser',
+                password: 'testPassword',
             }),
-            redirect: 'follow',
         });
         expect(mockResponse.json).toHaveBeenCalledTimes(1);
     });
