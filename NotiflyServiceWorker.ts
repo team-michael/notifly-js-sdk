@@ -146,29 +146,15 @@ async function getCognitoIdTokenInSw(): Promise<string | null> {
     if (!userName || !password) {
         return null;
     }
-    const headers = new Headers({
-        'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth',
-        'Content-Type': 'application/x-amz-json-1.1',
-    });
-
-    const body = JSON.stringify({
-        AuthFlow: 'USER_PASSWORD_AUTH',
-        AuthParameters: {
-            PASSWORD: password,
-            USERNAME: userName,
-        },
-        ClientId: '2pc5pce21ec53csf8chafknqve',
-    });
-
-    const requestOptions: RequestInit = {
-        method: 'POST',
-        headers,
-        body,
-        redirect: 'follow',
-    };
 
     try {
-        const response = await fetch('https://cognito-idp.ap-northeast-2.amazonaws.com/', requestOptions);
+        const response = await fetch('https://api.notifly.tech/authorize', {
+            method: 'POST',
+            body: JSON.stringify({
+                userName,
+                password,
+            }),
+        });
         const result = await response.text();
         const token = JSON.parse(result).AuthenticationResult.IdToken;
         return token;
