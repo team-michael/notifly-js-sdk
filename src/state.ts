@@ -1,6 +1,9 @@
 import type { Campaign, Condition, UserData, EventIntermediateCounts } from './types';
 import { scheduleInWebMessage } from './webMessageUtils';
 import localForage from './localforage';
+import { saveCognitoIdToken } from './auth';
+
+const SYNC_STATE_MAX_RETRY_COUNT = 3;
 
 let eventIntermediateCounts: EventIntermediateCounts[] = [];
 let inWebMessageCampaigns: Campaign[] = [];
@@ -20,27 +23,34 @@ async function refreshState() {
     }
 }
 
-async function syncState(projectID: string, notiflyUserID: string): Promise<void> {
-    const endpoint =
-        'https://om97mq7cx4.execute-api.ap-northeast-2.amazonaws.com/default/notifly-js-sdk-user-state-retrieval';
-    const queryParams = {
-        projectID: projectID,
-        notiflyUserID: notiflyUserID,
-    };
-
-    const url = new URL(endpoint);
-    const searchParams = new URLSearchParams(queryParams);
-    url.search = searchParams.toString();
-
+async function syncState(projectID: string, notiflyUserID: string, retryCount = 0): Promise<void> {
     try {
-        const response = await fetch(url.toString());
+        const cognitoIdToken = await localForage.getItem<string>('__notiflyCognitoIDToken');
+        const response = await fetch(`https://api.notifly.tech/user-state/${projectID}/${notiflyUserID}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${cognitoIdToken}`,
+            },
+        });
 
         if (!response.ok) {
-            throw new Error(`[Notifly] HTTP error in syncing user state -- status: ${response.status}`);
+            if (retryCount < SYNC_STATE_MAX_RETRY_COUNT) {
+                if (response.status === 401) {
+                    // Invalid token
+                    const [userName, password] = await Promise.all([
+                        localForage.getItem<string>('__notiflyUserName'),
+                        localForage.getItem<string>('__notiflyPassword'),
+                    ]);
+                    await saveCognitoIdToken(userName || '', password || '');
+                }
+                return await syncState(projectID, notiflyUserID, retryCount + 1);
+            } else {
+                throw new Error(response.statusText);
+            }
         }
 
         const data = await response.json();
-
         if (data.eventIntermediateCountsData != null) {
             eventIntermediateCounts = data.eventIntermediateCountsData;
         }
@@ -50,7 +60,6 @@ async function syncState(projectID: string, notiflyUserID: string): Promise<void
         if (data.userData != null) {
             userData = data.userData;
         }
-
         return data;
     } catch (error) {
         console.error('Error:', error);
