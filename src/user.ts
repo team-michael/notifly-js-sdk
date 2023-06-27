@@ -3,6 +3,8 @@ import { logEvent } from './logEvent';
 import { generateNotiflyUserID } from './utils';
 import { refreshState, updateUserData } from './state';
 
+const SYNC_TIMEOUT_AFTER_USER_ID_CHANGED = 5000;
+
 /**
  * Sets or removes user ID for the current user.
  *
@@ -28,7 +30,7 @@ async function setUserId(userID?: string | null | undefined) {
     } catch (err) {
         console.warn('[Notifly] setUserId failed');
     } finally {
-        await refreshState();
+        setTimeout(refreshState, SYNC_TIMEOUT_AFTER_USER_ID_CHANGED);
     }
 }
 

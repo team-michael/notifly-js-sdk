@@ -11,28 +11,39 @@ let userData: UserData = {};
 
 async function refreshState() {
     try {
-        const [projectID, notiflyUserID] = await Promise.all([
+        const [projectID, notiflyUserID, notiflyDeviceID] = await Promise.all([
             localForage.getItem<string>('__notiflyProjectID'),
             localForage.getItem<string>('__notiflyUserID'),
+            localForage.getItem<string>('__notiflyDeviceID'),
         ]);
         if (projectID && notiflyUserID) {
-            await syncState(projectID, notiflyUserID);
+            await syncState(projectID, notiflyUserID, notiflyDeviceID);
         }
     } catch (err) {
         console.warn('[Notifly] refreshState failed: ', err);
     }
 }
 
-async function syncState(projectID: string, notiflyUserID: string, retryCount = 0): Promise<void> {
+async function syncState(
+    projectID: string,
+    notiflyUserID: string,
+    notiflyDeviceID: string | null,
+    retryCount = 0
+): Promise<void> {
     try {
         const cognitoIdToken = await localForage.getItem<string>('__notiflyCognitoIDToken');
-        const response = await fetch(`https://api.notifly.tech/user-state/${projectID}/${notiflyUserID}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${cognitoIdToken}`,
-            },
-        });
+        const response = await fetch(
+            `https://api.notifly.tech/user-state/${projectID}/${notiflyUserID}?${
+                notiflyDeviceID ? `deviceId=${notiflyDeviceID}` : ''
+            }`,
+            {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${cognitoIdToken}`,
+                },
+            }
+        );
 
         if (!response.ok) {
             if (retryCount < SYNC_STATE_MAX_RETRY_COUNT) {
@@ -44,7 +55,7 @@ async function syncState(projectID: string, notiflyUserID: string, retryCount = 
                     ]);
                     await saveCognitoIdToken(userName || '', password || '');
                 }
-                return await syncState(projectID, notiflyUserID, retryCount + 1);
+                return await syncState(projectID, notiflyUserID, notiflyDeviceID, retryCount + 1);
             } else {
                 throw new Error(response.statusText);
             }
@@ -74,32 +85,23 @@ function updateUserData(params: Record<string, any>) {
     });
 }
 
-function updateEventIntermediateCounts(eventName: string) {
-    // Create a new Date object for the current date
+function updateEventIntermediateCounts(
+    eventName: string,
+    eventParams: Record<string, any>,
+    segmentationEventParamKeys?: string[] | null
+) {
     const currentDate = new Date();
+    const _month = currentDate.getMonth() + 1;
+    const month = _month < 10 ? `0${_month}` : _month;
+    const formattedDate = `${currentDate.getFullYear()}-${month}-${currentDate.getDate()}`;
 
-    // Get the current year, month, and day
-    const year = currentDate.getFullYear();
-    const monthTs = currentDate.getMonth() + 1; // Months are zero-based, so we add 1
-    const month = monthTs < 10 ? '0' + monthTs : '' + monthTs;
-    const dayTs = currentDate.getDate();
-    const day = dayTs < 10 ? '0' + dayTs : '' + dayTs;
+    const keyField = segmentationEventParamKeys ? segmentationEventParamKeys[0] : null;
 
-    // Create the formatted date string
-    const formattedDate = year + '-' + month + '-' + day;
-
-    // Check if an object with the given dt and name already exists
     const existingRow = eventIntermediateCounts.find((row) => row.dt === formattedDate && row.name === eventName);
-
     if (existingRow) {
         // If an existing row is found, increase the count by 1
-        const updatedRows = eventIntermediateCounts.map((row) => {
-            if (row.dt === formattedDate && row.name === eventName) {
-                return { ...row, count: row.count + 1 };
-            }
-            return row;
-        });
-        eventIntermediateCounts = updatedRows;
+        const rowIndex = eventIntermediateCounts.indexOf(existingRow);
+        eventIntermediateCounts[rowIndex].count += 1;
     } else {
         // If no existing row is found, create a new entry
         const newRow = {

@@ -31,7 +31,6 @@ async function logEvent(
 
         let notiflyUserID = await localForage.getItem('__notiflyUserID');
         if (!notiflyUserID) {
-            // Use generateNotiflyUserID to not call localForage again
             notiflyUserID = await generateNotiflyUserID(projectID, externalUserID, deviceToken, notiflyDeviceID);
         }
 
@@ -116,7 +115,8 @@ function _getRequestOptionsForLogEvent(token: string, body: string): RequestInit
 }
 
 async function sessionStart(): Promise<void> {
-    const notifAuthStatus = (typeof Notification) === 'undefined' ? -1 : mapNotificationPermissionToEnum(Notification.permission);
+    const notifAuthStatus =
+        typeof Notification === 'undefined' ? -1 : mapNotificationPermissionToEnum(Notification.permission);
     return await logEvent('session_start', { notif_auth_status: notifAuthStatus }, null, true);
 }
 

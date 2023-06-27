@@ -73,7 +73,7 @@ async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
             const { vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis } = pushSubscriptionOptions;
             await registerServiceWorker(vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis);
         }
-        await syncState(projectId, notiflyUserID);
+        await syncState(projectId, notiflyUserID, notiflyDeviceID);
         await sessionStart();
 
         return onInitializationSuccess();
