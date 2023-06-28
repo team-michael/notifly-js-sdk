@@ -10,15 +10,14 @@ import type {
     DeviceProperties,
     SegmentOperator,
     SegmentConditionUnitType,
-    SegmentConditionValueType,
 } from '../Types';
 import { ConditionValueComparator, getKSTCalendarDateString } from './Utils';
 import { WebMessageScheduler } from './Scheduler';
 
 export class WebMessageManager {
-    private static eventIntermediateCounts: EventIntermediateCounts[] = [];
-    private static inWebMessageCampaigns: Campaign[] = [];
-    private static userData: UserData = {};
+    private static _eventIntermediateCounts: EventIntermediateCounts[] = [];
+    private static _inWebMessageCampaigns: Campaign[] = [];
+    private static _userData: UserData = {};
 
     static async refreshState() {
         try {
@@ -44,13 +43,13 @@ export class WebMessageManager {
                 'GET'
             );
             if (data.eventIntermediateCountsData != null) {
-                this.eventIntermediateCounts = data.eventIntermediateCountsData;
+                this._eventIntermediateCounts = data.eventIntermediateCountsData;
             }
             if (data.campaignData != null) {
-                this.inWebMessageCampaigns = data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message');
+                this._inWebMessageCampaigns = data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message');
             }
             if (data.userData != null) {
-                this.userData = data.userData;
+                this._userData = data.userData;
             }
             return data;
         } catch (error) {
@@ -60,8 +59,8 @@ export class WebMessageManager {
 
     static updateUserData(params: Record<string, any>) {
         Object.keys(params).map((key) => {
-            if (this.userData && this.userData.user_properties) {
-                this.userData.user_properties[key] = params[key];
+            if (this._userData && this._userData.user_properties) {
+                this._userData.user_properties[key] = params[key];
             }
         });
     }
@@ -70,6 +69,15 @@ export class WebMessageManager {
         eventName: string,
         eventParams: Record<string, any>,
         externalUserID: string | null,
+        segmentationEventParamKeys?: string[] | null
+    ) {
+        this._updateEventCounts(eventName, eventParams, segmentationEventParamKeys);
+        this._triggerWebMessages(eventName, eventParams, externalUserID);
+    }
+
+    private static _updateEventCounts(
+        eventName: string,
+        eventParams: Record<string, any>,
         segmentationEventParamKeys?: string[] | null
     ) {
         const formattedDate = getKSTCalendarDateString();
@@ -83,21 +91,27 @@ export class WebMessageManager {
                 return row.dt === formattedDate && row.name === eventName;
             }
         };
-        const existingRow = this.eventIntermediateCounts.find(predicate);
+        const existingRow = this._eventIntermediateCounts.find(predicate);
         if (existingRow) {
             // If an existing row is found, increase the count by 1
             existingRow.count += 1;
         } else {
             // If no existing row is found, create a new entry
-            this.eventIntermediateCounts.push({
+            this._eventIntermediateCounts.push({
                 dt: formattedDate,
                 name: eventName,
                 count: 1,
                 event_params: eventParams || {},
             });
         }
+    }
 
-        this._getCampaignsToSchedule(this.inWebMessageCampaigns, eventName, eventParams, externalUserID).forEach(
+    private static _triggerWebMessages(
+        eventName: string,
+        eventParams: Record<string, any>,
+        externalUserID: string | null
+    ) {
+        this._getCampaignsToSchedule(this._inWebMessageCampaigns, eventName, eventParams, externalUserID).forEach(
             WebMessageScheduler.scheduleInWebMessage.bind(WebMessageScheduler)
         );
     }
@@ -190,9 +204,9 @@ export class WebMessageManager {
         const message = campaign.message;
         const modalProperties = message.modal_properties;
         const templateName = modalProperties.template_name;
-        if (this.userData && this.userData.user_properties) {
+        if (this._userData && this._userData.user_properties) {
             const currentTimestamp = Math.floor(Date.now() / 1000);
-            const hideUntilTimestamp = this.userData.user_properties[`hide_in_web_message_${templateName}`];
+            const hideUntilTimestamp = this._userData.user_properties[`hide_in_web_message_${templateName}`];
             if (currentTimestamp <= hideUntilTimestamp) {
                 // Hidden
                 return false;
@@ -257,14 +271,14 @@ export class WebMessageManager {
 
         let totalCount: number;
         if (event_condition_type === 'count X') {
-            totalCount = this.eventIntermediateCounts.reduce((sum, row) => {
+            totalCount = this._eventIntermediateCounts.reduce((sum, row) => {
                 if (row.name === event) {
                     return sum + row.count;
                 }
                 return sum;
             }, 0);
         } else if (event_condition_type === 'count X in Y days') {
-            totalCount = this.eventIntermediateCounts
+            totalCount = this._eventIntermediateCounts
                 .filter((row) => row.name === event)
                 .filter((row) => {
                     const start = getKSTCalendarDateString(-(secondary_value as number));
@@ -281,7 +295,7 @@ export class WebMessageManager {
         return _compare(totalCount, operator, value);
     }
 
-    static _matchUserPropertyBasedCondition(condition: Condition, eventParams: Record<string, any>) {
+    private static _matchUserPropertyBasedCondition(condition: Condition, eventParams: Record<string, any>) {
         const { unit, attribute, operator, useEventParamsAsConditionValue, comparison_parameter, valueType } =
             condition;
 
@@ -289,11 +303,11 @@ export class WebMessageManager {
             return false;
         }
 
-        const userProperties = this.userData.user_properties;
+        const userProperties = this._userData.user_properties;
         if (!userProperties) {
             return false;
         }
-        const userAttributeValue = this._extractUserAttribute(unit, this.userData, attribute as string);
+        const userAttributeValue = this._extractUserAttribute(unit, this._userData, attribute as string);
         if (!userAttributeValue) {
             return false;
         }
@@ -342,4 +356,22 @@ export class WebMessageManager {
                 return null;
         }
     }
+
+    /**
+     * ONLY FOR TESTING PURPOSES
+     */
+    public static set eventIntermediateCounts(counts: EventIntermediateCounts[]) {
+        this._eventIntermediateCounts = counts;
+    }
+    public static get eventIntermediateCounts() {
+        return this._eventIntermediateCounts;
+    }
+
+    public static set userData(userData: UserData) {
+        this._userData = userData;
+    }
+
+    public static updateEventCounts = this._updateEventCounts;
+    public static isEntityOfSegment = this._isEntityOfSegment;
+    public static getCampaignsToSchedule = this._getCampaignsToSchedule;
 }

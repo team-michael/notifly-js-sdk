@@ -1,4 +1,4 @@
-import { getCognitoIdToken } from '../../src/auth';
+import { getCognitoIdToken } from '../../src/API/Auth';
 
 jest.mock('localforage', () => ({
     config: jest.fn(),

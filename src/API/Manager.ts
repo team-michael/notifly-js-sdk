@@ -35,7 +35,7 @@ export class APIManager {
         retryCount = 0
     ): Promise<any> {
         if (!this.username || !this.password) {
-            throw new Error('Not initialized');
+            console.warn('[Notifly]: APIManager has not been initialized. API may not work as expected.');
         }
 
         const request: RequestInit = {
@@ -59,6 +59,11 @@ export class APIManager {
             if (retryCount < this.MAX_RETRY_COUNT_ON_TOKEN_EXPIRED) {
                 if (response.status === 401) {
                     // Invalid token
+                    if (!this.username || !this.password) {
+                        throw new Error(
+                            'Username or password required when token has expired. Call APIManager.initialize() first to refresh token.'
+                        );
+                    }
                     this.cognitoIdToken = await saveCognitoIdToken(this.username, this.password);
                 }
                 return await this._call(url, method, body, redirect, retryCount + 1);
