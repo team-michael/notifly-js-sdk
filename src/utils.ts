@@ -1,6 +1,6 @@
 import { v4, v5 } from 'uuid';
-import localForage from './localforage';
-import { NAMESPACE } from './constants';
+import localForage from './LocalForage';
+import { NAMESPACE } from './Constants';
 
 async function generateNotiflyUserID(
     projectID: string,

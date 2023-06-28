@@ -1,6 +1,6 @@
 import * as localForage from 'localforage';
 
-export function showPopup(promptDelayMillis = 5000): Promise<NotificationPermission> {
+export function showPrompt(promptDelayMillis = 5000): Promise<NotificationPermission> {
     let delay = promptDelayMillis;
     if (delay < 0) {
         console.warn('[Notifly] Invalid prompt delay. Defaulting to 5000 milliseconds.');

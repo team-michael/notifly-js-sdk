@@ -1,13 +1,13 @@
-import localForage from './src/localforage';
+import localForage from './src/LocalForage';
 
-import type { NotiflyInitializeOptions } from './src/types';
-import { logEvent, sessionStart } from './src/logEvent';
-import { saveCognitoIdToken } from './src/auth';
-import { setUserId, setUserProperties, deleteUser } from './src/user';
-import { getNotiflyUserID, getNotiflyDeviceID } from './src/utils';
-import { setDeviceToken } from './src/device';
-import { syncState } from './src/state';
-import { registerServiceWorker } from './src/push';
+import type { NotiflyInitializeOptions } from './src/Types';
+import { WebMessageManager } from './src/WebMessages/Manager';
+import { APIManager } from './src/API/Manager';
+import { registerServiceWorker } from './src/Push';
+import { logEvent, sessionStart } from './src/Event';
+import { setUserId, setUserProperties, deleteUser } from './src/User';
+import { getNotiflyUserID, getNotiflyDeviceID } from './src/Utils';
+import { setDeviceToken } from './src/Device';
 
 let initializationLock = false;
 let isNotiflyInitialized = false;
@@ -58,22 +58,21 @@ async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
         const [notiflyUserID, notiflyDeviceID] = await Promise.all([
             getNotiflyUserID(projectId, undefined, deviceToken),
             getNotiflyDeviceID(deviceToken),
-            saveCognitoIdToken(username, password),
         ]);
+
         await _saveNotiflyData({
             __notiflyProjectID: projectId,
-            __notiflyUserName: username,
-            __notiflyPassword: password,
             __notiflyDeviceID: notiflyDeviceID,
             __notiflyUserID: notiflyUserID,
             ...(deviceToken !== null && deviceToken !== undefined && { __notiflyDeviceToken: deviceToken }),
         });
 
+        await APIManager.initialize(username, password);
         if (pushSubscriptionOptions) {
             const { vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis } = pushSubscriptionOptions;
             await registerServiceWorker(vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis);
         }
-        await syncState(projectId, notiflyUserID, notiflyDeviceID);
+        await WebMessageManager.syncState(projectId, notiflyUserID, notiflyDeviceID);
         await sessionStart();
 
         return onInitializationSuccess();

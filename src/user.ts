@@ -1,7 +1,8 @@
-import localForage from './localforage';
-import { logEvent } from './logEvent';
-import { generateNotiflyUserID } from './utils';
-import { refreshState, updateUserData } from './state';
+import localForage from './LocalForage';
+
+import { WebMessageManager } from './WebMessages/Manager';
+import { logEvent } from './Event';
+import { generateNotiflyUserID } from './Utils';
 
 const SYNC_TIMEOUT_AFTER_USER_ID_CHANGED = 5000;
 
@@ -30,7 +31,7 @@ async function setUserId(userID?: string | null | undefined) {
     } catch (err) {
         console.warn('[Notifly] setUserId failed');
     } finally {
-        setTimeout(refreshState, SYNC_TIMEOUT_AFTER_USER_ID_CHANGED);
+        setTimeout(WebMessageManager.refreshState.bind(WebMessageManager), SYNC_TIMEOUT_AFTER_USER_ID_CHANGED);
     }
 }
 
@@ -70,7 +71,7 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
         }
 
         // Update local state
-        updateUserData(params);
+        WebMessageManager.updateUserData(params);
 
         return await logEvent('set_user_properties', params, null, true);
     } catch (err) {
@@ -111,7 +112,7 @@ async function deleteUser(): Promise<void> {
         await logEvent('delete_user', {}, null, true);
         await _cleanUserIDInLocalForage();
         await logEvent('remove_external_user_id', {}, null, true);
-        await refreshState();
+        await WebMessageManager.refreshState();
         return;
     } catch (err) {
         console.warn('[Notifly] Failed to delete user');

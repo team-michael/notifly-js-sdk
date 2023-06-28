@@ -1,4 +1,4 @@
-import type { Campaign } from '../../src/types';
+import type { Campaign } from '../../src/Types';
 
 import {
     updateEventIntermediateCounts,
@@ -22,11 +22,11 @@ describe('updateEventIntermediateCounts', () => {
 
     test('should update the count of an existing row', () => {
         setEventIntermediateCountsForTest([
-            { dt: '2023-05-26', name: 'Event A', count: 3 },
-            { dt: '2023-05-26', name: 'Event B', count: 5 },
+            { dt: '2023-05-26', name: 'Event A', count: 3, event_params: {} },
+            { dt: '2023-05-26', name: 'Event B', count: 5, event_params: {} },
         ]);
 
-        updateEventIntermediateCounts('Event A');
+        updateEventIntermediateCounts('Event A', {});
 
         const eventIntermediateCounts = getEventIntermediateCountsForTest();
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].count === 4);
@@ -37,11 +37,11 @@ describe('updateEventIntermediateCounts', () => {
 
     test('should add a new entry when no existing row is found', () => {
         setEventIntermediateCountsForTest([
-            { dt: '2023-05-26', name: 'Event A', count: 4 },
-            { dt: '2023-05-26', name: 'Event B', count: 5 },
+            { dt: '2023-05-26', name: 'Event A', count: 4, event_params: {} },
+            { dt: '2023-05-26', name: 'Event B', count: 5, event_params: {} },
         ]);
 
-        updateEventIntermediateCounts('Event C');
+        updateEventIntermediateCounts('Event C', {});
 
         const eventIntermediateCounts = getEventIntermediateCountsForTest();
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].count === 4);
@@ -53,7 +53,7 @@ describe('updateEventIntermediateCounts', () => {
     });
 
     test('should create a new entry when the array is empty', () => {
-        updateEventIntermediateCounts('Event A');
+        updateEventIntermediateCounts('Event A', {});
 
         const eventIntermediateCounts = getEventIntermediateCountsForTest();
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].count === 1);
@@ -61,9 +61,9 @@ describe('updateEventIntermediateCounts', () => {
     });
 
     test('should increase the count of an existing row', () => {
-        setEventIntermediateCountsForTest([{ dt: '2023-05-26', name: 'Event A', count: 2 }]);
+        setEventIntermediateCountsForTest([{ dt: '2023-05-26', name: 'Event A', count: 2, event_params: {} }]);
 
-        updateEventIntermediateCounts('Event A');
+        updateEventIntermediateCounts('Event A', {});
 
         const eventIntermediateCounts = getEventIntermediateCountsForTest();
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].count === 3);
@@ -71,9 +71,9 @@ describe('updateEventIntermediateCounts', () => {
     });
 
     test('should not modify the array when the event name does not match an existing row', () => {
-        setEventIntermediateCountsForTest([{ dt: '2023-05-26', name: 'Event A', count: 2 }]);
+        setEventIntermediateCountsForTest([{ dt: '2023-05-26', name: 'Event A', count: 2, event_params: {} }]);
 
-        updateEventIntermediateCounts('Event B');
+        updateEventIntermediateCounts('Event B', {});
 
         const eventIntermediateCounts = getEventIntermediateCountsForTest();
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].count === 2);
@@ -87,7 +87,7 @@ describe('getCampaignsToSchedule', () => {
     beforeAll(() => {
         jest.clearAllMocks();
         jest.mock('../../src/state', () => ({
-            checkCondition: jest.fn().mockReturnValue(true),
+            _matchCondition: jest.fn().mockReturnValue(true),
         }));
     });
     afterAll(() => {
@@ -144,13 +144,13 @@ describe('getCampaignsToSchedule', () => {
     ];
 
     it('Test case 1: Valid event name with matching campaigns', () => {
-        const result = _getCampaignsToSchedule(campaigns, 'event1');
+        const result = _getCampaignsToSchedule(campaigns, 'event1', {}, null);
         expect(result.map((campaign) => campaign.id)).toEqual(['test-campaign-1', 'test-campaign-3']);
     });
 
     it('Test case 2: Valid event name with no matching campaigns', () => {
         const nonExistingEventName = 'event3';
-        const result = _getCampaignsToSchedule(campaigns, nonExistingEventName);
+        const result = _getCampaignsToSchedule(campaigns, nonExistingEventName, {}, null);
         expect(result).toEqual([]);
     });
 });
@@ -170,7 +170,7 @@ describe('checkCondition', () => {
             segment_type: 'some_other_type',
         };
 
-        const result = checkConditionForTest(campaign);
+        const result = checkConditionForTest(campaign, 'test-event', {}, null);
 
         expect(result).toBe(false);
     });
@@ -190,7 +190,7 @@ describe('checkCondition', () => {
             delay: 0,
         };
 
-        const result = checkConditionForTest(campaign);
+        const result = checkConditionForTest(campaign, 'test-event', {}, null);
 
         expect(result).toBe(true);
     });
@@ -215,7 +215,7 @@ describe('checkCondition', () => {
             delay: 0,
         };
 
-        const result = checkConditionForTest(campaign);
+        const result = checkConditionForTest(campaign, 'test-event', {}, null);
 
         expect(result).toBe(false);
     });
@@ -226,8 +226,8 @@ describe('checkCondition', () => {
         const formattedDate = currentDate.toISOString().split('T')[0];
 
         const eventIntermediateCounts = [
-            { dt: formattedDate, name: 'Event A', count: 3 },
-            { dt: formattedDate, name: 'Event B', count: 5 },
+            { dt: formattedDate, name: 'Event A', count: 3, event_params: {} },
+            { dt: formattedDate, name: 'Event B', count: 5, event_params: {} },
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
@@ -243,7 +243,6 @@ describe('checkCondition', () => {
                     {
                         conditions: [
                             {
-                                attribute: '',
                                 event: 'Event A',
                                 event_condition_type: 'count X',
                                 operator: '>=',
@@ -260,7 +259,7 @@ describe('checkCondition', () => {
             delay: 0,
         };
 
-        const result = checkConditionForTest(campaign);
+        const result = checkConditionForTest(campaign, 'test-event', {}, null);
 
         expect(result).toBe(true);
     });
@@ -271,8 +270,8 @@ describe('checkCondition', () => {
         const formattedDate = currentDate.toISOString().split('T')[0];
 
         const eventIntermediateCounts = [
-            { dt: formattedDate, name: 'Event A', count: 3 },
-            { dt: formattedDate, name: 'Event B', count: 5 },
+            { dt: formattedDate, name: 'Event A', count: 3, event_params: {} },
+            { dt: formattedDate, name: 'Event B', count: 5, event_params: {} },
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
@@ -288,7 +287,6 @@ describe('checkCondition', () => {
                     {
                         conditions: [
                             {
-                                attribute: '',
                                 event: 'Event A',
                                 event_condition_type: 'count X',
                                 operator: '>=',
@@ -305,7 +303,7 @@ describe('checkCondition', () => {
             delay: 0,
         };
 
-        const result = checkConditionForTest(campaign);
+        const result = checkConditionForTest(campaign, 'test-event', {}, null);
 
         expect(result).toBe(false);
     });
@@ -316,8 +314,8 @@ describe('checkCondition', () => {
         const formattedDate = currentDate.toISOString().split('T')[0];
 
         const eventIntermediateCounts = [
-            { dt: formattedDate, name: 'Event A', count: 1 },
-            { dt: formattedDate, name: 'Event B', count: 5 },
+            { dt: formattedDate, name: 'Event A', count: 1, event_params: {} },
+            { dt: formattedDate, name: 'Event B', count: 5, event_params: {} },
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
@@ -333,7 +331,6 @@ describe('checkCondition', () => {
                     {
                         conditions: [
                             {
-                                attribute: '',
                                 event: 'Event A',
                                 event_condition_type: 'count X in Y days',
                                 operator: '>=',
@@ -350,7 +347,7 @@ describe('checkCondition', () => {
             delay: 0,
         };
 
-        const result = checkConditionForTest(campaign);
+        const result = checkConditionForTest(campaign, 'test-event', {}, null);
 
         expect(result).toBe(false);
     });
@@ -361,8 +358,8 @@ describe('checkCondition', () => {
         const formattedDate = currentDate.toISOString().split('T')[0];
 
         const eventIntermediateCounts = [
-            { dt: formattedDate, name: 'Event A', count: 10 },
-            { dt: formattedDate, name: 'Event B', count: 5 },
+            { dt: formattedDate, name: 'Event A', count: 10, event_params: {} },
+            { dt: formattedDate, name: 'Event B', count: 5, event_params: {} },
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
@@ -378,7 +375,6 @@ describe('checkCondition', () => {
                     {
                         conditions: [
                             {
-                                attribute: '',
                                 event: 'Event A',
                                 event_condition_type: 'count X in Y days',
                                 operator: '>=',
@@ -395,7 +391,7 @@ describe('checkCondition', () => {
             delay: 0,
         };
 
-        const result = checkConditionForTest(campaign);
+        const result = checkConditionForTest(campaign, 'test-event', {}, null);
 
         expect(result).toBe(true);
     });
@@ -421,12 +417,10 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'age',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '>=',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 25,
+                                valueType: 'INT',
                             },
                         ],
                         condition_operator: null,
@@ -436,7 +430,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = checkConditionForTest(campaign);
+        const result = checkConditionForTest(campaign, 'test-event', {}, null);
 
         expect(result).toBe(true);
     });
@@ -462,12 +456,10 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'age',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '<',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 25,
+                                valueType: 'INT',
                             },
                         ],
                         condition_operator: null,
@@ -477,7 +469,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = checkConditionForTest(campaign);
+        const result = checkConditionForTest(campaign, 'test-event', {}, null);
 
         expect(result).toBe(false);
     });
@@ -504,12 +496,10 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'age',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '>=',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 25,
+                                valueType: 'INT',
                             },
                         ],
                         condition_operator: null,
@@ -518,12 +508,10 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'country',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '<>',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 'USA',
+                                valueType: 'TEXT',
                             },
                         ],
                         condition_operator: null,
@@ -533,7 +521,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = checkConditionForTest(campaign);
+        const result = checkConditionForTest(campaign, 'test-event', {}, null);
 
         expect(result).toBe(true);
     });
@@ -559,12 +547,10 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'age',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '<',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 25,
+                                valueType: 'INT',
                             },
                         ],
                         condition_operator: null,
@@ -573,12 +559,10 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'country',
-                                event: '',
-                                event_condition_type: '',
-                                operator: '!=',
-                                secondary_value: 0,
+                                operator: '<>',
                                 unit: 'user',
                                 value: 'USA',
+                                valueType: 'TEXT',
                             },
                         ],
                         condition_operator: null,
@@ -587,12 +571,10 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'gender',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '=',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 'female',
+                                valueType: 'TEXT',
                             },
                         ],
                         condition_operator: null,
@@ -602,7 +584,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = checkConditionForTest(campaign);
+        const result = checkConditionForTest(campaign, 'test-event', {}, null);
 
         expect(result).toBe(false);
     });
@@ -628,30 +610,24 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'age',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '>',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 25,
+                                valueType: 'INT',
                             },
                             {
                                 attribute: 'gender',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '=',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 'male',
+                                valueType: 'TEXT',
                             },
                             {
                                 attribute: 'country',
-                                event: '',
-                                event_condition_type: '',
-                                operator: '!=',
-                                secondary_value: 0,
+                                operator: '<>',
                                 unit: 'user',
                                 value: 'UK',
+                                valueType: 'TEXT',
                             },
                         ],
                         condition_operator: 'AND',
@@ -660,12 +636,10 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'country',
-                                event: '',
-                                event_condition_type: '',
-                                operator: '!=',
-                                secondary_value: 0,
+                                operator: '<>',
                                 unit: 'user',
                                 value: 'USA',
+                                valueType: 'TEXT',
                             },
                         ],
                         condition_operator: null,
@@ -674,12 +648,10 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'gender',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '=',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 'female',
+                                valueType: 'TEXT',
                             },
                         ],
                         condition_operator: null,
@@ -689,7 +661,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = checkConditionForTest(campaign);
+        const result = checkConditionForTest(campaign, 'test-event', {}, null);
 
         expect(result).toBe(true);
     });
@@ -715,30 +687,24 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'age',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '=',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 25,
+                                valueType: 'INT',
                             },
                             {
                                 attribute: 'gender',
-                                event: '',
-                                event_condition_type: '',
-                                operator: '!=',
-                                secondary_value: 0,
+                                operator: '<>',
                                 unit: 'user',
                                 value: 'male',
+                                valueType: 'TEXT',
                             },
                             {
                                 attribute: 'country',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '=',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 'UK',
+                                valueType: 'TEXT',
                             },
                         ],
                         condition_operator: 'AND',
@@ -747,12 +713,10 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'country',
-                                event: '',
-                                event_condition_type: '',
-                                operator: '!=',
-                                secondary_value: 0,
+                                operator: '<>',
                                 unit: 'user',
                                 value: 'USA',
+                                valueType: 'TEXT',
                             },
                         ],
                         condition_operator: null,
@@ -761,12 +725,10 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'gender',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '=',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 'male',
+                                valueType: 'TEXT',
                             },
                         ],
                         condition_operator: null,
@@ -776,7 +738,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = checkConditionForTest(campaign);
+        const result = checkConditionForTest(campaign, 'test-event', {}, null);
 
         expect(result).toBe(true);
     });
@@ -789,8 +751,8 @@ describe('checkCondition', () => {
             },
         });
         const eventIntermediateCounts = [
-            { dt: '2023-05-26', name: 'Event A', count: 3 },
-            { dt: '2023-05-26', name: 'Event B', count: 5 },
+            { dt: '2023-05-26', name: 'Event A', count: 3, event_params: {} },
+            { dt: '2023-05-26', name: 'Event B', count: 5, event_params: {} },
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
@@ -807,15 +769,12 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'age',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '>',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 25,
+                                valueType: 'INT',
                             },
                             {
-                                attribute: '',
                                 event: 'Event A',
                                 event_condition_type: 'count X',
                                 operator: '>=',
@@ -825,12 +784,10 @@ describe('checkCondition', () => {
                             },
                             {
                                 attribute: 'country',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '=',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 'USA',
+                                valueType: 'TEXT',
                             },
                         ],
                         condition_operator: 'AND',
@@ -839,12 +796,10 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'country',
-                                event: '',
-                                event_condition_type: '',
-                                operator: '!=',
-                                secondary_value: 0,
+                                operator: '<>',
                                 unit: 'user',
                                 value: 'USA',
+                                valueType: 'TEXT',
                             },
                         ],
                         condition_operator: null,
@@ -853,12 +808,10 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'gender',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '=',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 'female',
+                                valueType: 'TEXT',
                             },
                         ],
                         condition_operator: null,
@@ -868,7 +821,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = checkConditionForTest(campaign);
+        const result = checkConditionForTest(campaign, 'test-event', {}, null);
 
         expect(result).toBe(true);
     });
@@ -885,8 +838,8 @@ describe('checkCondition', () => {
             },
         });
         const eventIntermediateCounts = [
-            { dt: formattedDate, name: 'Event A', count: 3 },
-            { dt: formattedDate, name: 'Event B', count: 5 },
+            { dt: formattedDate, name: 'Event A', count: 3, event_params: {} },
+            { dt: formattedDate, name: 'Event B', count: 5, event_params: {} },
         ];
         setEventIntermediateCountsForTest(eventIntermediateCounts);
 
@@ -903,15 +856,12 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'age',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '>',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 25,
+                                valueType: 'INT',
                             },
                             {
-                                attribute: '',
                                 event: 'Event A',
                                 event_condition_type: 'count X in Y days',
                                 operator: '=',
@@ -921,12 +871,10 @@ describe('checkCondition', () => {
                             },
                             {
                                 attribute: 'country',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '=',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 'USA',
+                                valueType: 'TEXT',
                             },
                         ],
                         condition_operator: 'AND',
@@ -935,12 +883,10 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'country',
-                                event: '',
-                                event_condition_type: '',
-                                operator: '!=',
-                                secondary_value: 0,
+                                operator: '<>',
                                 unit: 'user',
                                 value: 'USA',
+                                valueType: 'TEXT',
                             },
                         ],
                         condition_operator: null,
@@ -949,12 +895,10 @@ describe('checkCondition', () => {
                         conditions: [
                             {
                                 attribute: 'gender',
-                                event: '',
-                                event_condition_type: '',
                                 operator: '=',
-                                secondary_value: 0,
                                 unit: 'user',
                                 value: 'female',
+                                valueType: 'TEXT',
                             },
                         ],
                         condition_operator: null,
@@ -964,7 +908,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = checkConditionForTest(campaign);
+        const result = checkConditionForTest(campaign, 'test-event', {}, null);
 
         expect(result).toBe(true);
     });
