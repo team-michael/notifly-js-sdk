@@ -304,6 +304,9 @@ export class WebMessageManager {
         } else {
             value = condition.value;
         }
+        if (!value) {
+            return false;
+        }
 
         switch (operator) {
             case '=':
