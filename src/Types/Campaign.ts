@@ -1,14 +1,21 @@
-type GroupOperator = 'OR' | null;
-type ConditionOperator = 'AND' | null;
+export type SegmentConditionUnitType = 'user' | 'device' | 'event';
+export type SegmentConditionValueType = 'INT' | 'TEXT' | 'BOOL';
+export type GroupOperator = 'OR' | null;
+export type ConditionOperator = 'AND' | null;
+export type SegmentOperator = '=' | '<>' | '>' | '>=' | '<' | '<=' | '@>';
+export type EventBasedConditionType = 'count X' | 'count X in Y days';
 
 export interface Condition {
-    attribute: string;
-    event: string;
-    event_condition_type: string;
-    operator: string;
-    secondary_value: number;
-    unit: string;
+    unit: SegmentConditionUnitType;
+    operator: SegmentOperator;
     value: any;
+    attribute?: string;
+    event?: string;
+    event_condition_type?: EventBasedConditionType;
+    secondary_value?: number;
+    valueType?: SegmentConditionValueType;
+    comparison_parameter?: string;
+    useEventParamsAsConditionValue?: boolean;
 }
 
 export interface Campaign {
@@ -16,6 +23,8 @@ export interface Campaign {
     channel: string;
     last_updated_timestamp: number;
     segment_type: string;
+    testing?: boolean;
+    whitelist?: string[];
     message: {
         html_url: string;
         modal_properties: {

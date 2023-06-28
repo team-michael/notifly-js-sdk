@@ -1,8 +1,8 @@
 import localForage from 'localforage';
-import { setUserProperties } from '../../src/user';
-import { logEvent } from '../../src/logEvent';
+import { setUserProperties } from '../../src/User';
+import { logEvent } from '../../src/Event';
 
-jest.mock('../../src/logEvent');
+jest.mock('../../src/Event');
 jest.mock('localforage', () => ({
     config: jest.fn(),
     getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),

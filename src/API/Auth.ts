@@ -1,4 +1,4 @@
-import localForage from './localforage';
+import localForage from '../LocalForage';
 
 /**
  * Fetches a Cognito ID token for the given user name and password.
@@ -35,9 +35,10 @@ async function getCognitoIdToken(userName: string, password: string): Promise<st
     }
 }
 
-async function saveCognitoIdToken(userName: string, password: string): Promise<void> {
+async function saveCognitoIdToken(userName: string, password: string): Promise<string> {
     const cognitoIDToken = await getCognitoIdToken(userName, password);
     await localForage.setItem('__notiflyCognitoIDToken', cognitoIDToken);
+    return cognitoIDToken;
 }
 
 export { getCognitoIdToken, saveCognitoIdToken };

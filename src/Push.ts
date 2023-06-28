@@ -1,8 +1,8 @@
 import { v5 } from 'uuid';
-import localForage from './localforage';
-import { NAMESPACE } from './constants';
-import { logEvent } from './logEvent';
-import { showPopup } from './popup/popup';
+import localForage from './LocalForage';
+import { NAMESPACE } from './Constants';
+import { logEvent } from './Event';
+import { showPrompt } from './Prompt';
 
 async function registerServiceWorker(
     vapidPublicKey: string,
@@ -24,7 +24,7 @@ async function registerServiceWorker(
         if (askPermission && permission === 'default') {
             const notiflyNotificationPermission = await localForage.getItem('__notiflyNotificationPermission');
             if (notiflyNotificationPermission != 'denied') {
-                permission = await showPopup(promptDelayMillis);
+                permission = await showPrompt(promptDelayMillis);
             }
         }
         if (permission !== 'granted') {

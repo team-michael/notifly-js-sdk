@@ -1,7 +1,7 @@
 import { v5 } from 'uuid';
 import localForage from 'localforage';
-import { NAMESPACE } from '../../src/constants';
-import { getNotiflyUserID, getPlatform } from '../../src/utils';
+import { NAMESPACE } from '../../src/Constants';
+import { getNotiflyUserID, getPlatform } from '../../src/Utils';
 
 jest.mock('localforage', () => ({
     config: jest.fn(),

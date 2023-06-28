@@ -1,4 +1,4 @@
-import localForage from './localforage';
+import localForage from './LocalForage';
 
 /**
  * Sets the device token for the current device.
