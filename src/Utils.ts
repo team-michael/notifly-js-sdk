@@ -1,8 +1,30 @@
 import { v4, v5 } from 'uuid';
-import localForage from './LocalForage';
 import { NAMESPACE } from './Constants';
+import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 
-async function generateNotiflyUserID(
+async function initializeNotiflyStorage(projectId: string, username: string, password: string, deviceToken?: string) {
+    const [_token, externalUserId] = await NotiflyStorage.getItems([
+        NotiflyStorageKeys.NOTIFLY_DEVICE_TOKEN,
+        NotiflyStorageKeys.EXTERNAL_USER_ID,
+    ]);
+    const token = deviceToken || _token;
+
+    const [deviceId, notiflyUserId] = await Promise.all([
+        getInitialDeviceId(token),
+        getInitialNotiflyUserId(projectId, externalUserId, token),
+    ]);
+
+    await NotiflyStorage.setItems({
+        __notiflyProjectID: projectId,
+        __notiflyUserName: username,
+        __notiflyPassword: password,
+        ...(token ? { __notiflyDeviceToken: token } : {}),
+        __notiflyDeviceID: deviceId,
+        __notiflyUserID: notiflyUserId,
+    });
+}
+
+async function generateNotiflyUserId(
     projectID: string,
     externalUserID?: string | null,
     deviceToken?: string | null,
@@ -20,39 +42,32 @@ async function generateNotiflyUserID(
 
     // If externalUserID, deviceToken, and deviceID do not exist, generate a random ID
     // based on a seed string that persists throughout the lifecycle of localForage.,
-    const storedSeedString = await localForage.getItem<string>('__notiflySeedString');
+    const storedSeedString = await NotiflyStorage.getItem(NotiflyStorageKeys.SEED_STRING);
     if (storedSeedString) {
         return v5(storedSeedString, NAMESPACE.REGISTERED_USERID).replace(/-/g, '');
     } else {
         const seedString = generateRandomString(8);
-        await localForage.setItem('__notiflySeedString', seedString);
+        await NotiflyStorage.setItem(NotiflyStorageKeys.SEED_STRING, seedString);
         return v5(seedString, NAMESPACE.REGISTERED_USERID).replace(/-/g, '');
     }
 }
 
-async function getNotiflyUserID(projectID: string, externalUserID?: string, deviceToken?: string) {
-    const storedNotiflyUserID = await localForage.getItem<string>('__notiflyUserID');
+async function getInitialNotiflyUserId(projectID: string, externalUserID?: string | null, deviceToken?: string | null) {
+    const storedNotiflyUserID = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_USER_ID);
     if (storedNotiflyUserID) {
         return storedNotiflyUserID;
     }
 
-    const id = externalUserID || (await localForage.getItem<string>('__notiflyExternalUserID'));
-    const token = (await localForage.getItem<string>('__notiflyDeviceToken')) || deviceToken;
-
-    return generateNotiflyUserID(projectID, id, token);
+    return await generateNotiflyUserId(projectID, externalUserID, deviceToken);
 }
 
-async function getNotiflyDeviceID(deviceToken?: string) {
-    const storedNotiflyDeviceID = await localForage.getItem<string>('__notiflyDeviceID');
+async function getInitialDeviceId(deviceToken?: string | null) {
+    const storedNotiflyDeviceID = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_DEVICE_ID);
     if (storedNotiflyDeviceID) {
         return storedNotiflyDeviceID;
     }
 
-    const token = deviceToken || (await localForage.getItem<string>('__notiflyDeviceToken'));
-    if (token) {
-        return v5(token, NAMESPACE.DEVICEID).replace(/-/g, '');
-    }
-    return v4();
+    return deviceToken ? v5(deviceToken, NAMESPACE.DEVICEID).replace(/-/g, '') : v4();
 }
 
 function getPlatform(): string {
@@ -85,4 +100,4 @@ function generateRandomString(length: number): string {
     return result;
 }
 
-export { generateNotiflyUserID, getNotiflyUserID, getNotiflyDeviceID, getPlatform };
+export { initializeNotiflyStorage, generateNotiflyUserId, getInitialNotiflyUserId, getInitialDeviceId, getPlatform };

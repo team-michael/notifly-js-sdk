@@ -1,25 +1,26 @@
-import localForage from '../LocalForage';
+import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 import { saveCognitoIdToken } from './Auth';
 
 export class APIManager {
     private static readonly MAX_RETRY_COUNT_ON_TOKEN_EXPIRED = 3;
-    private static username: string | null = null;
-    private static password: string | null = null;
-    private static cognitoIdToken: string | null = null;
+    private static _username: string | null = null;
+    private static _password: string | null = null;
+    private static _cognitoIdToken: string | null = null;
 
-    static async initialize(username: string, password: string) {
-        this.username = username;
-        this.password = password;
-
-        await Promise.all([
-            localForage.setItem('__notiflyUserName', username),
-            localForage.setItem('__notiflyPassword', password),
+    static async initialize() {
+        [this._username, this._password] = await NotiflyStorage.getItems([
+            NotiflyStorageKeys.USERNAME,
+            NotiflyStorageKeys.PASSWORD,
         ]);
 
-        this.cognitoIdToken = await localForage.getItem<string>('__notiflyCognitoIDToken');
-        if (!this.cognitoIdToken) {
-            this.cognitoIdToken = await saveCognitoIdToken(username, password);
+        if (!this._username || !this._password) {
+            throw new Error('Username or password not found. Call Notifly.initialize() first.');
+        }
+
+        this._cognitoIdToken = await NotiflyStorage.getItem(NotiflyStorageKeys.COGNITO_ID_TOKEN);
+        if (!this._cognitoIdToken) {
+            this._cognitoIdToken = await saveCognitoIdToken(this._username, this._password);
         }
     }
 
@@ -34,7 +35,7 @@ export class APIManager {
         redirect?: RequestRedirect,
         retryCount = 0
     ): Promise<any> {
-        if (!this.username || !this.password) {
+        if (!this._username || !this._password) {
             console.warn('[Notifly]: APIManager has not been initialized. API may not work as expected.');
         }
 
@@ -42,7 +43,7 @@ export class APIManager {
             method,
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${this.cognitoIdToken}`,
+                Authorization: `Bearer ${this._cognitoIdToken}`,
             },
         };
         if (body) {
@@ -59,12 +60,12 @@ export class APIManager {
             if (retryCount < this.MAX_RETRY_COUNT_ON_TOKEN_EXPIRED) {
                 if (response.status === 401) {
                     // Invalid token
-                    if (!this.username || !this.password) {
+                    if (!this._username || !this._password) {
                         throw new Error(
                             'Username or password required when token has expired. Call APIManager.initialize() first to refresh token.'
                         );
                     }
-                    this.cognitoIdToken = await saveCognitoIdToken(this.username, this.password);
+                    this._cognitoIdToken = await saveCognitoIdToken(this._username, this._password);
                 }
                 return await this._call(url, method, body, redirect, retryCount + 1);
             } else {

@@ -3,8 +3,9 @@ import localForage from './LocalForage';
 
 import { APIManager } from './API/Manager';
 import { WebMessageManager } from './WebMessages/Manager';
-import { generateNotiflyUserID, getPlatform } from './Utils';
+import { generateNotiflyUserId, getPlatform } from './Utils';
 import { SDK_VERSION } from './Constants';
+import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 
@@ -15,21 +16,27 @@ async function logEvent(
     isInternalEvent = false
 ): Promise<void> {
     try {
-        const [projectID, deviceToken, notiflyDeviceID, externalUserID] = await Promise.all([
-            localForage.getItem<string>('__notiflyProjectID'),
-            localForage.getItem<string>('__notiflyDeviceToken'),
-            localForage.getItem<string>('__notiflyDeviceID'),
-            localForage.getItem<string>('__notiflyExternalUserID'),
+        const [projectID, deviceToken, notiflyDeviceID, externalUserID] = await NotiflyStorage.getItems([
+            NotiflyStorageKeys.PROJECT_ID,
+            NotiflyStorageKeys.NOTIFLY_DEVICE_TOKEN,
+            NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
+            NotiflyStorageKeys.EXTERNAL_USER_ID,
         ]);
 
         if (!projectID) {
-            console.error('[Notifly] Project ID should be set before logging an event.');
-            return;
+            throw new Error('Project ID should be set before logging an event.');
         }
 
-        let notiflyUserID = await localForage.getItem('__notiflyUserID');
+        let notiflyUserID = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_USER_ID);
         if (!notiflyUserID) {
-            notiflyUserID = await generateNotiflyUserID(projectID, externalUserID, deviceToken, notiflyDeviceID);
+            const generatedNotiflyUserID = await generateNotiflyUserId(
+                projectID,
+                externalUserID,
+                deviceToken,
+                notiflyDeviceID
+            );
+            notiflyUserID = generatedNotiflyUserID;
+            await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_ID, generatedNotiflyUserID);
         }
 
         const data: any = {
@@ -41,7 +48,7 @@ async function logEvent(
             segmentationEventParamKeys: segmentationEventParamKeys,
             sdk_version: SDK_VERSION,
             sdk_type: 'js',
-            time: Math.floor(new Date().valueOf() / 1000),
+            time: Math.floor(Date.now() / 1000),
             platform: getPlatform(),
         };
         if (notiflyUserID) {

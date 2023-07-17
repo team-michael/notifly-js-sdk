@@ -1,4 +1,4 @@
-import * as localForage from 'localforage';
+import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 
 export function showPrompt(promptDelayMillis = 5000): Promise<NotificationPermission> {
     let delay = promptDelayMillis;
@@ -135,7 +135,7 @@ export function showPrompt(promptDelayMillis = 5000): Promise<NotificationPermis
 
             denyButton.onclick = async () => {
                 try {
-                    await localForage.setItem('__notiflyNotificationPermission', 'denied');
+                    await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_NOTIFICATION_PERMISSION, 'denied');
                 } catch (e) {
                     console.error('[Notifly] Failed to set notification permission to denied: ', e);
                 }
@@ -145,7 +145,7 @@ export function showPrompt(promptDelayMillis = 5000): Promise<NotificationPermis
 
             closeButton.onclick = async () => {
                 try {
-                    await localForage.setItem('__notiflyNotificationPermission', 'denied');
+                    await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_NOTIFICATION_PERMISSION, 'denied');
                 } catch (e) {
                     console.error('[Notifly] Failed to set notification permission to denied: ', e);
                 }

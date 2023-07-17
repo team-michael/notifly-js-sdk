@@ -1,5 +1,5 @@
 import { v5 } from 'uuid';
-import localForage from './LocalForage';
+import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 import { NAMESPACE } from './Constants';
 import { logEvent } from './Event';
 import { showPrompt } from './Prompt';
@@ -22,7 +22,9 @@ async function registerServiceWorker(
     if (typeof Notification !== 'undefined') {
         let permission = Notification.permission;
         if (askPermission && permission === 'default') {
-            const notiflyNotificationPermission = await localForage.getItem('__notiflyNotificationPermission');
+            const notiflyNotificationPermission = await NotiflyStorage.getItem(
+                NotiflyStorageKeys.NOTIFLY_NOTIFICATION_PERMISSION
+            );
             if (notiflyNotificationPermission != 'denied') {
                 permission = await showPrompt(promptDelayMillis);
             }
@@ -69,12 +71,12 @@ async function _logSubscription(subscription: PushSubscription): Promise<void> {
     const subscriptionStr = JSON.stringify(subscription);
 
     let notiflyDeviceID;
-    const notiflyDeviceIDLocalStore = await localForage.getItem('__notiflyDeviceID');
+    const notiflyDeviceIDLocalStore = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_DEVICE_ID);
     if (notiflyDeviceIDLocalStore) {
         notiflyDeviceID = notiflyDeviceIDLocalStore;
     } else {
         notiflyDeviceID = v5(subscriptionStr, NAMESPACE.DEVICEID).replace(/-/g, '');
-        await localForage.setItem('__notiflyDeviceID', notiflyDeviceID);
+        await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_DEVICE_ID, notiflyDeviceID);
     }
 
     return await logEvent(

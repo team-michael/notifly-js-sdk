@@ -1,8 +1,7 @@
-import localForage from './LocalForage';
-
 import { WebMessageManager } from './WebMessages/Manager';
 import { logEvent } from './Event';
-import { generateNotiflyUserID } from './Utils';
+import { generateNotiflyUserId } from './Utils';
+import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 
 const SYNC_TIMEOUT_AFTER_USER_ID_CHANGED = 5000;
 
@@ -48,10 +47,10 @@ async function setUserId(userID?: string | null | undefined) {
 async function setUserProperties(params: Record<string, any>): Promise<void> {
     try {
         if (params.external_user_id) {
-            const [projectID, previousNotiflyUserID, previousExternalUserID] = await Promise.all([
-                localForage.getItem<string>('__notiflyProjectID'),
-                localForage.getItem<string>('__notiflyUserID'),
-                localForage.getItem<string>('__notiflyExternalUserID'),
+            const [projectID, previousNotiflyUserID, previousExternalUserID] = await NotiflyStorage.getItems([
+                NotiflyStorageKeys.PROJECT_ID,
+                NotiflyStorageKeys.NOTIFLY_USER_ID,
+                NotiflyStorageKeys.EXTERNAL_USER_ID,
             ]);
 
             if (!projectID) {
@@ -62,12 +61,11 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
             params['previous_notifly_user_id'] = previousNotiflyUserID;
             params['previous_external_user_id'] = previousExternalUserID;
 
-            const notiflyUserID = await generateNotiflyUserID(projectID, params.external_user_id);
-
-            await Promise.all([
-                localForage.setItem('__notiflyUserID', notiflyUserID),
-                localForage.setItem('__notiflyExternalUserID', params.external_user_id),
-            ]);
+            const notiflyUserID = await generateNotiflyUserId(projectID, params.external_user_id);
+            await NotiflyStorage.setItems({
+                __notiflyUserID: notiflyUserID,
+                __notiflyExternalUserID: params.external_user_id,
+            });
         }
 
         // Update local state
@@ -120,10 +118,7 @@ async function deleteUser(): Promise<void> {
 }
 
 async function _cleanUserIDInLocalForage() {
-    return await Promise.all([
-        localForage.removeItem('__notiflyExternalUserID'),
-        localForage.removeItem('__notiflyUserID'),
-    ]);
+    await NotiflyStorage.removeItems([NotiflyStorageKeys.NOTIFLY_USER_ID, NotiflyStorageKeys.EXTERNAL_USER_ID]);
 }
 
 export { setUserProperties, setUserId, deleteUser };

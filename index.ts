@@ -1,12 +1,10 @@
-import localForage from './src/LocalForage';
-
 import type { NotiflyInitializeOptions } from './src/Types';
 import { WebMessageManager } from './src/WebMessages/Manager';
 import { APIManager } from './src/API/Manager';
 import { registerServiceWorker } from './src/Push';
 import { logEvent, sessionStart } from './src/Event';
 import { setUserId, setUserProperties, deleteUser } from './src/User';
-import { getNotiflyUserID, getNotiflyDeviceID } from './src/Utils';
+import { initializeNotiflyStorage } from './src/Utils';
 import { setDeviceToken } from './src/Device';
 
 let initializationLock = false;
@@ -15,6 +13,7 @@ let isNotiflyInitialized = false;
 /**
  * Initializes the Notifly SDK. This should be called as early as possible in your application to function properly.
  * @param {NotiflyInitializeOptions} options - An object containing the project ID, username, password, device token, and push subscription options.
+ * @param {boolean | undefined} shouldStartSession - A boolean value indicating whether a session should be started after initialization. Defaults to true.
  * @returns {Promise<boolean>} A promise that resolves with a boolean value indicating whether the SDK was initialized successfully.
  */
 async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
@@ -55,24 +54,16 @@ async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
     }
 
     try {
-        const [notiflyUserID, notiflyDeviceID] = await Promise.all([
-            getNotiflyUserID(projectId, undefined, deviceToken),
-            getNotiflyDeviceID(deviceToken),
-        ]);
+        await initializeNotiflyStorage(projectId, username, password, deviceToken);
+        await APIManager.initialize();
 
-        await _saveNotiflyData({
-            __notiflyProjectID: projectId,
-            __notiflyDeviceID: notiflyDeviceID,
-            __notiflyUserID: notiflyUserID,
-            ...(deviceToken !== null && deviceToken !== undefined && { __notiflyDeviceToken: deviceToken }),
-        });
-
-        await APIManager.initialize(username, password);
         if (pushSubscriptionOptions) {
+            // Initialize push notifications
             const { vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis } = pushSubscriptionOptions;
             await registerServiceWorker(vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis);
         }
-        await WebMessageManager.syncState(projectId, notiflyUserID, notiflyDeviceID);
+
+        await WebMessageManager.syncState();
         await sessionStart();
 
         return onInitializationSuccess();
@@ -80,14 +71,6 @@ async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
         console.error('[Notifly] Error initializing SDK: ', error);
         return onInitializationFailed();
     }
-}
-
-async function _saveNotiflyData(data: Record<string, string>): Promise<void> {
-    const promises = Object.entries(data).map(([key, val]) => {
-        return localForage.setItem(key, val as string);
-    });
-
-    await Promise.all(promises);
 }
 
 /**

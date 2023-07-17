@@ -1,4 +1,4 @@
-import localForage from '../LocalForage';
+import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 /**
  * Fetches a Cognito ID token for the given user name and password.
@@ -37,7 +37,7 @@ async function getCognitoIdToken(userName: string, password: string): Promise<st
 
 async function saveCognitoIdToken(userName: string, password: string): Promise<string> {
     const cognitoIDToken = await getCognitoIdToken(userName, password);
-    await localForage.setItem('__notiflyCognitoIDToken', cognitoIDToken);
+    await NotiflyStorage.setItem(NotiflyStorageKeys.COGNITO_ID_TOKEN, cognitoIDToken);
     return cognitoIDToken;
 }
 

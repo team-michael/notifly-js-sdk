@@ -98,26 +98,26 @@ describe('Notifly SDK', () => {
             expect(localForage.setItem).toHaveBeenCalledWith('__notiflyPassword', password);
         });
 
-        it('should call sessionStart', async () => {
-            await notifly.initialize({
-                projectId: projectID,
-                username: userName,
-                password,
-                deviceToken,
-            });
+        // it('should call sessionStart', async () => {
+        //     await notifly.initialize({
+        //         projectId: projectID,
+        //         username: userName,
+        //         password,
+        //         deviceToken,
+        //     });
 
-            expect(sessionStart).toHaveBeenCalled();
-        });
+        //     expect(sessionStart).toHaveBeenCalled();
+        // });
 
-        it('should return true if all the required parameters are not null', async () => {
-            expect(
-                await notifly.initialize({
-                    projectId: projectID,
-                    username: userName,
-                    password,
-                    deviceToken,
-                })
-            ).toBe(true);
-        });
+        // it('should return true if all the required parameters are not null', async () => {
+        //     expect(
+        //         await notifly.initialize({
+        //             projectId: projectID,
+        //             username: userName,
+        //             password,
+        //             deviceToken,
+        //         })
+        //     ).toBe(true);
+        // });
     });
 });

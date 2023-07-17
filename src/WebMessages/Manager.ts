@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import localForage from '../LocalForage';
+import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 import { APIManager } from '../API/Manager';
 import type {
@@ -11,6 +11,8 @@ import type {
     SegmentOperator,
     SegmentConditionUnitType,
 } from '../Types';
+import { generateNotiflyUserId } from '../Utils';
+
 import { ConditionValueComparator, getKSTCalendarDateString } from './Utils';
 import { WebMessageScheduler } from './Scheduler';
 
@@ -20,41 +22,49 @@ export class WebMessageManager {
     private static _userData: UserData = {};
 
     static async refreshState() {
-        try {
-            const [projectID, notiflyUserID, notiflyDeviceID] = await Promise.all([
-                localForage.getItem<string>('__notiflyProjectID'),
-                localForage.getItem<string>('__notiflyUserID'),
-                localForage.getItem<string>('__notiflyDeviceID'),
-            ]);
-            if (projectID && notiflyUserID) {
-                await this.syncState(projectID, notiflyUserID, notiflyDeviceID);
-            }
-        } catch (err) {
-            console.warn('[Notifly] refreshState failed: ', err);
-        }
+        await this.syncState();
     }
 
-    static async syncState(projectID: string, notiflyUserID: string, notiflyDeviceID: string | null): Promise<void> {
-        try {
-            const data = await APIManager.call(
-                `https://api.notifly.tech/user-state/${projectID}/${notiflyUserID}?${
-                    notiflyDeviceID ? `deviceId=${notiflyDeviceID}` : ''
-                }`,
-                'GET'
-            );
-            if (data.eventIntermediateCountsData != null) {
-                this._eventIntermediateCounts = data.eventIntermediateCountsData;
-            }
-            if (data.campaignData != null) {
-                this._inWebMessageCampaigns = data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message');
-            }
-            if (data.userData != null) {
-                this._userData = data.userData;
-            }
-            return data;
-        } catch (error) {
-            console.error('Error:', error);
+    static async syncState(): Promise<void> {
+        const [projectID, deviceToken, notiflyDeviceID, externalUserID] = await NotiflyStorage.getItems([
+            NotiflyStorageKeys.PROJECT_ID,
+            NotiflyStorageKeys.NOTIFLY_DEVICE_TOKEN,
+            NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
+            NotiflyStorageKeys.EXTERNAL_USER_ID,
+        ]);
+
+        if (!projectID) {
+            throw new Error('Project ID should be set before logging an event.');
         }
+
+        let notiflyUserID = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_USER_ID);
+        if (!notiflyUserID) {
+            const generatedNotiflyUserID = await generateNotiflyUserId(
+                projectID,
+                externalUserID,
+                deviceToken,
+                notiflyDeviceID
+            );
+            notiflyUserID = generatedNotiflyUserID;
+            await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_ID, generatedNotiflyUserID);
+        }
+
+        const data = await APIManager.call(
+            `https://api.notifly.tech/user-state/${projectID}/${notiflyUserID}?${
+                notiflyDeviceID ? `deviceId=${notiflyDeviceID}` : ''
+            }`,
+            'GET'
+        );
+        if (data.eventIntermediateCountsData != null) {
+            this._eventIntermediateCounts = data.eventIntermediateCountsData;
+        }
+        if (data.campaignData != null) {
+            this._inWebMessageCampaigns = data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message');
+        }
+        if (data.userData != null) {
+            this._userData = data.userData;
+        }
+        return data;
     }
 
     static updateUserData(params: Record<string, any>) {

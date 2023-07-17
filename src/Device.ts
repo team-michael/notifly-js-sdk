@@ -1,4 +1,4 @@
-import localForage from './LocalForage';
+import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 
 /**
  * Sets the device token for the current device.
@@ -12,5 +12,5 @@ export async function setDeviceToken(deviceToken: string | null | undefined): Pr
         return;
     }
 
-    await localForage.setItem('__notiflyDeviceToken', deviceToken);
+    await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_DEVICE_TOKEN, deviceToken);
 }
