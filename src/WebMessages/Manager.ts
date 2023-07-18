@@ -121,9 +121,19 @@ export class WebMessageManager {
         eventParams: Record<string, any>,
         externalUserID: string | null
     ) {
-        this._getCampaignsToSchedule(this._inWebMessageCampaigns, eventName, eventParams, externalUserID).forEach(
-            WebMessageScheduler.scheduleInWebMessage.bind(WebMessageScheduler)
-        );
+        const schedule = () => {
+            this._getCampaignsToSchedule(this._inWebMessageCampaigns, eventName, eventParams, externalUserID).forEach(
+                WebMessageScheduler.scheduleInWebMessage.bind(WebMessageScheduler)
+            );
+        };
+        if (document.readyState === 'complete') {
+            schedule();
+        } else {
+            window.addEventListener('DOMContentLoaded', () => {
+                schedule();
+                window.removeEventListener('DOMContentLoaded', schedule);
+            });
+        }
     }
 
     /**

@@ -1,7 +1,11 @@
 // NotiflyServiceWorker.ts
 
-const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.0.3';
+const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.0.4';
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
+
+self.addEventListener('install', (event) => {
+    self.skipWaiting();
+});
 
 self.addEventListener('activate', (event) => {
     event.waitUntil(swActivate());
