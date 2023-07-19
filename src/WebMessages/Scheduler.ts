@@ -91,6 +91,8 @@ export class WebMessageScheduler {
                                     document.body.removeChild(iframeContainer);
                                 } catch (error) {
                                     /* empty */
+                                } finally {
+                                    window.removeEventListener('message', messageEventListener);
                                 }
                                 const extraData = message.extraData;
                                 if (extraData) {
@@ -120,6 +122,8 @@ export class WebMessageScheduler {
                                     document.body.removeChild(iframeContainer);
                                 } catch (error) {
                                     /* empty */
+                                } finally {
+                                    window.removeEventListener('message', messageEventListener);
                                 }
                                 await logEvent(
                                     'main_button_click',
@@ -146,7 +150,7 @@ export class WebMessageScheduler {
                 return func.bind(this);
             })();
 
-            _registerMessageEventListenerOnce(messageEventListener);
+            window.addEventListener('message', messageEventListener);
         } catch (error) {
             this._isWebMessageOpen = false;
             console.error('[Notifly] Error creating iframe: ', error);
@@ -175,19 +179,4 @@ function _convertToValidCSSStyle(value: string | number | undefined, defaultValu
     } else {
         return defaultValue;
     }
-}
-
-function _registerMessageEventListenerOnce(task: (e: MessageEvent) => void) {
-    const taskWrapper = (function () {
-        const internalTaskFunction = function (e: MessageEvent) {
-            const destroyEventListener = function () {
-                window.removeEventListener('message', taskWrapper);
-            };
-            destroyEventListener();
-            task(e);
-        };
-        return internalTaskFunction;
-    })();
-
-    window.addEventListener('message', taskWrapper);
 }
