@@ -1,5 +1,4 @@
 import { v4 } from 'uuid';
-import localForage from './LocalForage';
 
 import { APIManager } from './API/Manager';
 import { WebMessageManager } from './WebMessages/Manager';
