@@ -34,6 +34,8 @@ export interface Campaign {
             zIndex?: string | number;
             position?: string;
             bottom?: string | number;
+            right?: string | number;
+            left?: string | number;
             top?: string | number;
             center?: boolean;
             padding?: string | number;

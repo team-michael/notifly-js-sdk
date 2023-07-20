@@ -70,7 +70,13 @@ export class WebMessageScheduler {
                     iframeContainer.style.left = '50%';
                     iframeContainer.style.transform = 'translate(-50%, -50%)';
                 } else {
-                    iframeContainer.style.left = '0px';
+                    if (modalProperties.right !== undefined) {
+                        iframeContainer.style.right = _convertToValidCSSStyle(modalProperties.right, '0px');
+                    } else if (modalProperties.left !== undefined) {
+                        iframeContainer.style.left = _convertToValidCSSStyle(modalProperties.left, '0px');
+                    } else {
+                        iframeContainer.style.left = '0px';
+                    }
                     if (modalProperties.bottom !== undefined) {
                         iframeContainer.style.bottom = _convertToValidCSSStyle(modalProperties.bottom);
                     } else if (modalProperties.top !== undefined) {
@@ -158,7 +164,12 @@ export class WebMessageScheduler {
                             }
                             if (message.link) {
                                 // Navigate to link if necessary
-                                window.open(message.link, '_blank');
+                                const a = document.createElement('a');
+                                document.body.appendChild(a);
+                                a.setAttribute('style', 'display: none');
+                                a.href = message.link;
+                                a.click();
+                                document.body.removeChild(a);
                             }
                         }
                     } catch (error) {
