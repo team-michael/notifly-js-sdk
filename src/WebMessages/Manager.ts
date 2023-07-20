@@ -129,10 +129,11 @@ export class WebMessageManager {
         if (document.readyState === 'complete') {
             schedule();
         } else {
-            window.addEventListener('DOMContentLoaded', () => {
+            const task = () => {
                 schedule();
-                window.removeEventListener('DOMContentLoaded', schedule);
-            });
+                window.removeEventListener('DOMContentLoaded', task);
+            };
+            window.addEventListener('DOMContentLoaded', task);
         }
     }
 

@@ -20,18 +20,14 @@ async function registerServiceWorker(
     }
     const registration = await navigator.serviceWorker.register(path);
     if (typeof Notification !== 'undefined') {
-        let permission = Notification.permission;
+        const permission = Notification.permission;
         if (askPermission && permission === 'default') {
             const notiflyNotificationPermission = await NotiflyStorage.getItem(
                 NotiflyStorageKeys.NOTIFLY_NOTIFICATION_PERMISSION
             );
             if (notiflyNotificationPermission != 'denied') {
-                permission = await showPrompt(promptDelayMillis);
+                showPrompt(promptDelayMillis);
             }
-        }
-        if (permission !== 'granted') {
-            console.warn('[Notifly] Notification permission has not been granted to the current domain.');
-            return;
         }
     }
     const subscription = await _getSubscription(registration, vapidPublicKey);
