@@ -59,6 +59,8 @@ export class WebMessageScheduler {
                     modalProperties.backgroundOpacity,
                     'rgba(0,0,0,0.2)'
                 );
+            } else {
+                iframeContainer.style.background = 'transparent';
             }
             if (modalProperties.padding) {
                 iframeContainer.style.padding = _convertToValidCSSStyle(modalProperties.padding, '0px');
