@@ -111,9 +111,13 @@ function _showPrompt(registration: ServiceWorkerRegistration, vapidPublicKey: st
 }
 
 function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string): void {
+    const svgNS = 'http://www.w3.org/2000/svg';
+
     const overlay = document.createElement('div');
     const popup = document.createElement('div');
+    const bellIcon = document.createElementNS(svgNS, 'svg');
     const closeButton = document.createElement('button');
+    const headerContainer = document.createElement('div');
     const header = document.createElement('h2');
     const message = document.createElement('p');
     const buttonContainer = document.createElement('div');
@@ -134,34 +138,51 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
     popup.id = 'popup';
     popup.style.position = 'relative';
     popup.style.paddingTop = '10px';
-    popup.style.paddingRight = '20px';
-    popup.style.paddingBottom = '20px';
+    popup.style.paddingRight = '18px';
+    popup.style.paddingBottom = '18px';
     popup.style.paddingLeft = '20px';
     popup.style.backgroundColor = '#fff';
     popup.style.border = '1px solid #d3d3d3';
     popup.style.borderRadius = '8px';
     popup.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
 
+    bellIcon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    bellIcon.setAttribute('viewBox', '0 0 48 48');
+    bellIcon.style.width = '23px';
+    bellIcon.style.height = '23px';
+    bellIcon.innerHTML = `
+    <defs>
+      <style>.cls-1{fill:#1976d2;}</style>
+    </defs>
+    <path class="cls-1" d="M24,44a6,6,0,0,0,5.67-4H18.33A6,6,0,0,0,24,44Z"/>
+    <path class="cls-1" d="M39.38,35.26,38,31.81V22A14,14,0,0,0,26.71,8.27a3,3,0,1,0-5.42,0A14,14,0,0,0,10,22v9.81L8.62,35.26A2,2,0,0,0,10.48,38h27a2,2,0,0,0,1.86-2.74Z"/>
+  `;
+
     closeButton.style.position = 'absolute';
-    closeButton.style.right = '20px';
-    closeButton.style.top = '10px';
+    closeButton.style.right = '8px';
+    closeButton.style.top = '-5px';
     closeButton.style.border = 'none';
     closeButton.style.background = 'none';
     closeButton.style.cursor = 'pointer';
     closeButton.style.fontSize = '25px';
+    closeButton.style.fontWeight = '600';
     closeButton.style.color = '#c6c6c6';
     closeButton.innerHTML = '&times;';
 
-    header.style.marginTop = '10px';
-    header.style.marginBottom = '5px';
-    header.style.marginLeft = '0px';
-    header.style.marginRight = '0px';
-    message.style.marginTop = '5px';
-    message.style.marginBottom = '10px';
+    headerContainer.style.display = 'flex';
+    headerContainer.style.justifyContent = 'start';
+    headerContainer.style.alignItems = 'center';
+    headerContainer.style.marginTop = '10px';
+    headerContainer.style.marginBottom = '5px';
+    headerContainer.style.marginLeft = '0px';
+    headerContainer.style.marginRight = '0px';
+
+    header.style.fontWeight = '600';
+    header.style.marginLeft = '6px';
+    message.style.marginTop = '8px';
+    message.style.marginBottom = '13px';
     message.style.marginLeft = '0px';
     message.style.marginRight = '0px';
-    header.style.fontWeight = '600';
-    message.style.fontWeight = '400';
 
     buttonContainer.style.display = 'flex';
     buttonContainer.style.justifyContent = 'flex-end';
@@ -169,22 +190,29 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
 
     grantButton.style.padding = '5px 15px';
     grantButton.style.border = 'none';
-    grantButton.style.backgroundColor = '#007bff';
+    grantButton.style.backgroundColor = '#1e88e5';
     grantButton.style.color = 'white';
+    grantButton.style.fontWeight = '400';
     grantButton.style.cursor = 'pointer';
     grantButton.style.borderRadius = '5px';
 
     denyButton.style.padding = '5px 15px';
     denyButton.style.border = 'none';
-    denyButton.style.backgroundColor = '#808080';
+    denyButton.style.backgroundColor = '#707070';
     denyButton.style.color = 'white';
     denyButton.style.cursor = 'pointer';
+    denyButton.style.fontWeight = '400';
     denyButton.style.borderRadius = '5px';
 
-    header.style.fontSize = '16px';
-    message.style.fontSize = '16px';
-    grantButton.style.fontSize = '16px';
-    denyButton.style.fontSize = '16px';
+    header.style.fontSize = '18px';
+    header.style.letterSpacing = '-0.5px';
+    message.style.fontSize = '15px';
+    message.style.fontWeight = '400';
+    message.style.letterSpacing = '-0.3px';
+    grantButton.style.fontSize = '13.5px';
+    grantButton.style.letterSpacing = '-0.3px';
+    denyButton.style.fontSize = '13.5px';
+    denyButton.style.letterSpacing = '-0.3px';
     header.style.setProperty(
         'font-family',
         "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
@@ -208,23 +236,25 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
 
     const language = navigator.language;
     if (language.startsWith('ko')) {
-        header.textContent = '\uD83D\uDD14 푸시 알림 받기';
+        header.textContent = '푸시 알림 받기';
         message.textContent = '푸시 알림을 허용하고 중요한 정보를 실시간으로 받아보세요! ';
         grantButton.textContent = '알림 받기';
         denyButton.textContent = '다음에';
     } else {
-        header.textContent = '\uD83D\uDD14 Receive Push Notifications';
+        header.textContent = 'Receive Push Notifications';
         message.textContent = 'Allow push notifications and receive important information in real-time!';
         grantButton.textContent = 'Receive Notifications';
         denyButton.textContent = 'Not Now';
     }
 
     overlay.appendChild(popup);
+    headerContainer.appendChild(bellIcon);
+    headerContainer.appendChild(header);
+    popup.appendChild(headerContainer);
+    popup.appendChild(message);
     buttonContainer.appendChild(grantButton);
     buttonContainer.appendChild(denyButton);
     popup.appendChild(closeButton);
-    popup.appendChild(header);
-    popup.appendChild(message);
     popup.appendChild(buttonContainer);
 
     document.body.appendChild(overlay);
