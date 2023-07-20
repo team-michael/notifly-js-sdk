@@ -35,6 +35,10 @@ export interface Campaign {
             position?: string;
             bottom?: string | number;
             top?: string | number;
+            center?: boolean;
+            padding?: string | number;
+            background?: boolean;
+            backgroundOpacity?: number;
         };
     };
     segment_info?: {

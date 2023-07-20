@@ -51,17 +51,36 @@ export class WebMessageScheduler {
             iframeContainer.style.height = _convertToValidCSSStyle(modalProperties.height, '100%');
             iframeContainer.style.zIndex = _convertToValidCSSStyle(modalProperties.zIndex, '9999');
             iframeContainer.style.position = _convertToValidCSSStyle(modalProperties.position, 'fixed');
+
+            if (modalProperties.background) {
+                iframeContainer.style.width = '100%';
+                iframeContainer.style.height = '100%';
+                iframeContainer.style.background = _convertToValidCSSStyle(
+                    modalProperties.backgroundOpacity,
+                    'rgba(0,0,0,0.2)'
+                );
+            }
+            if (modalProperties.padding) {
+                iframeContainer.style.padding = _convertToValidCSSStyle(modalProperties.padding, '0px');
+            }
             if (iframeContainer.style.position === 'fixed') {
                 // If top and bottom are both defined, bottom will take precedence
-                iframeContainer.style.left = '0px';
-                if (modalProperties.bottom !== undefined) {
-                    iframeContainer.style.bottom = _convertToValidCSSStyle(modalProperties.bottom);
-                } else if (modalProperties.top !== undefined) {
-                    iframeContainer.style.top = _convertToValidCSSStyle(modalProperties.top);
+                if (modalProperties.center) {
+                    iframeContainer.style.top = '50%';
+                    iframeContainer.style.left = '50%';
+                    iframeContainer.style.transform = 'translate(-50%, -50%)';
                 } else {
-                    iframeContainer.style.top = '0px';
+                    iframeContainer.style.left = '0px';
+                    if (modalProperties.bottom !== undefined) {
+                        iframeContainer.style.bottom = _convertToValidCSSStyle(modalProperties.bottom);
+                    } else if (modalProperties.top !== undefined) {
+                        iframeContainer.style.top = _convertToValidCSSStyle(modalProperties.top);
+                    } else {
+                        iframeContainer.style.top = '0px';
+                    }
                 }
             }
+
             iframeContainer.appendChild(iframe);
 
             // Insert iframe container into DOM
