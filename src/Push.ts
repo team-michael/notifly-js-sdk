@@ -116,7 +116,8 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
     const overlay = document.createElement('div');
     const popup = document.createElement('div');
     const bellIcon = document.createElementNS(svgNS, 'svg');
-    const closeButton = document.createElement('button');
+    const keyframes = document.createElement('style');
+    const closeButton = document.createElementNS(svgNS, 'svg');
     const headerContainer = document.createElement('div');
     const header = document.createElement('h2');
     const message = document.createElement('p');
@@ -124,7 +125,7 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
     const grantButton = document.createElement('button');
     const denyButton = document.createElement('button');
 
-    overlay.id = 'overlay';
+    overlay.id = '--notifly-push-prompt-overlay';
     overlay.style.position = 'fixed';
     overlay.style.top = '10px';
     overlay.style.right = '10px';
@@ -135,7 +136,7 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
     overlay.style.width = '350px';
     overlay.style.maxWidth = '50%';
 
-    popup.id = 'popup';
+    popup.id = '--notifly-push-prompt-body';
     popup.style.position = 'relative';
     popup.style.paddingTop = '10px';
     popup.style.paddingRight = '18px';
@@ -148,26 +149,44 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
 
     bellIcon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     bellIcon.setAttribute('viewBox', '0 0 48 48');
-    bellIcon.style.width = '23px';
-    bellIcon.style.height = '23px';
+    bellIcon.style.width = '21px';
+    bellIcon.style.height = '21px';
     bellIcon.innerHTML = `
     <defs>
-      <style>.cls-1{fill:#1976d2;}</style>
+      <style>.--notifly-bell-icon{fill:#eab308;}</style>
     </defs>
-    <path class="cls-1" d="M24,44a6,6,0,0,0,5.67-4H18.33A6,6,0,0,0,24,44Z"/>
-    <path class="cls-1" d="M39.38,35.26,38,31.81V22A14,14,0,0,0,26.71,8.27a3,3,0,1,0-5.42,0A14,14,0,0,0,10,22v9.81L8.62,35.26A2,2,0,0,0,10.48,38h27a2,2,0,0,0,1.86-2.74Z"/>
-  `;
+    <path class="--notifly-bell-icon" d="M24,44a6,6,0,0,0,5.67-4H18.33A6,6,0,0,0,24,44Z"/>
+    <path class="--notifly-bell-icon" d="M39.38,35.26,38,31.81V22A14,14,0,0,0,26.71,8.27a3,3,0,1,0-5.42,0A14,14,0,0,0,10,22v9.81L8.62,35.26A2,2,0,0,0,10.48,38h27a2,2,0,0,0,1.86-2.74Z"/>
+  	`;
+    bellIcon.style.animation = '--notifly-bell-icon-animation 0.6s ease-in-out infinite';
+    bellIcon.style.transformOrigin = 'top center';
+
+    keyframes.innerHTML = `
+	@keyframes --notifly-bell-icon-animation {
+		0% { transform: rotateZ(0deg); }
+		12.5% { transform: rotateZ(-5deg); }
+        25% { transform: rotateZ(-7deg); }
+		37.5% { transform: rotateZ(-5deg); }
+        50% { transform: rotateZ(0deg); }
+		62.5% { transform: rotateZ(5deg); }
+        75% { transform: rotateZ(7deg); }
+		87.5% { transform: rotateZ(5deg); }
+        100% { transform: rotateZ(0deg); }
+	}
+	`;
+    document.head.appendChild(keyframes);
 
     closeButton.style.position = 'absolute';
     closeButton.style.right = '8px';
-    closeButton.style.top = '-5px';
-    closeButton.style.border = 'none';
-    closeButton.style.background = 'none';
+    closeButton.style.top = '8px';
     closeButton.style.cursor = 'pointer';
-    closeButton.style.fontSize = '25px';
-    closeButton.style.fontWeight = '600';
-    closeButton.style.color = '#c6c6c6';
-    closeButton.innerHTML = '&times;';
+    closeButton.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    closeButton.setAttribute('viewBox', '0 0 24 24');
+    closeButton.style.width = '18px';
+    closeButton.style.height = '18px';
+    closeButton.innerHTML = `
+	<path d="M17.2929 5.29289C17.6834 4.90237 18.3166 4.90237 18.7071 5.29289C19.0976 5.68342 19.0976 6.31658 18.7071 6.70711L13.4142 12L18.7071 17.2929C19.0976 17.6834 19.0976 18.3166 18.7071 18.7071C18.3166 19.0976 17.6834 19.0976 17.2929 18.7071L12 13.4142L6.70711 18.7071C6.31658 19.0976 5.68342 19.0976 5.29289 18.7071C4.90237 18.3166 4.90237 17.6834 5.29289 17.2929L10.5858 12L5.29289 6.70711C4.90237 6.31658 4.90237 5.68342 5.29289 5.29289C5.68342 4.90237 6.31658 4.90237 6.70711 5.29289L12 10.5858L17.2929 5.29289Z" fill="#c6c6c6"/>
+	`;
 
     headerContainer.style.display = 'flex';
     headerContainer.style.justifyContent = 'start';
@@ -180,34 +199,50 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
     header.style.fontWeight = '600';
     header.style.marginLeft = '6px';
     message.style.marginTop = '8px';
-    message.style.marginBottom = '13px';
+    message.style.marginBottom = '16px';
     message.style.marginLeft = '0px';
     message.style.marginRight = '0px';
 
     buttonContainer.style.display = 'flex';
     buttonContainer.style.justifyContent = 'flex-end';
-    buttonContainer.style.gap = '10px';
+    buttonContainer.style.gap = '6px';
 
     grantButton.style.padding = '5px 15px';
     grantButton.style.border = 'none';
-    grantButton.style.backgroundColor = '#1e88e5';
+    grantButton.style.backgroundColor = '#2563eb';
     grantButton.style.color = 'white';
-    grantButton.style.fontWeight = '400';
+    grantButton.style.fontWeight = '500';
     grantButton.style.cursor = 'pointer';
     grantButton.style.borderRadius = '5px';
+    grantButton.addEventListener('mouseover', () => {
+        grantButton.style.backgroundColor = '#1d4ed8';
+    });
+    grantButton.addEventListener('mouseout', () => {
+        grantButton.style.backgroundColor = '#2563eb';
+    });
 
     denyButton.style.padding = '5px 15px';
     denyButton.style.border = 'none';
-    denyButton.style.backgroundColor = '#707070';
+    denyButton.style.backgroundColor = '#27272a';
     denyButton.style.color = 'white';
     denyButton.style.cursor = 'pointer';
-    denyButton.style.fontWeight = '400';
+    denyButton.style.fontWeight = '500';
     denyButton.style.borderRadius = '5px';
+    denyButton.addEventListener('mouseover', () => {
+        denyButton.style.backgroundColor = '#334155';
+    });
+    denyButton.addEventListener('mouseout', () => {
+        denyButton.style.backgroundColor = '#27272a';
+    });
 
-    header.style.fontSize = '18px';
+    header.style.fontSize = '17px';
+    header.style.color = '#1f2937';
     header.style.letterSpacing = '-0.5px';
+    header.style.fontWeight = '800';
     message.style.fontSize = '15px';
     message.style.fontWeight = '400';
+    message.style.color = '#374151';
+    message.style.lineHeight = '1.3';
     message.style.letterSpacing = '-0.3px';
     grantButton.style.fontSize = '13.5px';
     grantButton.style.letterSpacing = '-0.3px';
@@ -234,8 +269,8 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
         'important'
     );
 
-    const language = navigator.language;
-    if (language.startsWith('ko')) {
+    const language = navigator?.language || null;
+    if (!language || language.startsWith('ko')) {
         header.textContent = '푸시 알림 받기';
         message.textContent = '푸시 알림을 허용하고 중요한 정보를 실시간으로 받아보세요! ';
         grantButton.textContent = '알림 받기';
@@ -246,6 +281,18 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
         grantButton.textContent = 'Receive Notifications';
         denyButton.textContent = 'Not Now';
     }
+
+    overlay.appendChild(popup);
+    headerContainer.appendChild(bellIcon);
+    headerContainer.appendChild(header);
+    popup.appendChild(headerContainer);
+    popup.appendChild(message);
+    buttonContainer.appendChild(grantButton);
+    buttonContainer.appendChild(denyButton);
+    popup.appendChild(closeButton);
+    popup.appendChild(buttonContainer);
+
+    document.body.appendChild(overlay);
 
     overlay.appendChild(popup);
     headerContainer.appendChild(bellIcon);
