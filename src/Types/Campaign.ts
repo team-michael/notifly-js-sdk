@@ -41,6 +41,7 @@ export interface Campaign {
             padding?: string | number;
             background?: boolean;
             backgroundOpacity?: number;
+            small_screen_width_full?: boolean;
         };
     };
     segment_info?: {

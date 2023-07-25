@@ -48,6 +48,11 @@ export class WebMessageScheduler {
 
             // Apply modal properties
             iframeContainer.style.width = _convertToValidCSSStyle(modalProperties.width, '100%');
+            if (modalProperties.small_screen_width_full && window.outerWidth < 520) {
+                console.log(window.outerWidth)
+                iframeContainer.style.width = '100%';
+            }
+
             iframeContainer.style.height = _convertToValidCSSStyle(modalProperties.height, '100%');
             iframeContainer.style.zIndex = _convertToValidCSSStyle(modalProperties.zIndex, '9999');
             iframeContainer.style.position = _convertToValidCSSStyle(modalProperties.position, 'fixed');
