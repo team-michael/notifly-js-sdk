@@ -66,10 +66,11 @@ export class WebMessageScheduler {
                 );
             } else {
                 iframeContainer.style.background = 'transparent';
+                if (modalProperties.padding) {
+                    iframeContainer.style.padding = _convertToValidCSSStyle(modalProperties.padding, '0px');
+                }
             }
-            if (modalProperties.padding) {
-                iframeContainer.style.padding = _convertToValidCSSStyle(modalProperties.padding, '0px');
-            }
+            
             if (iframeContainer.style.position === 'fixed') {
                 // If top and bottom are both defined, bottom will take precedence
                 if (modalProperties.center) {
