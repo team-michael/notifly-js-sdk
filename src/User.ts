@@ -26,12 +26,19 @@ async function setUserId(userID?: string | null | undefined) {
     }
 
     try {
-        if (!userID) {
-            await removeUserId();
+        const previousExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
+
+        if ((!previousExternalUserId && !userID) || previousExternalUserId === userID) {
+            // No-op
+            return;
         } else {
-            await setUserProperties({
-                external_user_id: userID,
-            });
+            if (!userID) {
+                await removeUserId();
+            } else {
+                await setUserProperties({
+                    external_user_id: userID,
+                });
+            }
             await WebMessageManager.refreshState();
         }
     } catch (err) {

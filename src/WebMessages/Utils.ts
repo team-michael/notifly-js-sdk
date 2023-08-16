@@ -127,3 +127,45 @@ export function getKSTCalendarDateString(daysOffset = 0) {
     kstDate.setDate(kstDate.getDate() + daysOffset);
     return kstDate.toISOString().split('T')[0];
 }
+
+export function isValidWebMessageState(state: any): boolean {
+    // TODO: validate campaign too
+    if (!state || !state.eventIntermediateCounts || !state.userData || !state.inWebMessageCampaigns) {
+        return false;
+    }
+    if (!Array.isArray(state.eventIntermediateCounts)) {
+        return false;
+    }
+    if (state.eventIntermediateCounts.some((eic: any) => !isValidEventIntermediateCounts(eic))) {
+        return false;
+    }
+    if (!isValidUserData(state.userData)) {
+        return false;
+    }
+
+    return true;
+}
+
+export function isValidEventIntermediateCounts(eic: any): boolean {
+    // dt should be YYYY-MM-DD format
+    if (
+        eic &&
+        eic.dt &&
+        typeof eic.dt === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(eic.dt) &&
+        eic.name &&
+        typeof eic.name === 'string' &&
+        eic.count &&
+        typeof eic.count === 'number' &&
+        eic.event_params &&
+        typeof eic.event_params === 'object'
+    ) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+export function isValidUserData(userData: any): boolean {
+    return typeof userData === 'object';
+}

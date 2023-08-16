@@ -3,6 +3,7 @@
  * @property {string} projectId - The project ID of the Notifly project.
  * @property {string} username - Username to authorize Notifly project.
  * @property {string} password - Password to authorize Notifly project.
+ * @property {number?} sessionDuration - The duration of the session in seconds. Defaults to 1800 seconds (30 minutes).
  * @property {string?} deviceToken - The device token of the current device.
  * @property {NotiflyPushSubscriptionOptions?} pushSubscriptionOptions - An object containing the web-push subscription options.
  */
@@ -10,6 +11,7 @@ export type NotiflyInitializeOptions = {
     projectId: string;
     username: string;
     password: string;
+    sessionDuration?: number;
     deviceToken?: string;
     pushSubscriptionOptions?: NotiflyPushSubscriptionOptions;
 };

@@ -14,8 +14,10 @@ export enum NotiflyStorageKeys {
     EXTERNAL_USER_ID = '__notiflyExternalUserID',
     NOTIFLY_DEVICE_ID = '__notiflyDeviceID',
     NOTIFLY_DEVICE_TOKEN = '__notiflyDeviceToken',
+    NOTIFLY_USER_STATE = '__notiflyUserState',
 
     // Misc
+    LAST_SESSION_TIME = '__notiflyLastSessionTime',
     NOTIFLY_NOTIFICATION_PERMISSION = '__notiflyNotificationPermission',
     SW_VERSION = '__notiflySWVersion',
     SEED_STRING = '__notiflySeedString',

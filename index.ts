@@ -1,12 +1,16 @@
 import type { NotiflyInitializeOptions } from './src/Types';
-import { WebMessageManager } from './src/WebMessages/Manager';
+
 import { APIManager } from './src/API/Manager';
-import { registerServiceWorker } from './src/Push';
 import { EventManager } from './src/Event/Manager';
+import { WebMessageManager } from './src/WebMessages/Manager';
+import { SdkStateManager, SdkState } from './src/SdkStateManager';
+import { WindowEventManager } from './src/Event/WindowEventManager';
+import { SessionManager } from './src/SessionManager';
+
+import { registerServiceWorker } from './src/Push';
 import { setUserId, setUserProperties, deleteUser } from './src/User';
 import { initializeNotiflyStorage } from './src/Utils';
 import { setDeviceToken } from './src/Device';
-import { SdkStateManager, SdkState } from './src/SdkStateManager';
 
 let initializationLock = false;
 
@@ -44,7 +48,7 @@ async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
         return true;
     };
 
-    const { projectId, username, password, deviceToken, pushSubscriptionOptions } = options;
+    const { projectId, username, password, deviceToken, sessionDuration, pushSubscriptionOptions } = options;
 
     if (!(projectId && username && password)) {
         console.error('[Notifly] projectID, userName and password must not be empty');
@@ -60,14 +64,21 @@ async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
 
     try {
         await initializeNotiflyStorage(projectId, username, password, deviceToken);
+        await SessionManager.initialize(sessionDuration);
         await APIManager.initialize();
-        if (pushSubscriptionOptions) {
+
+        if (pushSubscriptionOptions && SessionManager.isSessionExpired()) {
             // Initialize push notifications
             const { vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis } = pushSubscriptionOptions;
             await registerServiceWorker(vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis);
         }
+
+        WindowEventManager.initialize();
         await WebMessageManager.syncState();
-        await EventManager.sessionStart();
+
+        if (SessionManager.isSessionExpired()) {
+            await EventManager.sessionStart();
+        }
 
         return onInitializationSuccess();
     } catch (error) {

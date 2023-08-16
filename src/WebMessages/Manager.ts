@@ -13,14 +13,28 @@ import type {
 } from '../Types';
 import { generateNotiflyUserId } from '../Utils';
 
-import { ConditionValueComparator, getKSTCalendarDateString } from './Utils';
+import {
+    ConditionValueComparator,
+    getKSTCalendarDateString,
+    isValidEventIntermediateCounts,
+    isValidWebMessageState,
+} from './Utils';
 import { WebMessageScheduler } from './Scheduler';
 import { SdkState, SdkStateManager } from '../SdkStateManager';
+import { SessionManager } from '../SessionManager';
 
 export class WebMessageManager {
     private static _eventIntermediateCounts: EventIntermediateCounts[] = [];
     private static _inWebMessageCampaigns: Campaign[] = [];
     private static _userData: UserData = {};
+
+    static get state() {
+        return {
+            eventIntermediateCounts: this._eventIntermediateCounts,
+            inWebMessageCampaigns: this._inWebMessageCampaigns,
+            userData: this._userData,
+        };
+    }
 
     static async refreshState() {
         if (!SdkStateManager.isReady()) {
@@ -29,7 +43,7 @@ export class WebMessageManager {
         }
         SdkStateManager.state = SdkState.REFRESHING;
         try {
-            await this.syncState();
+            await this.syncState(false);
             SdkStateManager.state = SdkState.READY;
         } catch (error) {
             console.error('[Notifly] Failed to refresh state: ', error);
@@ -37,9 +51,31 @@ export class WebMessageManager {
         }
     }
 
-    static async syncState(): Promise<void> {
-        // // Simulate a delay
-        // await new Promise((resolve) => setTimeout(resolve, 2000));
+    static async syncState(useStorageIfAvailable = true): Promise<void> {
+        if (useStorageIfAvailable && !SessionManager.isSessionExpired()) {
+            // Get state from storage, if available
+            const storedState = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_USER_STATE);
+            try {
+                const parsedStateJSON = storedState ? JSON.parse(storedState) : null;
+                if (isValidWebMessageState(parsedStateJSON)) {
+                    const parsedState = parsedStateJSON as {
+                        eventIntermediateCounts: EventIntermediateCounts[];
+                        inWebMessageCampaigns: Campaign[];
+                        userData: UserData;
+                    };
+
+                    this._eventIntermediateCounts = parsedState.eventIntermediateCounts;
+                    this._inWebMessageCampaigns = parsedState.inWebMessageCampaigns;
+                    this._userData = parsedState.userData;
+
+                    console.log('Storage cache hit!', JSON.stringify(parsedStateJSON, null, 2)); // DELETE LATER
+                    return;
+                }
+            } catch (error) {
+                console.log('[Notifly] State from strorage might have been corrupted. Ignoring state from storage.');
+            }
+        }
+
         const [projectID, deviceToken, notiflyDeviceID, externalUserID] = await NotiflyStorage.getItems([
             NotiflyStorageKeys.PROJECT_ID,
             NotiflyStorageKeys.NOTIFLY_DEVICE_TOKEN,
@@ -69,16 +105,22 @@ export class WebMessageManager {
             }`,
             'GET'
         );
-        if (data.eventIntermediateCountsData != null) {
+
+        if (isValidEventIntermediateCounts(data.eventIntermediateCountsData)) {
             this._eventIntermediateCounts = data.eventIntermediateCountsData;
+        } else {
+            this._eventIntermediateCounts = [];
         }
-        if (data.campaignData != null) {
+        if (data.campaignData != null && Array.isArray(data.campaignData)) {
             this._inWebMessageCampaigns = data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message');
+        } else {
+            this._inWebMessageCampaigns = [];
         }
         if (data.userData != null) {
             this._userData = data.userData;
+        } else {
+            this._userData = {};
         }
-        return data;
     }
 
     static updateUserData(params: Record<string, any>) {
