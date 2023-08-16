@@ -1,7 +1,7 @@
 import { v5 } from 'uuid';
 import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 import { NAMESPACE } from './Constants';
-import { logEvent } from './Event';
+import { EventManager } from './Event/Manager';
 
 async function registerServiceWorker(
     vapidPublicKey: string,
@@ -80,7 +80,7 @@ async function _logSubscription(subscription: PushSubscription): Promise<void> {
         await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_DEVICE_ID, notiflyDeviceID);
     }
 
-    return await logEvent(
+    return await EventManager.logEvent(
         'set_device_properties',
         {
             device_token: subscriptionStr, // Use deviceToken to store the subscription

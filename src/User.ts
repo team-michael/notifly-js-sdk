@@ -1,9 +1,8 @@
 import { WebMessageManager } from './WebMessages/Manager';
-import { logEvent } from './Event';
+import { EventManager } from './Event/Manager';
 import { generateNotiflyUserId } from './Utils';
 import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
-
-const SYNC_TIMEOUT_AFTER_USER_ID_CHANGED = 5000;
+import { SdkStateManager } from './SdkStateManager';
 
 /**
  * Sets or removes user ID for the current user.
@@ -19,6 +18,13 @@ const SYNC_TIMEOUT_AFTER_USER_ID_CHANGED = 5000;
  * await setUserId() // Removes the user ID
  */
 async function setUserId(userID?: string | null | undefined) {
+    if (!SdkStateManager.isReady()) {
+        console.warn(
+            '[Notifly] Ignoring setUserId call because the SDK is either not successfully initialized or refreshing its state due to the previous setUserId call. Make sure to call initialize() before calling setUserId.'
+        );
+        return;
+    }
+
     try {
         if (!userID) {
             await removeUserId();
@@ -26,11 +32,10 @@ async function setUserId(userID?: string | null | undefined) {
             await setUserProperties({
                 external_user_id: userID,
             });
+            await WebMessageManager.refreshState();
         }
     } catch (err) {
         console.warn('[Notifly] setUserId failed');
-    } finally {
-        setTimeout(WebMessageManager.refreshState.bind(WebMessageManager), SYNC_TIMEOUT_AFTER_USER_ID_CHANGED);
     }
 }
 
@@ -45,6 +50,13 @@ async function setUserId(userID?: string | null | undefined) {
  * await setUserProperties({ external_user_id: 'myUserID' });
  */
 async function setUserProperties(params: Record<string, any>): Promise<void> {
+    if (!SdkStateManager.isReady()) {
+        console.warn(
+            '[Notifly] Ignoring setUserProperties call because the SDK is either not successfully initialized or refreshing its state due to the previous setUserId call. Make sure to call initialize() before calling setUserId.'
+        );
+        return;
+    }
+
     try {
         if (params.external_user_id) {
             const [projectID, previousNotiflyUserID, previousExternalUserID] = await NotiflyStorage.getItems([
@@ -66,12 +78,12 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
                 __notiflyUserID: notiflyUserID,
                 __notiflyExternalUserID: params.external_user_id,
             });
+        } else {
+            // Update local state
+            WebMessageManager.updateUserData(params);
         }
 
-        // Update local state
-        WebMessageManager.updateUserData(params);
-
-        return await logEvent('set_user_properties', params, null, true);
+        return await EventManager.logEvent('set_user_properties', params, null, true);
     } catch (err) {
         console.warn('[Notifly] Failed to set user properties:', err);
     }
@@ -87,10 +99,17 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
  * await removeUserId();
  */
 async function removeUserId(): Promise<void> {
+    if (!SdkStateManager.isReady()) {
+        console.warn(
+            '[Notifly] Ignoring removeUserId call because the SDK is either not successfully initialized or refreshing its state due to the previous setUserId call. Make sure to call initialize() before calling setUserId.'
+        );
+        return;
+    }
+
     try {
         await _cleanUserIDInLocalForage();
-        await logEvent('remove_external_user_id', {}, null, true);
-        return;
+        await EventManager.logEvent('remove_external_user_id', {}, null, true);
+        await WebMessageManager.refreshState();
     } catch (err) {
         console.warn('[Notifly] Failed to remove userID');
     }
@@ -106,10 +125,17 @@ async function removeUserId(): Promise<void> {
  * await deleteUser();
  */
 async function deleteUser(): Promise<void> {
+    if (!SdkStateManager.isReady()) {
+        console.warn(
+            '[Notifly] Ignoring deleteUserId call because the SDK is either not successfully initialized or refreshing its state due to the previous setUserId call. Make sure to call initialize() before calling setUserId.'
+        );
+        return;
+    }
+
     try {
-        await logEvent('delete_user', {}, null, true);
+        await EventManager.logEvent('delete_user', {}, null, true);
         await _cleanUserIDInLocalForage();
-        await logEvent('remove_external_user_id', {}, null, true);
+        await EventManager.logEvent('remove_external_user_id', {}, null, true);
         await WebMessageManager.refreshState();
         return;
     } catch (err) {

@@ -15,6 +15,7 @@ import { generateNotiflyUserId } from '../Utils';
 
 import { ConditionValueComparator, getKSTCalendarDateString } from './Utils';
 import { WebMessageScheduler } from './Scheduler';
+import { SdkState, SdkStateManager } from '../SdkStateManager';
 
 export class WebMessageManager {
     private static _eventIntermediateCounts: EventIntermediateCounts[] = [];
@@ -22,10 +23,23 @@ export class WebMessageManager {
     private static _userData: UserData = {};
 
     static async refreshState() {
-        await this.syncState();
+        if (!SdkStateManager.isReady()) {
+            console.error('[Notifly] Cannot refresh state when the SDK is not ready. Ignoring refreshState call.');
+            return;
+        }
+        SdkStateManager.state = SdkState.REFRESHING;
+        try {
+            await this.syncState();
+            SdkStateManager.state = SdkState.READY;
+        } catch (error) {
+            console.error('[Notifly] Failed to refresh state: ', error);
+            SdkStateManager.state = SdkState.FAILED;
+        }
     }
 
     static async syncState(): Promise<void> {
+        // // Simulate a delay
+        // await new Promise((resolve) => setTimeout(resolve, 2000));
         const [projectID, deviceToken, notiflyDeviceID, externalUserID] = await NotiflyStorage.getItems([
             NotiflyStorageKeys.PROJECT_ID,
             NotiflyStorageKeys.NOTIFLY_DEVICE_TOKEN,
@@ -121,11 +135,11 @@ export class WebMessageManager {
         eventParams: Record<string, any>,
         externalUserID: string | null
     ) {
-        const schedule = () => {
+        const schedule = () =>
             this._getCampaignsToSchedule(this._inWebMessageCampaigns, eventName, eventParams, externalUserID).forEach(
                 WebMessageScheduler.scheduleInWebMessage.bind(WebMessageScheduler)
             );
-        };
+
         if (document.readyState === 'complete') {
             schedule();
         } else {
@@ -378,9 +392,6 @@ export class WebMessageManager {
         }
     }
 
-    /**
-     * ONLY FOR TESTING PURPOSES
-     */
     public static set eventIntermediateCounts(counts: EventIntermediateCounts[]) {
         this._eventIntermediateCounts = counts;
     }
@@ -390,6 +401,10 @@ export class WebMessageManager {
 
     public static set userData(userData: UserData) {
         this._userData = userData;
+    }
+
+    public static get userData(): UserData {
+        return this._userData;
     }
 
     public static updateEventCounts = this._updateEventCounts;

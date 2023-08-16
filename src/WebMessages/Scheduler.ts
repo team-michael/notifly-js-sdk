@@ -1,6 +1,6 @@
 import type { Campaign } from '../Types';
 import { setUserProperties } from '../User';
-import { logEvent } from '../Event';
+import { EventManager } from '../Event/Manager';
 
 export class WebMessageScheduler {
     private static _isWebMessageOpen = false;
@@ -49,7 +49,7 @@ export class WebMessageScheduler {
             // Apply modal properties
             iframeContainer.style.width = _convertToValidCSSStyle(modalProperties.width, '100%');
             if (modalProperties.small_screen_width_full && window.outerWidth < 520) {
-                console.log(window.outerWidth)
+                console.log(window.outerWidth);
                 iframeContainer.style.width = '100%';
             }
 
@@ -70,7 +70,7 @@ export class WebMessageScheduler {
                     iframeContainer.style.padding = _convertToValidCSSStyle(modalProperties.padding, '0px');
                 }
             }
-            
+
             if (iframeContainer.style.position === 'fixed') {
                 // If top and bottom are both defined, bottom will take precedence
                 if (modalProperties.center) {
@@ -101,7 +101,7 @@ export class WebMessageScheduler {
             const firstChild = document.body.firstChild;
             document.body.insertBefore(iframeContainer, firstChild);
 
-            logEvent(
+            EventManager.logEvent(
                 'in_web_message_show',
                 {
                     type: 'message_event',
@@ -138,7 +138,7 @@ export class WebMessageScheduler {
                                         }
                                     }
                                 }
-                                await logEvent(
+                                await EventManager.logEvent(
                                     'close_button_click',
                                     {
                                         type: 'message_event',
@@ -158,7 +158,7 @@ export class WebMessageScheduler {
                                 } finally {
                                     window.removeEventListener('message', messageEventListener);
                                 }
-                                await logEvent(
+                                await EventManager.logEvent(
                                     'main_button_click',
                                     {
                                         type: 'message_event',

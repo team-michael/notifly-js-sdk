@@ -2,13 +2,13 @@ import type { NotiflyInitializeOptions } from './src/Types';
 import { WebMessageManager } from './src/WebMessages/Manager';
 import { APIManager } from './src/API/Manager';
 import { registerServiceWorker } from './src/Push';
-import { logEvent, sessionStart } from './src/Event';
+import { EventManager } from './src/Event/Manager';
 import { setUserId, setUserProperties, deleteUser } from './src/User';
 import { initializeNotiflyStorage } from './src/Utils';
 import { setDeviceToken } from './src/Device';
+import { SdkStateManager, SdkState } from './src/SdkStateManager';
 
 let initializationLock = false;
-let isNotiflyInitialized = false;
 
 /**
  * Initializes the Notifly SDK. This should be called as early as possible in your application to function properly.
@@ -21,21 +21,26 @@ async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
         console.warn('[Notifly] Notifly SDK is being initialized more than once. Ignoring this call.');
         return false;
     }
-    if (isNotiflyInitialized) {
-        console.warn('[Notifly] Notifly SDK is already initialized. Ignoring this call.');
-        return true;
+    if (!SdkStateManager.isNotInitialized()) {
+        if (SdkStateManager.isReady()) {
+            console.warn('[Notifly] Notifly SDK is already initialized. Ignoring this call.');
+            return true;
+        } else {
+            console.error('[Notifly] Encountered unexpected SDK state. Please contact us, contact@greyboxhq.com');
+            return false;
+        }
     }
 
-    initializationLock = true;
+    initializationLock = true; // Acquire
 
     const onInitializationFailed = () => {
         initializationLock = false;
-        isNotiflyInitialized = false;
+        SdkStateManager.state = SdkState.FAILED;
         return false;
     };
     const onInitializationSuccess = () => {
         initializationLock = false;
-        isNotiflyInitialized = true;
+        SdkStateManager.state = SdkState.READY;
         return true;
     };
 
@@ -56,15 +61,13 @@ async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
     try {
         await initializeNotiflyStorage(projectId, username, password, deviceToken);
         await APIManager.initialize();
-
         if (pushSubscriptionOptions) {
             // Initialize push notifications
             const { vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis } = pushSubscriptionOptions;
             await registerServiceWorker(vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis);
         }
-
         await WebMessageManager.syncState();
-        await sessionStart();
+        await EventManager.sessionStart();
 
         return onInitializationSuccess();
     } catch (error) {
@@ -84,7 +87,7 @@ function trackEvent(
     eventParams: Record<string, any>,
     segmentationEventParamKeys: string[] | null = null
 ): Promise<void> {
-    return logEvent(eventName, eventParams, segmentationEventParamKeys, false);
+    return EventManager.logEvent(eventName, eventParams, segmentationEventParamKeys, false);
 }
 
 const notifly = {
@@ -94,11 +97,6 @@ const notifly = {
     deleteUser,
     setUserId,
     setDeviceToken,
-    // For testing purposes only
-    resetInitialization: () => {
-        initializationLock = false;
-        isNotiflyInitialized = false;
-    },
 };
 
 // Check if the code is running in a browser environment before assigning to `window`

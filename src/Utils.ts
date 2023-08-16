@@ -100,4 +100,23 @@ function generateRandomString(length: number): string {
     return result;
 }
 
-export { initializeNotiflyStorage, generateNotiflyUserId, getInitialNotiflyUserId, getInitialDeviceId, getPlatform };
+function mapNotificationPermissionToEnum(permission: NotificationPermission): number {
+    if (permission === 'denied') {
+        return 0; // DENIED
+    }
+
+    if (permission === 'granted') {
+        return 1; // AUTHORIZED
+    }
+
+    return -1; // NOT_DETERMINED
+}
+
+export {
+    initializeNotiflyStorage,
+    generateNotiflyUserId,
+    getInitialNotiflyUserId,
+    getInitialDeviceId,
+    getPlatform,
+    mapNotificationPermissionToEnum,
+};

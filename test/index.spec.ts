@@ -2,12 +2,13 @@ import { v5 } from 'uuid';
 import localForage from 'localforage';
 import { NAMESPACE } from '../src/Constants';
 import { saveCognitoIdToken } from '../src/API/Auth';
-import { sessionStart } from '../src/Event';
+import { EventManager } from '../src/Event/Manager';
 
 import notifly from '../index';
+import { SdkState, SdkStateManager } from '../src/SdkStateManager';
 
 jest.mock('../src/API/Auth');
-jest.mock('../src/Event');
+jest.mock('../src/Event/Manager');
 jest.mock('localforage', () => ({
     config: jest.fn(),
     getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
@@ -23,11 +24,11 @@ describe('Notifly SDK', () => {
 
         beforeEach(() => {
             (saveCognitoIdToken as jest.MockedFunction<typeof saveCognitoIdToken>).mockClear();
-            (sessionStart as jest.MockedFunction<typeof sessionStart>).mockClear();
+            (EventManager.sessionStart as jest.MockedFunction<typeof EventManager.sessionStart>).mockClear();
         });
 
         afterEach(() => {
-            notifly.resetInitialization();
+            SdkStateManager.state = SdkState.NOT_INITIALIZED; // Reset
         });
 
         it('should return false if any of the required parameters is empty', async () => {
