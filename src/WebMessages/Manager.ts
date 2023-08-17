@@ -16,12 +16,14 @@ import { generateNotiflyUserId } from '../Utils';
 import {
     ConditionValueComparator,
     getKSTCalendarDateString,
-    isValidEventIntermediateCounts,
     isValidWebMessageState,
+    isValidCampaignData,
+    isValidEventIntermediateCounts,
+    isValidUserData,
 } from './Utils';
 import { WebMessageScheduler } from './Scheduler';
-import { SdkState, SdkStateManager } from '../SdkStateManager';
-import { SessionManager } from '../SessionManager';
+import { SdkState, SdkStateManager } from '../SdkState';
+import { SessionManager } from '../Session';
 
 export class WebMessageManager {
     private static _eventIntermediateCounts: EventIntermediateCounts[] = [];
@@ -111,16 +113,19 @@ export class WebMessageManager {
         } else {
             this._eventIntermediateCounts = [];
         }
-        if (data.campaignData != null && Array.isArray(data.campaignData)) {
+        if (isValidCampaignData(data.campaignData)) {
             this._inWebMessageCampaigns = data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message');
         } else {
             this._inWebMessageCampaigns = [];
         }
-        if (data.userData != null) {
+        if (isValidUserData(data.userData)) {
             this._userData = data.userData;
         } else {
             this._userData = {};
         }
+
+        console.log(JSON.stringify(this.state, null, 2)); // DELETE LATER
+        await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
     }
 
     static updateUserData(params: Record<string, any>) {
@@ -129,6 +134,8 @@ export class WebMessageManager {
                 this._userData.user_properties[key] = params[key];
             }
         });
+
+        NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
     }
 
     static updateEventCountsAndMaybeTriggerWebMessages(
@@ -170,6 +177,8 @@ export class WebMessageManager {
                 event_params: eventParams || {},
             });
         }
+
+        NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
     }
 
     private static _triggerWebMessages(

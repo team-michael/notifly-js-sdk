@@ -3,9 +3,8 @@ import type { NotiflyInitializeOptions } from './src/Types';
 import { APIManager } from './src/API/Manager';
 import { EventManager } from './src/Event/Manager';
 import { WebMessageManager } from './src/WebMessages/Manager';
-import { SdkStateManager, SdkState } from './src/SdkStateManager';
-import { WindowEventManager } from './src/Event/WindowEventManager';
-import { SessionManager } from './src/SessionManager';
+import { SdkStateManager, SdkState } from './src/SdkState';
+import { SessionManager } from './src/Session';
 
 import { registerServiceWorker } from './src/Push';
 import { setUserId, setUserProperties, deleteUser } from './src/User';
@@ -63,8 +62,10 @@ async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
     }
 
     try {
-        await initializeNotiflyStorage(projectId, username, password, deviceToken);
-        await SessionManager.initialize(sessionDuration);
+        await Promise.all([
+            initializeNotiflyStorage(projectId, username, password, deviceToken),
+            SessionManager.initialize(sessionDuration),
+        ]);
         await APIManager.initialize();
 
         if (pushSubscriptionOptions && SessionManager.isSessionExpired()) {
@@ -73,12 +74,12 @@ async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
             await registerServiceWorker(vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis);
         }
 
-        WindowEventManager.initialize();
         await WebMessageManager.syncState();
 
         if (SessionManager.isSessionExpired()) {
             await EventManager.sessionStart();
         }
+        await SessionManager.start();
 
         return onInitializationSuccess();
     } catch (error) {

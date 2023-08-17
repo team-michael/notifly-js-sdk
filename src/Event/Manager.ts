@@ -2,7 +2,7 @@ import { v4 } from 'uuid';
 
 import { SDK_VERSION } from '../Constants';
 
-import { SdkStateManager } from '../SdkStateManager';
+import { SdkStateManager } from '../SdkState';
 
 import { APIManager } from '../API/Manager';
 import { PendingEventManager } from './PendingEventManager';

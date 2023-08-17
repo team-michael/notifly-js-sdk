@@ -129,24 +129,36 @@ export function getKSTCalendarDateString(daysOffset = 0) {
 }
 
 export function isValidWebMessageState(state: any): boolean {
-    // TODO: validate campaign too
-    if (!state || !state.eventIntermediateCounts || !state.userData || !state.inWebMessageCampaigns) {
-        return false;
-    }
-    if (!Array.isArray(state.eventIntermediateCounts)) {
-        return false;
-    }
-    if (state.eventIntermediateCounts.some((eic: any) => !isValidEventIntermediateCounts(eic))) {
-        return false;
-    }
-    if (!isValidUserData(state.userData)) {
+    if (!state) {
         return false;
     }
 
-    return true;
+    return (
+        isValidCampaignData(state.inWebMessageCampaigns) &&
+        isValidUserData(state.userData) &&
+        isValidEventIntermediateCounts(state.eventIntermediateCounts)
+    );
 }
 
-export function isValidEventIntermediateCounts(eic: any): boolean {
+export function isValidEventIntermediateCounts(eics: any): boolean {
+    if (!eics || !Array.isArray(eics)) {
+        return false;
+    }
+
+    return eics.every((eic) => _isValidEventIntermediateCount(eic));
+}
+
+export function isValidCampaignData(campaignData: any): boolean {
+    // TODO: extra validation
+    return campaignData && Array.isArray(campaignData);
+}
+
+export function isValidUserData(userData: any): boolean {
+    // TODO: extra validation
+    return userData && typeof userData === 'object';
+}
+
+function _isValidEventIntermediateCount(eic: any): boolean {
     // dt should be YYYY-MM-DD format
     if (
         eic &&
@@ -164,8 +176,4 @@ export function isValidEventIntermediateCounts(eic: any): boolean {
     } else {
         return false;
     }
-}
-
-export function isValidUserData(userData: any): boolean {
-    return typeof userData === 'object';
 }

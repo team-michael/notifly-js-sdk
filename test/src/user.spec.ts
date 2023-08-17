@@ -1,5 +1,5 @@
 import localForage from 'localforage';
-import { SdkState, SdkStateManager } from '../../src/SdkStateManager';
+import { SdkState, SdkStateManager } from '../../src/SdkState';
 import { setUserProperties } from '../../src/User';
 import { EventManager } from '../../src/Event/Manager';
 

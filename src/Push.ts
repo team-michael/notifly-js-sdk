@@ -191,7 +191,6 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
     headerContainer.style.display = 'flex';
     headerContainer.style.justifyContent = 'start';
     headerContainer.style.alignItems = 'center';
-    headerContainer.style.marginTop = '10px';
     headerContainer.style.marginBottom = '5px';
     headerContainer.style.marginLeft = '0px';
     headerContainer.style.marginRight = '0px';
@@ -281,18 +280,6 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
         grantButton.textContent = 'Receive Notifications';
         denyButton.textContent = 'Not Now';
     }
-
-    overlay.appendChild(popup);
-    headerContainer.appendChild(bellIcon);
-    headerContainer.appendChild(header);
-    popup.appendChild(headerContainer);
-    popup.appendChild(message);
-    buttonContainer.appendChild(grantButton);
-    buttonContainer.appendChild(denyButton);
-    popup.appendChild(closeButton);
-    popup.appendChild(buttonContainer);
-
-    document.body.appendChild(overlay);
 
     overlay.appendChild(popup);
     headerContainer.appendChild(bellIcon);

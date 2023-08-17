@@ -5,7 +5,7 @@ import { saveCognitoIdToken } from '../src/API/Auth';
 import { EventManager } from '../src/Event/Manager';
 
 import notifly from '../index';
-import { SdkState, SdkStateManager } from '../src/SdkStateManager';
+import { SdkState, SdkStateManager } from '../src/SdkState';
 
 jest.mock('../src/API/Auth');
 jest.mock('../src/Event/Manager');

@@ -2,7 +2,7 @@ import { WebMessageManager } from './WebMessages/Manager';
 import { EventManager } from './Event/Manager';
 import { generateNotiflyUserId } from './Utils';
 import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
-import { SdkStateManager } from './SdkStateManager';
+import { SdkStateManager } from './SdkState';
 
 /**
  * Sets or removes user ID for the current user.

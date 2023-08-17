@@ -1,4 +1,4 @@
-import { SdkStateManager, SdkStateObserver } from '../SdkStateManager';
+import { SdkStateManager, SdkStateObserver } from '../SdkState';
 
 type ResolvingSdkEventName = 'initialized' | 'refresh_completed';
 
