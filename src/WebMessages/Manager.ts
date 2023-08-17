@@ -70,11 +70,10 @@ export class WebMessageManager {
                     this._inWebMessageCampaigns = parsedState.inWebMessageCampaigns;
                     this._userData = parsedState.userData;
 
-                    console.log('Storage cache hit!', JSON.stringify(parsedStateJSON, null, 2)); // DELETE LATER
                     return;
                 }
             } catch (error) {
-                console.log('[Notifly] State from strorage might have been corrupted. Ignoring state from storage.');
+                console.warn('[Notifly] State from strorage might have been corrupted. Ignoring state from storage.');
             }
         }
 
@@ -124,7 +123,6 @@ export class WebMessageManager {
             this._userData = {};
         }
 
-        console.log(JSON.stringify(this.state, null, 2)); // DELETE LATER
         await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
     }
 

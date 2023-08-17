@@ -29,9 +29,6 @@ export class SessionManager {
     }
 
     static async start() {
-        // DELETE LATER
-        console.log('SessionManager.start');
-
         await this.saveLastSessionTime();
 
         // Register saver if window is focused
@@ -48,8 +45,6 @@ export class SessionManager {
     }
 
     static onWindowFocus() {
-        // DELETE LATER
-        console.log('onWindowFocus');
         if (this._storageSaverIntervalId) {
             // This might not happen, but just in case
             clearInterval(this._storageSaverIntervalId);
@@ -62,19 +57,12 @@ export class SessionManager {
     }
 
     static onWindowBlur() {
-        // DELETE LATER
-        console.log('onWindowBlur');
         if (this._storageSaverIntervalId) {
             clearInterval(this._storageSaverIntervalId);
         }
     }
 
     static isSessionExpired() {
-        // DELETE LATER
-        console.log('lastSessionTime', this._lastSessionTime);
-        console.log('sessionDuration', this._sessionDuration);
-        console.log('now', Math.floor(Date.now() / 1000));
-
         if (!this._lastSessionTime) {
             return true;
         }
