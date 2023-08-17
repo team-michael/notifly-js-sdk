@@ -16,7 +16,6 @@ let initializationLock = false;
 /**
  * Initializes the Notifly SDK. This should be called as early as possible in your application to function properly.
  * @param {NotiflyInitializeOptions} options - An object containing the project ID, username, password, device token, and push subscription options.
- * @param {boolean | undefined} shouldStartSession - A boolean value indicating whether a session should be started after initialization. Defaults to true.
  * @returns {Promise<boolean>} A promise that resolves with a boolean value indicating whether the SDK was initialized successfully.
  */
 async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
