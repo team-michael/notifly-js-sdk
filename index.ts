@@ -101,6 +101,15 @@ function trackEvent(
     return EventManager.logEvent(eventName, eventParams, segmentationEventParamKeys, false);
 }
 
+// Function below is only for cafe24 scripts
+function setSdkType(sdkType: 'js' | 'js-cafe24') {
+    SdkStateManager.setSdkType(sdkType);
+}
+
+function setSource(source: 'cafe24' | null) {
+    SdkStateManager.setSource(source);
+}
+
 const notifly = {
     initialize,
     trackEvent,
@@ -108,6 +117,8 @@ const notifly = {
     deleteUser,
     setUserId,
     setDeviceToken,
+    setSdkType,
+    setSource,
 };
 
 // Check if the code is running in a browser environment before assigning to `window`

@@ -114,6 +114,12 @@ async function removeUserId(): Promise<void> {
     }
 
     try {
+        const previousExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
+        if (!previousExternalUserId) {
+            // No-op
+            return;
+        }
+
         await _cleanUserIDInLocalForage();
         await EventManager.logEvent('remove_external_user_id', {}, null, true);
         await WebMessageManager.refreshState();

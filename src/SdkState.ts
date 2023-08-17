@@ -13,6 +13,8 @@ export interface SdkStateObserver {
 export class SdkStateManager {
     private static _state: SdkState = SdkState.NOT_INITIALIZED;
     private static _observers: SdkStateObserver[] = [];
+    static type: 'js' | 'js-cafe24' = 'js';
+    static source: 'cafe24' | null = null;
 
     static registerObserver(observer: SdkStateObserver): void {
         this._observers.push(observer);
@@ -32,6 +34,14 @@ export class SdkStateManager {
             default:
                 break;
         }
+    }
+
+    static setSdkType(type: 'js' | 'js-cafe24'): void {
+        this.type = type;
+    }
+
+    static setSource(source: 'cafe24' | null): void {
+        this.source = source;
     }
 
     static isReady(): boolean {

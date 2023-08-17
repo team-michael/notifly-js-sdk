@@ -74,7 +74,7 @@ export class EventManager {
                 is_internal_event: isInternalEvent,
                 segmentationEventParamKeys: segmentationEventParamKeys,
                 sdk_version: SDK_VERSION,
-                sdk_type: 'js',
+                sdk_type: SdkStateManager.type,
                 time: Math.floor(Date.now() / 1000),
                 platform: getPlatform(),
             };
@@ -89,6 +89,9 @@ export class EventManager {
             }
             if (externalUserID) {
                 data.external_user_id = externalUserID;
+            }
+            if (SdkStateManager.source) {
+                data.source = SdkStateManager.source;
             }
 
             await APIManager.call(
