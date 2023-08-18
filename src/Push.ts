@@ -1,6 +1,9 @@
 import { v5 } from 'uuid';
-import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
+
 import { NAMESPACE } from './Constants';
+
+import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
+
 import { EventManager } from './Event/Manager';
 
 async function registerServiceWorker(

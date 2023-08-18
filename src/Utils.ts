@@ -1,5 +1,7 @@
 import { v4, v5 } from 'uuid';
+
 import { NAMESPACE } from './Constants';
+
 import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 
 async function initializeNotiflyStorage(projectId: string, username: string, password: string, deviceToken?: string) {

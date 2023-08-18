@@ -27,6 +27,8 @@ declare module 'notifly-js-sdk' {
         setDeviceToken(deviceToken: string | null | undefined): void;
         setSdkType(sdkType: 'js' | 'js-cafe24'): void;
         setSource(source: 'cafe24' | null): void;
+        getUserId(): Promise<string | null>;
+        getUserProperties(): Promise<Record<string, any> | null>;        
     }
 
     const notifly: NotiflySDK;

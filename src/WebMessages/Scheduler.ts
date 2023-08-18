@@ -1,9 +1,35 @@
 import type { Campaign } from '../Types';
+
 import { setUserProperties } from '../User';
 import { EventManager } from '../Event/Manager';
+import { SdkStateManager, SdkStateObserver } from '../SdkState';
+
+class SdkStateObserverForWebMessageScheduler implements SdkStateObserver {
+    onInitialized() {
+        // No-op
+        return;
+    }
+
+    onRefreshCompleted() {
+        // No-op
+        return;
+    }
+
+    onRefreshStarted() {
+        WebMessageScheduler.descheduleInWebMessage();
+    }
+}
 
 export class WebMessageScheduler {
     private static _isWebMessageOpen = false;
+    private static _scheduledWebMessages: {
+        timerId: ReturnType<typeof setTimeout>;
+        campaignId: string;
+    }[] = [];
+
+    static initialize() {
+        SdkStateManager.registerObserver(new SdkStateObserverForWebMessageScheduler());
+    }
 
     private static _showInWebMessage(campaign: Campaign) {
         if (this._isWebMessageOpen) {
@@ -196,15 +222,41 @@ export class WebMessageScheduler {
 
     static scheduleInWebMessage(campaign: Campaign) {
         const delayInSeconds = campaign.delay ?? 0;
-        delayInSeconds === 0
-            ? this._showInWebMessage(campaign)
-            : setTimeout(() => {
-                  try {
-                      this._showInWebMessage(campaign);
-                  } catch (error) {
-                      console.error('[Notifly] Error showing web message: ', error);
-                  }
-              }, delayInSeconds * 1000);
+
+        if (delayInSeconds <= 0) {
+            this._showInWebMessage(campaign);
+        } else {
+            const timerId = setTimeout(() => {
+                try {
+                    this._showInWebMessage(campaign);
+                } catch (error) {
+                    console.error('[Notifly] Error showing web message: ', error);
+                } finally {
+                    const index = this._scheduledWebMessages.findIndex((item) => item.timerId === timerId);
+                    if (index !== -1) {
+                        this._scheduledWebMessages.splice(index, 1);
+                    }
+                }
+            }, delayInSeconds * 1000);
+
+            this._scheduledWebMessages.push({
+                timerId: timerId,
+                campaignId: campaign.id,
+            });
+        }
+    }
+
+    static descheduleInWebMessage(campaignId: string | null = null) {
+        if (!campaignId) {
+            this._scheduledWebMessages.forEach((element) => clearTimeout(element.timerId));
+            this._scheduledWebMessages = [];
+        } else {
+            const index = this._scheduledWebMessages.findIndex((item) => item.campaignId === campaignId);
+            if (index !== -1) {
+                clearTimeout(this._scheduledWebMessages[index].timerId);
+                this._scheduledWebMessages.splice(index, 1);
+            }
+        }
     }
 }
 

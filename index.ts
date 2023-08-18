@@ -1,15 +1,12 @@
 import type { NotiflyInitializeOptions } from './src/Types';
 
 import { APIManager } from './src/API/Manager';
-import { EventManager } from './src/Event/Manager';
-import { WebMessageManager } from './src/WebMessages/Manager';
-import { SdkStateManager, SdkState } from './src/SdkState';
 import { SessionManager } from './src/Session';
-
-import { registerServiceWorker } from './src/Push';
-import { setUserId, setUserProperties, deleteUser } from './src/User';
-import { initializeNotiflyStorage } from './src/Utils';
+import { SdkStateManager, SdkState } from './src/SdkState';
+import { EventManager } from './src/Event/Manager';
+import { setUserId, getUserId, setUserProperties, getUserProperties, deleteUser } from './src/User';
 import { setDeviceToken } from './src/Device';
+import { initializeNotiflyStorage } from './src/Utils';
 
 let initializationLock = false;
 
@@ -61,24 +58,9 @@ async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
     }
 
     try {
-        await Promise.all([
-            initializeNotiflyStorage(projectId, username, password, deviceToken),
-            SessionManager.initialize(sessionDuration),
-        ]);
+        await initializeNotiflyStorage(projectId, username, password, deviceToken);
         await APIManager.initialize();
-
-        if (pushSubscriptionOptions && SessionManager.isSessionExpired()) {
-            // Initialize push notifications
-            const { vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis } = pushSubscriptionOptions;
-            await registerServiceWorker(vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis);
-        }
-
-        await WebMessageManager.syncState();
-
-        if (SessionManager.isSessionExpired()) {
-            await EventManager.sessionStart();
-        }
-        await SessionManager.start();
+        await SessionManager.initialize(pushSubscriptionOptions, sessionDuration);
 
         return onInitializationSuccess();
     } catch (error) {
@@ -119,6 +101,8 @@ const notifly = {
     setDeviceToken,
     setSdkType,
     setSource,
+    getUserId,
+    getUserProperties,
 };
 
 // Check if the code is running in a browser environment before assigning to `window`

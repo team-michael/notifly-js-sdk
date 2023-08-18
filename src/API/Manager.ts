@@ -1,5 +1,4 @@
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
-
 import { saveCognitoIdToken } from './Auth';
 
 export class APIManager {

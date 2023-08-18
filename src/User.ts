@@ -1,8 +1,12 @@
+import { isEqual, isEmpty } from 'lodash';
+
+import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
+
+import { SdkStateManager } from './SdkState';
 import { WebMessageManager } from './WebMessages/Manager';
 import { EventManager } from './Event/Manager';
+
 import { generateNotiflyUserId } from './Utils';
-import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
-import { SdkStateManager } from './SdkState';
 
 /**
  * Sets or removes user ID for the current user.
@@ -38,12 +42,29 @@ async function setUserId(userID?: string | null | undefined) {
                 await setUserProperties({
                     external_user_id: userID,
                 });
+                await WebMessageManager.refreshState();
             }
-            await WebMessageManager.refreshState();
         }
     } catch (err) {
         console.warn('[Notifly] setUserId failed');
     }
+}
+
+/**
+ * Gets the current user ID.
+ *
+ * @async
+ * @returns {Promise<string | null>}
+ *
+ * @example
+ * const currentUserId = await getUserId();
+ */
+async function getUserId(): Promise<string | null> {
+    if (!SdkStateManager.isReady()) {
+        console.error('User Id cannot retrieved when SDK is either not initialized or refreshing its state.');
+        return null;
+    }
+    return await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
 }
 
 /**
@@ -85,15 +106,39 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
                 __notiflyUserID: notiflyUserID,
                 __notiflyExternalUserID: params.external_user_id,
             });
+            await EventManager.logEvent('set_user_properties', params, null, true);
         } else {
             // Update local state
-            WebMessageManager.updateUserData(params);
-        }
+            const diff: Record<string, any> = {};
+            const previousUserProperties = (await getUserProperties()) || {};
 
-        return await EventManager.logEvent('set_user_properties', params, null, true);
+            Object.keys(params).forEach((key) => {
+                if (!isEqual(previousUserProperties[key], params[key])) {
+                    diff[key] = params[key];
+                }
+            });
+
+            if (!isEmpty(diff)) {
+                WebMessageManager.updateUserData(diff);
+                await EventManager.logEvent('set_user_properties', diff, null, true);
+            }
+        }
     } catch (err) {
         console.warn('[Notifly] Failed to set user properties:', err);
     }
+}
+
+/**
+ * Gets the user properties for the current user.
+ * @async
+ * @returns {Promise<Record<string, any> | null>}
+ */
+async function getUserProperties(): Promise<Record<string, any> | null> {
+    if (!SdkStateManager.isReady()) {
+        console.error('User properties cannot retrieved when SDK is either not initialized or refreshing its state.');
+        return null;
+    }
+    return WebMessageManager.state.userData.user_properties || null;
 }
 
 /**
@@ -160,4 +205,4 @@ async function _cleanUserIDInLocalForage() {
     await NotiflyStorage.removeItems([NotiflyStorageKeys.NOTIFLY_USER_ID, NotiflyStorageKeys.EXTERNAL_USER_ID]);
 }
 
-export { setUserProperties, setUserId, deleteUser };
+export { setUserProperties, getUserProperties, setUserId, deleteUser, getUserId };

@@ -42,4 +42,9 @@ export class PendingEventManager implements SdkStateObserver {
     onRefreshCompleted(): void {
         this._resolve('refresh_completed');
     }
+
+    onRefreshStarted(): void {
+        // No-op
+        return;
+    }
 }

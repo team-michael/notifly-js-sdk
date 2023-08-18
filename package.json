@@ -1,6 +1,6 @@
 {
   "name": "notifly-js-sdk",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "description": "Notifly JS SDK for browser.",
   "source": [
     "index.ts"
@@ -52,6 +52,7 @@
   "dependencies": {
     "@types/uuid": "^9.0.1",
     "localforage": "^1.10.0",
+    "lodash": "^4.17.21",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
@@ -62,6 +63,7 @@
     "@parcel/packager-ts": "^2.9.1",
     "@parcel/transformer-typescript-types": "^2.9.1",
     "@types/jest": "^29.5.1",
+    "@types/lodash": "^4.14.197",
     "@types/node": "^18.16.3",
     "@typescript-eslint/eslint-plugin": "^5.59.1",
     "@typescript-eslint/parser": "^5.59.1",

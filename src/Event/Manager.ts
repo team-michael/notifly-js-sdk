@@ -2,13 +2,13 @@ import { v4 } from 'uuid';
 
 import { SDK_VERSION } from '../Constants';
 
-import { SdkStateManager } from '../SdkState';
+import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
+import { SdkStateManager } from '../SdkState';
 import { APIManager } from '../API/Manager';
 import { PendingEventManager } from './PendingEventManager';
 import { WebMessageManager } from '../WebMessages/Manager';
 import { generateNotiflyUserId, getPlatform, mapNotificationPermissionToEnum } from '../Utils';
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 
@@ -108,7 +108,7 @@ export class EventManager {
                 'follow'
             );
 
-            WebMessageManager.updateEventCountsAndMaybeTriggerWebMessages(
+            WebMessageManager.maybeTriggerWebMessagesAndUpdateEventCounts(
                 isInternalEvent ? `notifly__${eventName}` : eventName,
                 eventParams,
                 externalUserID,

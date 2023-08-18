@@ -7,6 +7,7 @@ export enum SdkState {
 
 export interface SdkStateObserver {
     onInitialized(): void;
+    onRefreshStarted(): void;
     onRefreshCompleted(): void;
 }
 
@@ -27,6 +28,9 @@ export class SdkStateManager {
         switch ([previousState, state].join(',')) {
             case [SdkState.NOT_INITIALIZED, SdkState.READY].join(','):
                 this._observers.forEach((observer) => observer.onInitialized());
+                break;
+            case [SdkState.READY, SdkState.REFRESHING].join(','):
+                this._observers.forEach((observer) => observer.onRefreshStarted());
                 break;
             case [SdkState.REFRESHING, SdkState.READY].join(','):
                 this._observers.forEach((observer) => observer.onRefreshCompleted());

@@ -1,7 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
-
-import { APIManager } from '../API/Manager';
 import type {
     Campaign,
     Condition,
@@ -11,7 +8,12 @@ import type {
     SegmentOperator,
     SegmentConditionUnitType,
 } from '../Types';
-import { generateNotiflyUserId } from '../Utils';
+
+import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
+
+import { SdkState, SdkStateManager } from '../SdkState';
+import { APIManager } from '../API/Manager';
+import { WebMessageScheduler } from './Scheduler';
 
 import {
     ConditionValueComparator,
@@ -21,9 +23,7 @@ import {
     isValidEventIntermediateCounts,
     isValidUserData,
 } from './Utils';
-import { WebMessageScheduler } from './Scheduler';
-import { SdkState, SdkStateManager } from '../SdkState';
-import { SessionManager } from '../Session';
+import { generateNotiflyUserId } from '../Utils';
 
 export class WebMessageManager {
     private static _eventIntermediateCounts: EventIntermediateCounts[] = [];
@@ -38,6 +38,11 @@ export class WebMessageManager {
         };
     }
 
+    static async initialize(hard = false) {
+        await this._syncState(!hard);
+        WebMessageScheduler.initialize();
+    }
+
     static async refreshState() {
         if (!SdkStateManager.isReady()) {
             console.error('[Notifly] Cannot refresh state when the SDK is not ready. Ignoring refreshState call.');
@@ -45,7 +50,7 @@ export class WebMessageManager {
         }
         SdkStateManager.state = SdkState.REFRESHING;
         try {
-            await this.syncState(false);
+            await this._syncState(false);
             SdkStateManager.state = SdkState.READY;
         } catch (error) {
             console.error('[Notifly] Failed to refresh state: ', error);
@@ -53,8 +58,8 @@ export class WebMessageManager {
         }
     }
 
-    static async syncState(useStorageIfAvailable = true): Promise<void> {
-        if (useStorageIfAvailable && !SessionManager.isSessionExpired()) {
+    private static async _syncState(useStorageIfAvailable = true): Promise<void> {
+        if (useStorageIfAvailable) {
             // Get state from storage, if available
             const storedState = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_USER_STATE);
             try {
@@ -72,6 +77,7 @@ export class WebMessageManager {
 
                     return;
                 }
+                console.warn('[Notifly] State from strorage might have been corrupted. Ignoring state from storage.');
             } catch (error) {
                 console.warn('[Notifly] State from strorage might have been corrupted. Ignoring state from storage.');
             }
@@ -127,23 +133,25 @@ export class WebMessageManager {
     }
 
     static updateUserData(params: Record<string, any>) {
-        Object.keys(params).map((key) => {
-            if (this._userData && this._userData.user_properties) {
-                this._userData.user_properties[key] = params[key];
-            }
+        if (!this._userData.user_properties) {
+            this._userData.user_properties = {};
+        }
+
+        Object.keys(params).forEach((key) => {
+            this._userData.user_properties && (this._userData.user_properties[key] = params[key]);
         });
 
         NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
     }
 
-    static updateEventCountsAndMaybeTriggerWebMessages(
+    static maybeTriggerWebMessagesAndUpdateEventCounts(
         eventName: string,
         eventParams: Record<string, any>,
         externalUserID: string | null,
         segmentationEventParamKeys?: string[] | null
     ) {
-        this._updateEventCounts(eventName, eventParams, segmentationEventParamKeys);
         this._triggerWebMessages(eventName, eventParams, externalUserID);
+        this._updateEventCounts(eventName, eventParams, segmentationEventParamKeys);
     }
 
     private static _updateEventCounts(
