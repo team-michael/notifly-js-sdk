@@ -194,22 +194,36 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
     headerContainer.style.display = 'flex';
     headerContainer.style.justifyContent = 'start';
     headerContainer.style.alignItems = 'center';
+    headerContainer.style.marginTop = '10px';
     headerContainer.style.marginBottom = '5px';
     headerContainer.style.marginLeft = '0px';
     headerContainer.style.marginRight = '0px';
 
-    header.style.fontWeight = '600';
+    header.style.fontSize = '17px';
+    header.style.color = '#1f2937';
+    header.style.letterSpacing = '-0.5px';
+    header.style.fontWeight = '800';
     header.style.marginLeft = '6px';
+    header.style.marginTop = '0px';
+    header.style.marginBottom = '0px';
+
+    message.style.padding = '0px';
     message.style.marginTop = '8px';
     message.style.marginBottom = '16px';
     message.style.marginLeft = '0px';
     message.style.marginRight = '0px';
+    message.style.fontSize = '15px';
+    message.style.fontWeight = '400';
+    message.style.color = '#374151';
+    message.style.lineHeight = '1.3';
+    message.style.letterSpacing = '-0.3px';
 
     buttonContainer.style.display = 'flex';
     buttonContainer.style.justifyContent = 'flex-end';
     buttonContainer.style.gap = '6px';
 
     grantButton.style.padding = '5px 15px';
+    grantButton.style.margin = '0px';
     grantButton.style.border = 'none';
     grantButton.style.backgroundColor = '#2563eb';
     grantButton.style.color = 'white';
@@ -222,8 +236,11 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
     grantButton.addEventListener('mouseout', () => {
         grantButton.style.backgroundColor = '#2563eb';
     });
+    grantButton.style.fontSize = '13.5px';
+    grantButton.style.letterSpacing = '-0.3px';
 
     denyButton.style.padding = '5px 15px';
+    denyButton.style.margin = '0px';
     denyButton.style.border = 'none';
     denyButton.style.backgroundColor = '#27272a';
     denyButton.style.color = 'white';
@@ -236,20 +253,9 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
     denyButton.addEventListener('mouseout', () => {
         denyButton.style.backgroundColor = '#27272a';
     });
-
-    header.style.fontSize = '17px';
-    header.style.color = '#1f2937';
-    header.style.letterSpacing = '-0.5px';
-    header.style.fontWeight = '800';
-    message.style.fontSize = '15px';
-    message.style.fontWeight = '400';
-    message.style.color = '#374151';
-    message.style.lineHeight = '1.3';
-    message.style.letterSpacing = '-0.3px';
-    grantButton.style.fontSize = '13.5px';
-    grantButton.style.letterSpacing = '-0.3px';
     denyButton.style.fontSize = '13.5px';
     denyButton.style.letterSpacing = '-0.3px';
+
     header.style.setProperty(
         'font-family',
         "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
