@@ -1,9 +1,10 @@
 import type { Campaign } from '../Types';
 
+import NotiflyWebMessageRenderer from 'notifly-web-message-renderer';
+
 import { setUserProperties } from '../User';
 import { EventManager } from '../Event/Manager';
 import { SdkStateManager, SdkStateObserver } from '../SdkState';
-import { WebMessageRenderer } from './Renderer';
 
 class SdkStateObserverForWebMessageScheduler implements SdkStateObserver {
     onInitialized() {
@@ -47,7 +48,7 @@ export class WebMessageScheduler {
         const templateName = modalProperties.template_name;
 
         try {
-            const renderer = new WebMessageRenderer(campaign.message.modal_properties, message.html_url, () => {
+            NotiflyWebMessageRenderer.render(campaign.message.modal_properties, message.html_url, () => {
                 EventManager.logEvent(
                     'in_web_message_show',
                     {
@@ -63,12 +64,12 @@ export class WebMessageScheduler {
                 const messageEventListener = (() => {
                     const func = async (event: MessageEvent) => {
                         try {
-                            if (event.source === renderer.iframe.contentWindow) {
+                            if (event.source === NotiflyWebMessageRenderer.getIframe().contentWindow) {
                                 const message = event.data;
                                 if (message.type === 'close') {
                                     this._isWebMessageOpen = false;
                                     try {
-                                        renderer.dispose();
+                                        NotiflyWebMessageRenderer.dispose();
                                     } catch (error) {
                                         /* empty */
                                     } finally {
@@ -99,7 +100,7 @@ export class WebMessageScheduler {
                                 } else if (message.type === 'main_button') {
                                     this._isWebMessageOpen = false;
                                     try {
-                                        renderer.dispose();
+                                        NotiflyWebMessageRenderer.dispose();
                                     } catch (error) {
                                         /* empty */
                                     } finally {
@@ -137,8 +138,6 @@ export class WebMessageScheduler {
 
                 window.addEventListener('message', messageEventListener);
             });
-
-            renderer.render();
         } catch (error) {
             this._isWebMessageOpen = false;
             console.error('[Notifly] Error creating in web message: ', error);
