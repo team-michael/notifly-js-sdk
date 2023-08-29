@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { SegmentConditionValueType } from '../Types';
 
+export type PopupVersion = 1 | 2;
+
 export class ConditionValueComparator {
     private static _safeCast(value: any, type: SegmentConditionValueType | 'ARRAY') {
         switch (type) {
