@@ -47,8 +47,8 @@ export class WebMessageScheduler {
         const modalProperties = message.modal_properties;
         const templateName = modalProperties.template_name;
 
-        try {
-            NotiflyWebMessageRenderer.render(campaign.message.modal_properties, message.html_url, () => {
+        NotiflyWebMessageRenderer.render(campaign.message.modal_properties, message.html_url, {
+            onRenderCompleted: () => {
                 EventManager.logEvent(
                     'in_web_message_show',
                     {
@@ -117,6 +117,8 @@ export class WebMessageScheduler {
                                         null,
                                         true
                                     );
+                                } else {
+                                    // No-op
                                 }
                                 if (message.link) {
                                     // Navigate to link if necessary
@@ -137,11 +139,14 @@ export class WebMessageScheduler {
                 })();
 
                 window.addEventListener('message', messageEventListener);
-            });
-        } catch (error) {
-            this._isWebMessageOpen = false;
-            console.error('[Notifly] Error creating in web message: ', error);
-        }
+            },
+            onRenderFailed: () => {
+                this._isWebMessageOpen = false;
+                console.error(
+                    '[Notifly] Error creating in web message. Web message content is either invalid or not found'
+                );
+            },
+        });
     }
 
     static scheduleInWebMessage(campaign: Campaign) {
