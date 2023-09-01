@@ -30,7 +30,6 @@ export class WebMessageScheduler {
     }[] = [];
 
     static initialize() {
-        NotiflyWebMessageRenderer.initialize();
         SdkStateManager.registerObserver(new SdkStateObserverForWebMessageScheduler());
     }
 
