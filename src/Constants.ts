@@ -1,4 +1,4 @@
-export const SDK_VERSION = '1.6.0';
+export const SDK_VERSION = '1.6.1';
 
 export enum NAMESPACE {
     EVENTID = '830b5f7b-e392-43db-a17b-d835f0bcab2b',
