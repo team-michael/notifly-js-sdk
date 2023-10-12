@@ -1,5 +1,3 @@
-import { isEqual, isEmpty } from 'lodash';
-
 import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 
 import { SdkStateManager } from './SdkState';
@@ -110,18 +108,13 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
         } else {
             // Update local state
             const diff: Record<string, any> = {};
-            const previousUserProperties = (await getUserProperties()) || {};
 
             Object.keys(params).forEach((key) => {
-                if (!isEqual(previousUserProperties[key], params[key])) {
-                    diff[key] = params[key];
-                }
+                diff[key] = params[key];
             });
 
-            if (!isEmpty(diff)) {
-                WebMessageManager.updateUserData(diff);
-                await EventManager.logEvent('set_user_properties', diff, null, true);
-            }
+            WebMessageManager.updateUserData(diff);
+            await EventManager.logEvent('set_user_properties', diff, null, true);
         }
     } catch (err) {
         console.warn('[Notifly] Failed to set user properties:', err);
