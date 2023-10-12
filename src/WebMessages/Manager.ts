@@ -7,6 +7,7 @@ import type {
     DeviceProperties,
     SegmentOperator,
     SegmentConditionUnitType,
+    UserMetadataProperties,
 } from '../Types';
 
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
@@ -22,6 +23,7 @@ import {
     isValidCampaignData,
     isValidEventIntermediateCounts,
     isValidUserData,
+    isValueNotPresent,
 } from './Utils';
 import { generateNotiflyUserId } from '../Utils';
 
@@ -40,6 +42,7 @@ export class WebMessageManager {
 
     static async initialize(hard = false) {
         await this._syncState(!hard);
+        await this._updateExternalUserId();
         WebMessageScheduler.initialize();
     }
 
@@ -74,6 +77,8 @@ export class WebMessageManager {
                     this._eventIntermediateCounts = parsedState.eventIntermediateCounts;
                     this._inWebMessageCampaigns = parsedState.inWebMessageCampaigns;
                     this._userData = parsedState.userData;
+
+                    await this._updateExternalUserId();
 
                     return;
                 }
@@ -129,6 +134,7 @@ export class WebMessageManager {
             this._userData = {};
         }
 
+        await this._updateExternalUserId();
         await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
     }
 
@@ -142,6 +148,10 @@ export class WebMessageManager {
         });
 
         NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
+    }
+
+    private static async _updateExternalUserId() {
+        this._userData.external_user_id = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
     }
 
     static maybeTriggerWebMessagesAndUpdateEventCounts(
@@ -328,9 +338,11 @@ export class WebMessageManager {
     }
 
     private static _matchCondition(condition: Condition, eventParams: Record<string, any>) {
+        console.log('matchCondition', condition);
         switch (condition.unit) {
             case 'event':
                 return this._matchEventBasedCondition(condition);
+            case 'user_metadata':
             case 'user':
             case 'device':
                 return this._matchUserPropertyBasedCondition(condition, eventParams);
@@ -391,16 +403,19 @@ export class WebMessageManager {
         const { unit, attribute, operator, useEventParamsAsConditionValue, comparison_parameter, valueType } =
             condition;
 
-        if (!valueType) {
-            return false;
+        console.log(attribute);
+        const userAttributeValue = this._extractUserAttribute(unit, this._userData, attribute as string);
+
+        console.log(condition);
+        if (operator === 'IS_NULL') {
+            console.log('IS_NULL!!!', userAttributeValue);
+            return isValueNotPresent(userAttributeValue);
+        }
+        if (operator === 'IS_NOT_NULL') {
+            return !isValueNotPresent(userAttributeValue);
         }
 
-        const userProperties = this._userData.user_properties;
-        if (!userProperties) {
-            return false;
-        }
-        const userAttributeValue = this._extractUserAttribute(unit, this._userData, attribute as string);
-        if (!userAttributeValue) {
+        if (!valueType) {
             return false;
         }
 
@@ -429,6 +444,7 @@ export class WebMessageManager {
                 return ConditionValueComparator.IsLessThanOrEqual(userAttributeValue, value, valueType);
             case '@>':
                 return ConditionValueComparator.Contains(userAttributeValue, value, valueType);
+            // IS_NULL is handled above
             default:
                 return false;
         }
@@ -442,8 +458,10 @@ export class WebMessageManager {
         switch (conditionUnit) {
             case 'user':
                 return userData.user_properties?.[attributeToGet] || null;
+            case 'user_metadata':
+                return userData[attributeToGet as keyof UserMetadataProperties];
             case 'device':
-                return userData[attributeToGet as keyof DeviceProperties] || null;
+                return userData[attributeToGet as keyof DeviceProperties];
             default:
                 return null;
         }

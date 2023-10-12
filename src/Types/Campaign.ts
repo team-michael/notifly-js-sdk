@@ -1,8 +1,8 @@
-export type SegmentConditionUnitType = 'user' | 'device' | 'event';
+export type SegmentConditionUnitType = 'user' | 'user_metadata' | 'device' | 'event';
 export type SegmentConditionValueType = 'INT' | 'TEXT' | 'BOOL';
 export type GroupOperator = 'OR' | null;
 export type ConditionOperator = 'AND' | null;
-export type SegmentOperator = '=' | '<>' | '>' | '>=' | '<' | '<=' | '@>';
+export type SegmentOperator = '=' | '<>' | '>' | '>=' | '<' | '<=' | '@>' | 'IS_NULL' | 'IS_NOT_NULL';
 export type EventBasedConditionType = 'count X' | 'count X in Y days';
 
 export interface Condition {

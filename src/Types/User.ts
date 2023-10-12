@@ -11,6 +11,10 @@ export interface UserProperties {
     user_properties?: Record<string, any>;
 }
 
+export interface UserMetadataProperties {
+    external_user_id?: string | null;
+}
+
 export interface EventIntermediateCounts {
     dt: string;
     name: string;
@@ -18,4 +22,4 @@ export interface EventIntermediateCounts {
     event_params: Record<string, any>;
 }
 
-export type UserData = DeviceProperties & UserProperties;
+export type UserData = DeviceProperties & UserProperties & UserMetadataProperties;
