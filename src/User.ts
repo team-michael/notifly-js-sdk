@@ -88,6 +88,8 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
 
     try {
         if (params.external_user_id) {
+            const externalUserId = params.external_user_id;
+
             const [projectID, previousNotiflyUserID, previousExternalUserID] = await NotiflyStorage.getItems([
                 NotiflyStorageKeys.PROJECT_ID,
                 NotiflyStorageKeys.NOTIFLY_USER_ID,
@@ -102,11 +104,13 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
             params['previous_notifly_user_id'] = previousNotiflyUserID;
             params['previous_external_user_id'] = previousExternalUserID;
 
-            const notiflyUserID = await generateNotiflyUserId(projectID, params.external_user_id);
+            const notiflyUserID = await generateNotiflyUserId(projectID, externalUserId);
+
             await NotiflyStorage.setItems({
                 __notiflyUserID: notiflyUserID,
-                __notiflyExternalUserID: params.external_user_id,
+                __notiflyExternalUserID: externalUserId,
             });
+
             await EventManager.logEvent('set_user_properties', params, null, true);
         } else {
             // Update local state

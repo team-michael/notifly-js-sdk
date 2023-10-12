@@ -46,6 +46,7 @@ function HomePage() {
             <EventButton name="event_react_3" />
             <EventButton name="event_react_4" />
             <EventButton name="event_react_5" />
+            <EventButton name="가즈아아아아아" />
             <EventButtonWithParams name="event_react_6" />
             <RemoveUserIdButton />
             <DeleteUserIdButton />

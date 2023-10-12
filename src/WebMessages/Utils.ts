@@ -160,6 +160,10 @@ export function isValidUserData(userData: any): boolean {
     return userData && typeof userData === 'object';
 }
 
+export function isValueNotPresent(value: any) {
+    return typeof value === 'undefined' || value === null;
+}
+
 function _isValidEventIntermediateCount(eic: any): boolean {
     // dt should be YYYY-MM-DD format
     if (
