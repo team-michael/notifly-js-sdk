@@ -338,7 +338,6 @@ export class WebMessageManager {
     }
 
     private static _matchCondition(condition: Condition, eventParams: Record<string, any>) {
-        console.log('matchCondition', condition);
         switch (condition.unit) {
             case 'event':
                 return this._matchEventBasedCondition(condition);
@@ -403,12 +402,9 @@ export class WebMessageManager {
         const { unit, attribute, operator, useEventParamsAsConditionValue, comparison_parameter, valueType } =
             condition;
 
-        console.log(attribute);
         const userAttributeValue = this._extractUserAttribute(unit, this._userData, attribute as string);
 
-        console.log(condition);
         if (operator === 'IS_NULL') {
-            console.log('IS_NULL!!!', userAttributeValue);
             return isValueNotPresent(userAttributeValue);
         }
         if (operator === 'IS_NOT_NULL') {
