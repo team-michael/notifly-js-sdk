@@ -72,7 +72,7 @@ export class EventManager {
                 name: eventName,
                 event_params: eventParams,
                 is_internal_event: isInternalEvent,
-                segmentationEventParamKeys: segmentationEventParamKeys,
+                segmentation_event_param_keys: segmentationEventParamKeys,
                 sdk_version: SDK_VERSION,
                 sdk_type: SdkStateManager.type,
                 time: Math.floor(Date.now() / 1000),
