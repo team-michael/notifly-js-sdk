@@ -10,6 +10,9 @@ on:
       - 'scripts/**'
       - 'README.md'
       - '.gitignore'
+      - '.npmignore'
+      - '.eslintrc.cjs'
+      - '.prettierrc.yml'
 
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

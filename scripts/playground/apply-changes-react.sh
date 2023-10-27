@@ -2,7 +2,7 @@
 # Please make sure that package name is same as the packed tar.gz file!
 
 # Common
-rm -rf .parcel-cache *.tgz dist
+rm -rf tgz dist
 npm run build && npm pack
 npm run --prefix ${PWD}/example-react clean && npm --prefix ${PWD}/example-react install
 

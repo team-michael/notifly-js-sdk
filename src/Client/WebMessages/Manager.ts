@@ -2,7 +2,6 @@
 import type {
     Campaign,
     Condition,
-    EventIntermediateCounts,
     UserData,
     DeviceProperties,
     SegmentOperator,
@@ -10,148 +9,19 @@ import type {
     UserMetadataProperties,
 } from '../../Types';
 
-import { NotiflyStorage, NotiflyStorageKeys } from '../../Storage';
-
-import { SdkState, SdkStateManager } from '../SdkState';
-import { APIManager } from '../../API/Manager';
+import { UserStateManager } from '../User/State';
 import { WebMessageScheduler } from './Scheduler';
 
-import {
-    ConditionValueComparator,
-    getKSTCalendarDateString,
-    isValidWebMessageState,
-    isValidCampaignData,
-    isValidEventIntermediateCounts,
-    isValidUserData,
-    isValueNotPresent,
-} from './Utils';
-import { generateNotiflyUserId } from '../../Utils';
+import { ConditionValueComparator, getKSTCalendarDateString, isValueNotPresent } from './Utils';
 
 export class WebMessageManager {
-    private static _eventIntermediateCounts: EventIntermediateCounts[] = [];
-    private static _inWebMessageCampaigns: Campaign[] = [];
-    private static _userData: UserData = {};
-
-    static get state() {
-        return {
-            eventIntermediateCounts: this._eventIntermediateCounts,
-            inWebMessageCampaigns: this._inWebMessageCampaigns,
-            userData: this._userData,
-        };
-    }
-
     static async initialize(hard = false) {
-        await this._syncState(!hard);
-        await this._updateExternalUserId();
+        await UserStateManager.sync(!hard);
         WebMessageScheduler.initialize();
     }
 
     static async refreshState() {
-        if (!SdkStateManager.isReady()) {
-            console.error('[Notifly] Cannot refresh state when the SDK is not ready. Ignoring refreshState call.');
-            return;
-        }
-        SdkStateManager.state = SdkState.REFRESHING;
-        try {
-            await this._syncState(false);
-            SdkStateManager.state = SdkState.READY;
-        } catch (error) {
-            console.error('[Notifly] Failed to refresh state: ', error);
-            SdkStateManager.state = SdkState.FAILED;
-        }
-    }
-
-    private static async _syncState(useStorageIfAvailable = true): Promise<void> {
-        if (useStorageIfAvailable) {
-            // Get state from storage, if available
-            const storedState = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_USER_STATE);
-            try {
-                const parsedStateJSON = storedState ? JSON.parse(storedState) : null;
-                if (isValidWebMessageState(parsedStateJSON)) {
-                    const parsedState = parsedStateJSON as {
-                        eventIntermediateCounts: EventIntermediateCounts[];
-                        inWebMessageCampaigns: Campaign[];
-                        userData: UserData;
-                    };
-
-                    this._eventIntermediateCounts = parsedState.eventIntermediateCounts;
-                    this._inWebMessageCampaigns = parsedState.inWebMessageCampaigns;
-                    this._userData = parsedState.userData;
-
-                    await this._updateExternalUserId();
-
-                    return;
-                }
-                console.warn('[Notifly] State from strorage might have been corrupted. Ignoring state from storage.');
-            } catch (error) {
-                console.warn('[Notifly] State from strorage might have been corrupted. Ignoring state from storage.');
-            }
-        }
-
-        const [projectID, deviceToken, notiflyDeviceID, externalUserID] = await NotiflyStorage.getItems([
-            NotiflyStorageKeys.PROJECT_ID,
-            NotiflyStorageKeys.NOTIFLY_DEVICE_TOKEN,
-            NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
-            NotiflyStorageKeys.EXTERNAL_USER_ID,
-        ]);
-
-        if (!projectID) {
-            throw new Error('Project ID should be set before logging an event.');
-        }
-
-        let notiflyUserID = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_USER_ID);
-        if (!notiflyUserID) {
-            const generatedNotiflyUserID = await generateNotiflyUserId(
-                projectID,
-                externalUserID,
-                deviceToken,
-                notiflyDeviceID
-            );
-            notiflyUserID = generatedNotiflyUserID;
-            await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_ID, generatedNotiflyUserID);
-        }
-
-        const data = await APIManager.call(
-            `https://api.notifly.tech/user-state/${projectID}/${notiflyUserID}?${
-                notiflyDeviceID ? `deviceId=${notiflyDeviceID}` : ''
-            }`,
-            'GET'
-        );
-
-        if (isValidEventIntermediateCounts(data.eventIntermediateCountsData)) {
-            this._eventIntermediateCounts = data.eventIntermediateCountsData;
-        } else {
-            this._eventIntermediateCounts = [];
-        }
-        if (isValidCampaignData(data.campaignData)) {
-            this._inWebMessageCampaigns = data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message');
-        } else {
-            this._inWebMessageCampaigns = [];
-        }
-        if (isValidUserData(data.userData)) {
-            this._userData = data.userData;
-        } else {
-            this._userData = {};
-        }
-
-        await this._updateExternalUserId();
-        await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
-    }
-
-    static updateUserData(params: Record<string, any>) {
-        if (!this._userData.user_properties) {
-            this._userData.user_properties = {};
-        }
-
-        Object.keys(params).forEach((key) => {
-            this._userData.user_properties && (this._userData.user_properties[key] = params[key]);
-        });
-
-        NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
-    }
-
-    private static async _updateExternalUserId() {
-        this._userData.external_user_id = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
+        await UserStateManager.refresh();
     }
 
     static maybeTriggerWebMessagesAndUpdateEventCounts(
@@ -161,40 +31,7 @@ export class WebMessageManager {
         segmentationEventParamKeys?: string[] | null
     ) {
         this._triggerWebMessages(eventName, eventParams, externalUserID);
-        this._updateEventCounts(eventName, eventParams, segmentationEventParamKeys);
-    }
-
-    private static _updateEventCounts(
-        eventName: string,
-        eventParams: Record<string, any>,
-        segmentationEventParamKeys?: string[] | null
-    ) {
-        const formattedDate = getKSTCalendarDateString();
-        const keyField = segmentationEventParamKeys ? segmentationEventParamKeys[0] : null;
-        const valueField = keyField ? eventParams[keyField] || null : null;
-
-        const predicate = (row: EventIntermediateCounts) => {
-            if (keyField && valueField) {
-                return row.dt === formattedDate && row.name === eventName && row.event_params[keyField] === valueField;
-            } else {
-                return row.dt === formattedDate && row.name === eventName;
-            }
-        };
-        const existingRow = this._eventIntermediateCounts.find(predicate);
-        if (existingRow) {
-            // If an existing row is found, increase the count by 1
-            existingRow.count += 1;
-        } else {
-            // If no existing row is found, create a new entry
-            this._eventIntermediateCounts.push({
-                dt: formattedDate,
-                name: eventName,
-                count: 1,
-                event_params: eventParams || {},
-            });
-        }
-
-        NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
+        UserStateManager.updateEventCounts(eventName, eventParams, segmentationEventParamKeys);
     }
 
     private static _triggerWebMessages(
@@ -203,9 +40,12 @@ export class WebMessageManager {
         externalUserID: string | null
     ) {
         const schedule = () =>
-            this._getCampaignsToSchedule(this._inWebMessageCampaigns, eventName, eventParams, externalUserID).forEach(
-                WebMessageScheduler.scheduleInWebMessage.bind(WebMessageScheduler)
-            );
+            this._getCampaignsToSchedule(
+                UserStateManager.inWebMessageCampaigns,
+                eventName,
+                eventParams,
+                externalUserID
+            ).forEach(WebMessageScheduler.scheduleInWebMessage.bind(WebMessageScheduler));
 
         if (document.readyState === 'complete') {
             schedule();
@@ -306,9 +146,9 @@ export class WebMessageManager {
         const message = campaign.message;
         const modalProperties = message.modal_properties;
         const templateName = modalProperties.template_name;
-        if (this._userData && this._userData.user_properties) {
+        if (UserStateManager.userData && UserStateManager.userData.user_properties) {
             const currentTimestamp = Math.floor(Date.now() / 1000);
-            const hideUntilTimestamp = this._userData.user_properties[`hide_in_web_message_${templateName}`];
+            const hideUntilTimestamp = UserStateManager.userData.user_properties[`hide_in_web_message_${templateName}`];
             if (currentTimestamp <= hideUntilTimestamp) {
                 // Hidden
                 return false;
@@ -374,14 +214,14 @@ export class WebMessageManager {
 
         let totalCount: number;
         if (event_condition_type === 'count X') {
-            totalCount = this._eventIntermediateCounts.reduce((sum, row) => {
+            totalCount = UserStateManager.eventIntermediateCounts.reduce((sum, row) => {
                 if (row.name === event) {
                     return sum + row.count;
                 }
                 return sum;
             }, 0);
         } else if (event_condition_type === 'count X in Y days') {
-            totalCount = this._eventIntermediateCounts
+            totalCount = UserStateManager.eventIntermediateCounts
                 .filter((row) => row.name === event)
                 .filter((row) => {
                     const start = getKSTCalendarDateString(-(secondary_value as number));
@@ -402,7 +242,7 @@ export class WebMessageManager {
         const { unit, attribute, operator, useEventParamsAsConditionValue, comparison_parameter, valueType } =
             condition;
 
-        const userAttributeValue = this._extractUserAttribute(unit, this._userData, attribute as string);
+        const userAttributeValue = this._extractUserAttribute(unit, UserStateManager.userData, attribute as string);
 
         if (operator === 'IS_NULL') {
             return isValueNotPresent(userAttributeValue);
@@ -463,22 +303,6 @@ export class WebMessageManager {
         }
     }
 
-    public static set eventIntermediateCounts(counts: EventIntermediateCounts[]) {
-        this._eventIntermediateCounts = counts;
-    }
-    public static get eventIntermediateCounts() {
-        return this._eventIntermediateCounts;
-    }
-
-    public static set userData(userData: UserData) {
-        this._userData = userData;
-    }
-
-    public static get userData(): UserData {
-        return this._userData;
-    }
-
-    public static updateEventCounts = this._updateEventCounts;
     public static isEntityOfSegment = this._isEntityOfSegment;
     public static getCampaignsToSchedule = this._getCampaignsToSchedule;
 }

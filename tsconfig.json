@@ -1,6 +1,6 @@
 {
-  "include": ["../src/**/*", "../test/**/*", "./rollup.config.js"],
-  "exclude": ["../src/NotiflyServiceWorker.ts"],
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["src/NotiflyServiceWorker.ts"],
   "compilerOptions": {
     "esModuleInterop": true,
     "alwaysStrict": false,
@@ -27,11 +27,11 @@
     "target": "ES5",
     "types": ["jest", "node"],
     "noEmit": true,
-    "rootDir": "..",
-    "baseUrl": "..",
+    "rootDir": ".",
+    "baseUrl": ".",
     "allowSyntheticDefaultImports": true,
     "paths": {
-      "tslib": ["../node_modules/tslib/tslib.d.ts"]
+      "tslib": ["node_modules/tslib/tslib.d.ts"]
     }
   }
 }

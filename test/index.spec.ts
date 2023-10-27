@@ -40,6 +40,7 @@ describe('Notifly SDK', () => {
                     deviceToken,
                 })
             ).toBe(false);
+            SdkStateManager.state = SdkState.NOT_INITIALIZED; // Reset
             expect(
                 await notifly.initialize({
                     projectId: projectID,
@@ -48,6 +49,7 @@ describe('Notifly SDK', () => {
                     deviceToken,
                 })
             ).toBe(false);
+            SdkStateManager.state = SdkState.NOT_INITIALIZED; // Reset
             expect(
                 await notifly.initialize({
                     projectId: projectID,

@@ -1,13 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
+import { NotiflyStorage, NotiflyStorageKeys } from '../../Storage';
 
-import { SdkStateManager } from './SdkState';
-import { WebMessageManager } from './WebMessages/Manager';
-import { EventManager } from './Event/Manager';
+import { SdkStateManager } from '../SdkState';
+import { UserStateManager } from './State';
+import { EventManager } from '../Event/Manager';
 
-import { generateNotiflyUserId } from '../Utils';
+import { generateNotiflyUserId } from '../../Utils';
 
 /**
  * Sets or removes user ID for the current user.
@@ -43,7 +44,7 @@ export async function setUserId(userID?: string | null | undefined) {
                 await setUserProperties({
                     external_user_id: userID,
                 });
-                await WebMessageManager.refreshState();
+                await UserStateManager.refresh();
             }
         }
     } catch (err) {
@@ -124,7 +125,7 @@ export async function setUserProperties(params: Record<string, any>): Promise<vo
             });
 
             if (!isEmpty(diff)) {
-                WebMessageManager.updateUserData(diff);
+                UserStateManager.updateUserData(diff);
                 await EventManager.logEvent('set_user_properties', diff, null, true);
             }
         }
@@ -143,7 +144,7 @@ export async function getUserProperties(): Promise<Record<string, any> | null> {
         console.error('User properties cannot retrieved when SDK is either not initialized or refreshing its state.');
         return null;
     }
-    return WebMessageManager.state.userData.user_properties || null;
+    return UserStateManager.state.userData.user_properties || null;
 }
 
 /**
@@ -172,7 +173,7 @@ async function removeUserId(): Promise<void> {
 
         await _cleanUserIDInLocalForage();
         await EventManager.logEvent('remove_external_user_id', {}, null, true);
-        await WebMessageManager.refreshState();
+        await UserStateManager.refresh();
     } catch (err) {
         console.warn('[Notifly] Failed to remove userID');
     }
@@ -199,7 +200,7 @@ export async function deleteUser(): Promise<void> {
         await EventManager.logEvent('delete_user', {}, null, true);
         await _cleanUserIDInLocalForage();
         await EventManager.logEvent('remove_external_user_id', {}, null, true);
-        await WebMessageManager.refreshState();
+        await UserStateManager.refresh();
         return;
     } catch (err) {
         console.warn('[Notifly] Failed to delete user');

@@ -18,9 +18,3 @@ or
 ```
 yarn add notifly-js-sdk@latest
 ```
-
-## Development
-
-```
-npm run build
-```

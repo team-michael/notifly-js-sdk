@@ -7,6 +7,7 @@ import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { registerServiceWorker } from './Push';
 import { EventManager } from './Event/Manager';
 import { WebMessageManager } from './WebMessages/Manager';
+import { UserStateManager } from './User/State';
 
 export class SessionManager {
     private static _lastSessionTime: number | null = null;
@@ -92,7 +93,7 @@ export class SessionManager {
         if (this._isSessionExpired()) {
             await this._initializePushSubscription();
             await EventManager.sessionStart();
-            await WebMessageManager.refreshState();
+            await UserStateManager.refresh();
         }
     }
 

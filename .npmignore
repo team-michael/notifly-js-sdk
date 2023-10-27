@@ -8,7 +8,9 @@ jest.config.ts
 scripts/
 
 # Build configurations
-build/
+babel.config.js
+rollup.config.js
+tsconfig.*
 
 # Formatters and linters
 .eslintrc.cjs
