@@ -12,7 +12,6 @@
     "prepublishOnly": "npm run build",
     "build": "npm run clean && npm run build:es5 && npm run build:esm && npm run build:umd && npm run build:umd:min && npm run build:sw",
     "start": "http-server --cors",
-    "deploy-cdn": "aws s3 sync dist s3://notifly-content/notifly-js-sdk/dist && aws cloudfront create-invalidation --distribution-id E2M7VD2WC9S1MI --paths \"/notifly-js-sdk/dist/*\"",
     "deploy-cdn-dev": "aws s3 sync dist s3://notifly-content/notifly-js-sdk/dev && aws cloudfront create-invalidation --distribution-id E2M7VD2WC9S1MI --paths \"/notifly-js-sdk/dev/*\"",
     "clean": "rm -rf dist lib",
     "build:es5": "tsc -p ./tsconfig.es5.json",
