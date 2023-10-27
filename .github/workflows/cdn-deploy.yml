@@ -13,6 +13,7 @@ on:
       - '.npmignore'
       - '.eslintrc.cjs'
       - '.prettierrc.yml'
+      - '.vscode/**'
 
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
