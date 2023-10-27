@@ -11,7 +11,7 @@ import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
  * @example
  * const token = await getCognitoIdToken('myUserName', 'myPassword');
  */
-async function getCognitoIdToken(userName: string, password: string): Promise<string> {
+export async function getCognitoIdToken(userName: string, password: string): Promise<string> {
     const body = JSON.stringify({
         userName,
         password,
@@ -35,10 +35,8 @@ async function getCognitoIdToken(userName: string, password: string): Promise<st
     }
 }
 
-async function saveCognitoIdToken(userName: string, password: string): Promise<string> {
+export async function saveCognitoIdToken(userName: string, password: string): Promise<string> {
     const cognitoIDToken = await getCognitoIdToken(userName, password);
     await NotiflyStorage.setItem(NotiflyStorageKeys.COGNITO_ID_TOKEN, cognitoIDToken);
     return cognitoIDToken;
 }
-
-export { getCognitoIdToken, saveCognitoIdToken };

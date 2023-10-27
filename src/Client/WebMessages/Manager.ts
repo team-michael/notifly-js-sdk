@@ -8,12 +8,12 @@ import type {
     SegmentOperator,
     SegmentConditionUnitType,
     UserMetadataProperties,
-} from '../Types';
+} from '../../Types';
 
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
+import { NotiflyStorage, NotiflyStorageKeys } from '../../Storage';
 
 import { SdkState, SdkStateManager } from '../SdkState';
-import { APIManager } from '../API/Manager';
+import { APIManager } from '../../API/Manager';
 import { WebMessageScheduler } from './Scheduler';
 
 import {
@@ -25,7 +25,7 @@ import {
     isValidUserData,
     isValueNotPresent,
 } from './Utils';
-import { generateNotiflyUserId } from '../Utils';
+import { generateNotiflyUserId } from '../../Utils';
 
 export class WebMessageManager {
     private static _eventIntermediateCounts: EventIntermediateCounts[] = [];

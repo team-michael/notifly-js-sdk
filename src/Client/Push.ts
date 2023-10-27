@@ -1,26 +1,38 @@
 import { v5 } from 'uuid';
 
-import { NAMESPACE } from './Constants';
+import { NAMESPACE } from '../Constants';
 
-import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
+import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 import { EventManager } from './Event/Manager';
 
-async function registerServiceWorker(
+export async function registerServiceWorker(
     vapidPublicKey: string,
     askPermission = true,
     path = '/notifly-service-worker.js',
     promptDelayMillis = 5000
 ): Promise<void> {
-    if (
-        typeof navigator === 'undefined' ||
-        typeof navigator.serviceWorker === 'undefined' ||
-        typeof navigator.serviceWorker.register === 'undefined'
-    ) {
-        console.warn('[Notifly] Not running in a client-side environment. Aborting service worker registration.');
+    if (typeof navigator === 'undefined' || 'serviceWorker' in navigator === false) {
+        console.warn('[Notifly] Service worker is not supported in this browser.');
         return;
     }
+    if (typeof navigator.serviceWorker.register !== 'function') {
+        console.warn('[Notifly] Service worker registration is not supported in this browser.');
+        return;
+    }
+
     const registration = await navigator.serviceWorker.register(path);
+    if ('pushManager' in registration === false) {
+        console.warn('[Notifly] Push notification is not supported in this browser.');
+        return;
+    }
+
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data.action === '__notifly_navigate_to_url' && event.data.url) {
+            window.location.href = event.data.url;
+        }
+    });
+
     if (typeof Notification !== 'undefined') {
         const permission = Notification.permission;
         if (askPermission && permission === 'default') {
@@ -42,7 +54,7 @@ async function registerServiceWorker(
     }
 }
 
-function _urlBase64ToUint8Array(base64String: string): Uint8Array {
+export function _urlBase64ToUint8Array(base64String: string): Uint8Array {
     const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
     const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
 
@@ -55,7 +67,7 @@ function _urlBase64ToUint8Array(base64String: string): Uint8Array {
     return outputArray;
 }
 
-async function _getSubscription(
+export async function _getSubscription(
     registration: ServiceWorkerRegistration,
     VAPID_PUBLIC_KEY: string
 ): Promise<PushSubscription> {
@@ -337,5 +349,3 @@ function _show(registration: ServiceWorkerRegistration, vapidPublicKey: string):
         document.body.removeChild(overlay);
     };
 }
-
-export { _urlBase64ToUint8Array, _getSubscription, registerServiceWorker };

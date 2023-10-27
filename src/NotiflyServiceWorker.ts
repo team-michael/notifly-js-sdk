@@ -1,17 +1,24 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // NotiflyServiceWorker.ts
+/// <reference no-default-lib="true"/>
+/// <reference lib="es2015" />
+/// <reference lib="webworker" />
 
-const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.0.4';
+const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.1.0';
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 
-self.addEventListener('install', (event) => {
-    self.skipWaiting();
+const sw: ServiceWorkerGlobalScope & typeof globalThis = self as any;
+
+sw.addEventListener('install', () => {
+    sw.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
+sw.addEventListener('activate', (event) => {
     event.waitUntil(swActivate());
 });
 
-self.addEventListener('push', (event) => {
+sw.addEventListener('push', (event) => {
+    if (!event.data) return;
     const { notifly } = event.data.json();
     if (!notifly) return;
 
@@ -34,7 +41,7 @@ self.addEventListener('push', (event) => {
         actions: notifly.ac,
     };
 
-    event.waitUntil(self.registration.showNotification(notifly.ti, options));
+    event.waitUntil(sw.registration.showNotification(notifly.ti, options));
     event.waitUntil(
         logNotiflyInternalEvent('push_delivered', {
             type: 'message_event',
@@ -45,7 +52,7 @@ self.addEventListener('push', (event) => {
     );
 });
 
-self.addEventListener('notificationclick', function (event) {
+sw.addEventListener('notificationclick', function (event) {
     event.notification.close();
     if (event.action === 'close') {
         return;
@@ -63,22 +70,47 @@ self.addEventListener('notificationclick', function (event) {
             notifly_message_id: notifly_message_id,
         })
     );
-
-    const url = messageData.url || self.origin;
-    if (!url) {
-        return;
-    }
-    event.waitUntil(
-        clients.matchAll({ type: 'window' }).then((clientsArr) => {
-            for (const client of clientsArr) {
-                if (compareUrls(url, client.url) && 'focus' in client) {
-                    return client.focus();
-                }
-            }
-            clients.openWindow(url).then((windowClient) => (windowClient ? windowClient.focus() : null));
-        })
-    );
+    event.waitUntil(action(messageData.url || null));
 });
+
+async function action(url: string | null) {
+    // 1. If URL is specified, compare with current hostname.
+    // 1-1. If URL is same with current hostname, focus the window if it exists. Otherwise open a new window.
+    // 1-2. If URL is different with current hostname, open a new window.
+    // 2. If URL is not specified, open a new window with current hostname if the window does not exist.
+    // Otherwise focus the existing window.
+
+    const swHostname = sw.location.hostname;
+    const urlHostname = url ? new URL(url).hostname : null;
+    const clientsList = await sw.clients.matchAll({ type: 'window' });
+    const existingClient = clientsList.find((client) => new URL(client.url).hostname === (urlHostname || swHostname));
+
+    if (url && urlHostname) {
+        if (swHostname === urlHostname) {
+            if (existingClient) {
+                if (!existingClient.focused) {
+                    await existingClient.focus();
+                }
+                existingClient.postMessage({
+                    action: '__notifly_navigate_to_url',
+                    url: url,
+                });
+            } else {
+                await sw.clients.openWindow(url);
+            }
+        } else {
+            await sw.clients.openWindow(url);
+        }
+    } else {
+        if (existingClient) {
+            if (!existingClient.focused) {
+                await existingClient.focus();
+            }
+        } else {
+            await sw.clients.openWindow(sw.origin);
+        }
+    }
+}
 
 async function swActivate() {
     try {
@@ -88,7 +120,7 @@ async function swActivate() {
     }
 }
 
-async function getItemFromIndexedDB(dbName, key) {
+async function getItemFromIndexedDB(dbName: string, key: IDBValidKey) {
     try {
         const db = await openDB(dbName);
         const transaction = db.transaction('notiflyconfig');
@@ -101,13 +133,15 @@ async function getItemFromIndexedDB(dbName, key) {
     }
 }
 
-function openDB(name) {
+function openDB(name: string): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
         const openReq = indexedDB.open(name, 2);
         openReq.onerror = () => reject(openReq.error);
         openReq.onsuccess = () => resolve(openReq.result);
         openReq.onupgradeneeded = (event) => {
-            const db = event.target.result;
+            if (!event.target) return;
+            const request: IDBOpenDBRequest = event.target as IDBOpenDBRequest;
+            const db = request.result;
             if (!db.objectStoreNames.contains('notiflyconfig')) {
                 db.createObjectStore('notiflyconfig');
             }
@@ -115,7 +149,7 @@ function openDB(name) {
     });
 }
 
-function getValue(store, key) {
+function getValue(store: IDBObjectStore, key: IDBValidKey): Promise<any> {
     return new Promise((resolve, reject) => {
         const getReq = store.get(key);
         getReq.onerror = () => reject(getReq.error);
@@ -123,7 +157,7 @@ function getValue(store, key) {
     });
 }
 
-async function setItemToIndexedDB(dbName, key, value) {
+async function setItemToIndexedDB(dbName: string, key: IDBValidKey, value: any) {
     try {
         const db = await openDB(dbName);
         const transaction = db.transaction('notiflyconfig', 'readwrite');
@@ -134,7 +168,7 @@ async function setItemToIndexedDB(dbName, key, value) {
     }
 }
 
-function setValue(store, key, value) {
+function setValue(store: IDBObjectStore, key: IDBValidKey, value: any) {
     return new Promise<void>((resolve, reject) => {
         const putReq = store.put(value, key);
         putReq.onerror = () => reject(putReq.error);
@@ -159,20 +193,23 @@ async function getCognitoIdTokenInSw(): Promise<string | null> {
                 password,
             }),
         });
-        const result = await response.text();
-        const token = JSON.parse(result).AuthenticationResult.IdToken;
-        return token;
+        const result = await response.json();
+        return result.AuthenticationResult?.IdToken || null;
     } catch (error) {
         console.warn('[Notifly]: ', error);
-        return '';
+        return null;
     }
 }
 
-async function saveCognitoIdTokenInSW(cognitoIdToken): Promise<void> {
+async function saveCognitoIdTokenInSW(cognitoIdToken: string): Promise<void> {
     setItemToIndexedDB('notifly', '__notiflyCognitoIDToken', cognitoIdToken);
 }
 
-async function logNotiflyInternalEvent(eventName, eventParams = null, segmentationEventParamKeys = null) {
+async function logNotiflyInternalEvent(
+    eventName: string,
+    eventParams: Record<string, any> | null = null,
+    segmentationEventParamKeys: Array<string> | null = null
+) {
     try {
         const [cognitoToken, notiflyUserID, externalUserID, projectID, notiflyDeviceID] = await Promise.all([
             getItemFromIndexedDB('notifly', '__notiflyCognitoIDToken'),
@@ -201,6 +238,10 @@ async function logNotiflyInternalEvent(eventName, eventParams = null, segmentati
         // If the token is expired, get a new token and retry the logEvent.
         if (response.message == 'The incoming token has expired') {
             const newCognitoToken = await getCognitoIdTokenInSw();
+            if (!newCognitoToken) {
+                console.warn('[Notifly] Failed logging the event.');
+                return;
+            }
             await Promise.all([retryLogEvent(newCognitoToken, body), saveCognitoIdTokenInSW(newCognitoToken)]);
         }
     } catch (err) {
@@ -208,20 +249,20 @@ async function logNotiflyInternalEvent(eventName, eventParams = null, segmentati
     }
 }
 
-async function retryLogEvent(token, body) {
+async function retryLogEvent(token: string, body: string) {
     const requestOptions = _getRequestOptionsForLogEvent(token, body);
     return await request(NOTIFLY_LOG_EVENT_URL, requestOptions);
 }
 
 function _getBodyForLogEvent(
-    eventName,
-    eventParams,
-    segmentationEventParamKeys,
-    projectID,
-    notiflyUserID,
-    externalUserID,
-    notiflyDeviceID,
-    isInternalEvent
+    eventName: string,
+    eventParams: Record<string, any> | null,
+    segmentationEventParamKeys: Array<string> | null,
+    projectID: string,
+    notiflyUserID: string,
+    externalUserID: string,
+    notiflyDeviceID: string,
+    isInternalEvent: boolean
 ) {
     const eventData = JSON.stringify({
         id: generateRandomString(16),
@@ -247,12 +288,12 @@ function _getBodyForLogEvent(
     return body;
 }
 
-function _getRequestOptionsForLogEvent(token, body) {
+function _getRequestOptionsForLogEvent(token: string, body: string) {
     const myHeaders = new Headers();
     myHeaders.append('Authorization', token);
     myHeaders.append('Content-Type', 'application/json');
 
-    const requestOptions = {
+    const requestOptions: RequestInit = {
         method: 'POST',
         headers: myHeaders,
         body: body,
@@ -261,33 +302,16 @@ function _getRequestOptionsForLogEvent(token, body) {
     return requestOptions;
 }
 
-async function request(apiUrl, requestOptions) {
-    const result = fetch(apiUrl, requestOptions).then((response) => response.json());
-    return result;
+async function request(apiUrl: string, requestOptions: RequestInit) {
+    const result = await fetch(apiUrl, requestOptions);
+    return await result.json();
 }
 
-function generateRandomString(size) {
+function generateRandomString(size: number) {
     const epoch = Math.floor(size / 10) + (size % 10 > 0 ? 1 : 0);
     let randomString = '';
     for (let i = 0; i < epoch; i++) {
         randomString += Math.random().toString(36).substring(2, 12);
     }
     return randomString.substring(0, size);
-}
-
-function compareUrls(url1, url2) {
-    const parsedUrl1 = new URL(url1);
-    const parsedUrl2 = new URL(url2);
-    if (
-        parsedUrl1.href === parsedUrl2.href &&
-        parsedUrl1.protocol === parsedUrl2.protocol &&
-        parsedUrl1.host === parsedUrl2.host &&
-        parsedUrl1.pathname === parsedUrl2.pathname &&
-        parsedUrl1.search === parsedUrl2.search &&
-        parsedUrl1.hash === parsedUrl2.hash
-    ) {
-        return true;
-    } else {
-        return false;
-    }
 }

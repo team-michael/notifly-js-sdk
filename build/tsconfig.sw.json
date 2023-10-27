@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["../src/NotiflyServiceWorker.ts"],
+  "exclude": [],
+  "compilerOptions": {
+    "lib": ["WebWorker", "ES2015"],
+    "outDir": "../dist",
+    "rootDir": "../src",
+    "noEmit": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "inlineSources": false,
+    "importHelpers": false,
+    "noEmitHelpers": false
+  }
+}

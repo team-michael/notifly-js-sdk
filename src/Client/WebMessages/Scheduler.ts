@@ -1,4 +1,4 @@
-import type { Campaign } from '../Types';
+import type { Campaign } from '../../Types';
 
 import NotiflyWebMessageRenderer from 'notifly-web-message-renderer';
 

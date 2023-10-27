@@ -1,14 +1,14 @@
 import { v4 } from 'uuid';
 
-import { SDK_VERSION } from '../Constants';
+import { SDK_VERSION } from '../../Constants';
 
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
+import { NotiflyStorage, NotiflyStorageKeys } from '../../Storage';
 
 import { SdkStateManager } from '../SdkState';
-import { APIManager } from '../API/Manager';
+import { APIManager } from '../../API/Manager';
 import { PendingEventManager } from './PendingEventManager';
 import { WebMessageManager } from '../WebMessages/Manager';
-import { generateNotiflyUserId, getPlatform, mapNotificationPermissionToEnum } from '../Utils';
+import { generateNotiflyUserId, getPlatform, mapNotificationPermissionToEnum } from '../../Utils';
 
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 

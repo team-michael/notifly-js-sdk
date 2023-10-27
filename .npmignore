@@ -1,45 +1,25 @@
-# Files and directories to ignore when publishing to npm
-
-# source files
-**/*.ts
-!index.d.ts
-**/*.map
-**/*.tsbuildinfo
-
-# tests
-test/
-tests/
-__tests__/
-*.test.*
-*.spec.*
-
-# docs and build tools
-docs/
-website/
-CHANGELOG.md
-CONTRIBUTING.md
-ISSUE_TEMPLATE.md
-PULL_REQUEST_TEMPLATE.md
-
-# example app
-example-vanillajs/
+# Examples and tests
 example-react/
+example-vanillajs/
+test/
+jest.config.ts
 
-# misc
-*.log
-.DS_Store
-.github/
-
-# parcel cache
-.parcel-cache/
-
-node_modules/
-
-# ignore tgz files
-*.tgz
-
-# ignore service worker in the root
-notifly-service-worker.js
-
-# scripts
+# Scripts
 scripts/
+
+# Build configurations
+build/
+
+# Formatters and linters
+.eslintrc.cjs
+.prettierrc.yml
+
+# Misc
+**/*.tgz
+.github/
+.vscode/
+.gitignore
+.npmignore
+package-lock.json
+node_modules/
+notifly-service-worker.js

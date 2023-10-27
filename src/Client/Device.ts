@@ -1,4 +1,4 @@
-import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
+import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 /**
  * Sets the device token for the current device.

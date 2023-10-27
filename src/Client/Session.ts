@@ -1,8 +1,8 @@
-import type { NotiflyPushSubscriptionOptions } from './Types';
+import type { NotiflyPushSubscriptionOptions } from '../Types';
 
-import { LAST_SESSION_TIME_LOGGING_INTERVAL } from './Constants';
+import { LAST_SESSION_TIME_LOGGING_INTERVAL } from '../Constants';
 
-import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
+import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 import { registerServiceWorker } from './Push';
 import { EventManager } from './Event/Manager';

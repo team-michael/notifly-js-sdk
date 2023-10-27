@@ -1,6 +1,6 @@
 import type { Campaign } from '../../src/Types';
 
-import { WebMessageManager } from '../../src/WebMessages/Manager';
+import { WebMessageManager } from '../../src/Client/WebMessages/Manager';
 
 jest.mock('localforage', () => ({
     config: jest.fn(),

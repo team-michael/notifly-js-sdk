@@ -1,13 +1,13 @@
 import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 
-import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
+import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 import { SdkStateManager } from './SdkState';
 import { WebMessageManager } from './WebMessages/Manager';
 import { EventManager } from './Event/Manager';
 
-import { generateNotiflyUserId } from './Utils';
+import { generateNotiflyUserId } from '../Utils';
 
 /**
  * Sets or removes user ID for the current user.
@@ -22,7 +22,7 @@ import { generateNotiflyUserId } from './Utils';
  * await setUserId(null) // Removes the user ID
  * await setUserId() // Removes the user ID
  */
-async function setUserId(userID?: string | null | undefined) {
+export async function setUserId(userID?: string | null | undefined) {
     if (!SdkStateManager.isReady()) {
         console.warn(
             '[Notifly] Ignoring setUserId call because the SDK is either not successfully initialized or refreshing its state due to the previous setUserId call. Make sure to call initialize() before calling setUserId.'
@@ -60,7 +60,7 @@ async function setUserId(userID?: string | null | undefined) {
  * @example
  * const currentUserId = await getUserId();
  */
-async function getUserId(): Promise<string | null> {
+export async function getUserId(): Promise<string | null> {
     if (!SdkStateManager.isReady()) {
         console.error('User Id cannot retrieved when SDK is either not initialized or refreshing its state.');
         return null;
@@ -78,7 +78,7 @@ async function getUserId(): Promise<string | null> {
  * @example
  * await setUserProperties({ external_user_id: 'myUserID' });
  */
-async function setUserProperties(params: Record<string, any>): Promise<void> {
+export async function setUserProperties(params: Record<string, any>): Promise<void> {
     if (!SdkStateManager.isReady()) {
         console.warn(
             '[Notifly] Ignoring setUserProperties call because the SDK is either not successfully initialized or refreshing its state due to the previous setUserId call. Make sure to call initialize() before calling setUserId.'
@@ -138,7 +138,7 @@ async function setUserProperties(params: Record<string, any>): Promise<void> {
  * @async
  * @returns {Promise<Record<string, any> | null>}
  */
-async function getUserProperties(): Promise<Record<string, any> | null> {
+export async function getUserProperties(): Promise<Record<string, any> | null> {
     if (!SdkStateManager.isReady()) {
         console.error('User properties cannot retrieved when SDK is either not initialized or refreshing its state.');
         return null;
@@ -187,7 +187,7 @@ async function removeUserId(): Promise<void> {
  * @example
  * await deleteUser();
  */
-async function deleteUser(): Promise<void> {
+export async function deleteUser(): Promise<void> {
     if (!SdkStateManager.isReady()) {
         console.warn(
             '[Notifly] Ignoring deleteUserId call because the SDK is either not successfully initialized or refreshing its state due to the previous setUserId call. Make sure to call initialize() before calling setUserId.'
@@ -209,5 +209,3 @@ async function deleteUser(): Promise<void> {
 async function _cleanUserIDInLocalForage() {
     await NotiflyStorage.removeItems([NotiflyStorageKeys.NOTIFLY_USER_ID, NotiflyStorageKeys.EXTERNAL_USER_ID]);
 }
-
-export { setUserProperties, getUserProperties, setUserId, deleteUser, getUserId };

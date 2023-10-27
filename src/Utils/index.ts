@@ -1,10 +1,15 @@
 import { v4, v5 } from 'uuid';
 
-import { NAMESPACE } from './Constants';
+import { NAMESPACE } from '../Constants';
 
-import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
+import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
-async function initializeNotiflyStorage(projectId: string, username: string, password: string, deviceToken?: string) {
+export async function initializeNotiflyStorage(
+    projectId: string,
+    username: string,
+    password: string,
+    deviceToken?: string
+) {
     const [_token, externalUserId] = await NotiflyStorage.getItems([
         NotiflyStorageKeys.NOTIFLY_DEVICE_TOKEN,
         NotiflyStorageKeys.EXTERNAL_USER_ID,
@@ -26,7 +31,7 @@ async function initializeNotiflyStorage(projectId: string, username: string, pas
     });
 }
 
-async function generateNotiflyUserId(
+export async function generateNotiflyUserId(
     projectID: string,
     externalUserID?: string | null,
     deviceToken?: string | null,
@@ -54,7 +59,11 @@ async function generateNotiflyUserId(
     }
 }
 
-async function getInitialNotiflyUserId(projectID: string, externalUserID?: string | null, deviceToken?: string | null) {
+export async function getInitialNotiflyUserId(
+    projectID: string,
+    externalUserID?: string | null,
+    deviceToken?: string | null
+) {
     const storedNotiflyUserID = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_USER_ID);
     if (storedNotiflyUserID) {
         return storedNotiflyUserID;
@@ -63,7 +72,7 @@ async function getInitialNotiflyUserId(projectID: string, externalUserID?: strin
     return await generateNotiflyUserId(projectID, externalUserID, deviceToken);
 }
 
-async function getInitialDeviceId(deviceToken?: string | null) {
+export async function getInitialDeviceId(deviceToken?: string | null) {
     const storedNotiflyDeviceID = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_DEVICE_ID);
     if (storedNotiflyDeviceID) {
         return storedNotiflyDeviceID;
@@ -72,7 +81,7 @@ async function getInitialDeviceId(deviceToken?: string | null) {
     return deviceToken ? v5(deviceToken, NAMESPACE.DEVICEID).replace(/-/g, '') : v4();
 }
 
-function getPlatform(): string {
+export function getPlatform(): string {
     if (typeof navigator === 'undefined') {
         console.warn('[Notifly] Not running in a client-side environment. Cannot determine platform.');
         return 'unknown';
@@ -89,7 +98,7 @@ function getPlatform(): string {
     }
 }
 
-function generateRandomString(length: number): string {
+export function generateRandomString(length: number): string {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
     const charactersLength = characters.length;
@@ -102,7 +111,7 @@ function generateRandomString(length: number): string {
     return result;
 }
 
-function mapNotificationPermissionToEnum(permission: NotificationPermission): number {
+export function mapNotificationPermissionToEnum(permission: NotificationPermission): number {
     if (permission === 'denied') {
         return 0; // DENIED
     }
@@ -114,11 +123,18 @@ function mapNotificationPermissionToEnum(permission: NotificationPermission): nu
     return -1; // NOT_DETERMINED
 }
 
-export {
-    initializeNotiflyStorage,
-    generateNotiflyUserId,
-    getInitialNotiflyUserId,
-    getInitialDeviceId,
-    getPlatform,
-    mapNotificationPermissionToEnum,
+export const getGlobalScope = (): typeof globalThis | undefined => {
+    if (typeof globalThis !== 'undefined') {
+        return globalThis;
+    }
+    if (typeof window !== 'undefined') {
+        return window;
+    }
+    if (typeof self !== 'undefined') {
+        return self;
+    }
+    if (typeof global !== 'undefined') {
+        return global;
+    }
+    return undefined;
 };

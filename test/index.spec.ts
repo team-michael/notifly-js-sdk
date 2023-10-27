@@ -2,13 +2,13 @@ import { v5 } from 'uuid';
 import localForage from 'localforage';
 import { NAMESPACE } from '../src/Constants';
 import { saveCognitoIdToken } from '../src/API/Auth';
-import { EventManager } from '../src/Event/Manager';
+import { EventManager } from '../src/Client/Event/Manager';
 
-import notifly from '../index';
-import { SdkState, SdkStateManager } from '../src/SdkState';
+import notifly from '../src/index';
+import { SdkState, SdkStateManager } from '../src/Client/SdkState';
 
 jest.mock('../src/API/Auth');
-jest.mock('../src/Event/Manager');
+jest.mock('../src/Client/Event/Manager');
 jest.mock('localforage', () => ({
     config: jest.fn(),
     getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),

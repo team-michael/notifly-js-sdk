@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { SegmentConditionValueType } from '../Types';
+import { SegmentConditionValueType } from '../../Types';
 
 export type PopupVersion = 1 | 2;
 
@@ -115,6 +115,7 @@ export class ConditionValueComparator {
                     if (this.IsEqual(element, value, type)) {
                         return true;
                     }
+                    return false;
                 }).bind(this)
             );
         } catch (error) {

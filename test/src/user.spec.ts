@@ -1,9 +1,9 @@
 import localForage from 'localforage';
-import { SdkState, SdkStateManager } from '../../src/SdkState';
-import { setUserProperties } from '../../src/User';
-import { EventManager } from '../../src/Event/Manager';
+import { SdkState, SdkStateManager } from '../../src/Client/SdkState';
+import { setUserProperties } from '../../src/Client/User';
+import { EventManager } from '../../src/Client/Event/Manager';
 
-jest.mock('../../src/Event/Manager');
+jest.mock('../../src/Client/Event/Manager');
 jest.mock('localforage', () => ({
     config: jest.fn(),
     getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
