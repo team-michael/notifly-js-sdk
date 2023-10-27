@@ -1,6 +1,6 @@
 {
   "name": "notifly-js-sdk",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Notifly JS SDK for browser.",
   "main": "lib/cjs/index.js",
   "module": "lib/esm/index.js",
@@ -21,8 +21,7 @@
     "build:umd:min": "cross-env NODE_ENV=production rollup -c -o dist/index.min.js",
     "build:sw": "tsc -p ./tsconfig.sw.json",
     "type-check": "tsc -p ./tsconfig.json",
-    "apply-changes-react": "source ./scripts/react/apply-changes-react.sh",
-    "run-react": "source ./scripts/react/run-react.sh"
+    "apply-changes-react": "source ./scripts/playground/apply-changes-react.sh"
   },
   "author": "Grey Box Inc.",
   "license": "ISC",
