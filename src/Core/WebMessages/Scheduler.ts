@@ -1,9 +1,9 @@
-import type { Campaign } from '../../Types';
+import type { Campaign } from '../Interfaces/Campaign';
 
 import NotiflyWebMessageRenderer from 'notifly-web-message-renderer';
 
-import { setUserProperties } from '../User';
-import { EventManager } from '../Event/Manager';
+import { UserIdentityManager } from '../User';
+import { EventLogger } from '../Event';
 import { SdkStateManager, SdkStateObserver } from '../SdkState';
 
 class SdkStateObserverForWebMessageScheduler implements SdkStateObserver {
@@ -49,7 +49,7 @@ export class WebMessageScheduler {
 
         NotiflyWebMessageRenderer.render(campaign.message.modal_properties, message.html_url, {
             onRenderCompleted: () => {
-                EventManager.logEvent(
+                EventLogger.logEvent(
                     'in_web_message_show',
                     {
                         type: 'message_event',
@@ -80,13 +80,13 @@ export class WebMessageScheduler {
                                         const data = extraData.data;
                                         if (data) {
                                             if (data.hideUntil) {
-                                                await setUserProperties({
+                                                await UserIdentityManager.setUserProperties({
                                                     [`hide_in_web_message_${templateName}`]: data.hideUntil,
                                                 });
                                             }
                                         }
                                     }
-                                    await EventManager.logEvent(
+                                    await EventLogger.logEvent(
                                         'close_button_click',
                                         {
                                             type: 'message_event',
@@ -106,7 +106,7 @@ export class WebMessageScheduler {
                                     } finally {
                                         window.removeEventListener('message', messageEventListener);
                                     }
-                                    await EventManager.logEvent(
+                                    await EventLogger.logEvent(
                                         'main_button_click',
                                         {
                                             type: 'message_event',

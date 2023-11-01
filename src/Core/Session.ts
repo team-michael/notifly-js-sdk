@@ -1,13 +1,12 @@
-import type { NotiflyPushSubscriptionOptions } from '../Types';
+import type { NotiflyPushSubscriptionOptions } from './Interfaces/Options';
 
 import { LAST_SESSION_TIME_LOGGING_INTERVAL } from '../Constants';
 
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
-
-import { registerServiceWorker } from './Push';
-import { EventManager } from './Event/Manager';
-import { WebMessageManager } from './WebMessages/Manager';
+import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 import { UserStateManager } from './User/State';
+import { registerServiceWorker } from './Push';
+import { EventLogger } from './Event';
+import { WebMessageManager } from './WebMessages/Manager';
 
 export class SessionManager {
     private static _lastSessionTime: number | null = null;
@@ -85,14 +84,14 @@ export class SessionManager {
     private static async _maybeStartSession() {
         if (this._isSessionExpired()) {
             await this._initializePushSubscription();
-            await EventManager.sessionStart();
+            await EventLogger.sessionStart();
         }
     }
 
     private static async _maybeRefreshSession() {
         if (this._isSessionExpired()) {
             await this._initializePushSubscription();
-            await EventManager.sessionStart();
+            await EventLogger.sessionStart();
             await UserStateManager.refresh();
         }
     }

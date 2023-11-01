@@ -9,6 +9,8 @@ import Playground from './Playground';
 function App() {
     useEffect(() => {
         if (typeof window !== 'undefined') {
+            notifly.trackEvent('hello', { from: 'react' });
+            notifly.trackEvent('hello2', { from: 'react' });
             notifly.initialize({
                 projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID,
                 username: process.env.REACT_APP_NOTIFLY_USERNAME,
@@ -135,7 +137,9 @@ function TrackEventSection() {
                         };
                     }
                     notifly.trackEvent(eventName, eventParams).then(() => {
-                        alert(`Event ${eventName} tracked successfully with params ${JSON.stringify(eventParams)}`);
+                        console.log(
+                            `Event ${eventName} tracked successfully with params ${JSON.stringify(eventParams)}`
+                        );
                     });
                 }}
             >

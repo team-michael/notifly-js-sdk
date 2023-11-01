@@ -1,4 +1,4 @@
-import { getCognitoIdToken } from '../../src/API/Auth';
+import { getCognitoIdToken } from '../../src/Core/API/Auth';
 
 jest.mock('localforage', () => ({
     config: jest.fn(),
@@ -43,7 +43,7 @@ describe('getCognitoIdToken', () => {
         const mockError = new Error('Mock error');
         mockFetch.mockImplementationOnce(() => Promise.reject(mockError));
         const token = await getCognitoIdToken('testUser', 'testPassword');
-        expect(token).toEqual('');
+        expect(token).toEqual(null);
         expect(mockFetch).toHaveBeenCalledTimes(2);
         expect(mockResponse.json).toHaveBeenCalledTimes(1);
     });

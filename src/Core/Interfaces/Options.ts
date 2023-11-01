@@ -12,7 +12,6 @@ export type NotiflyInitializeOptions = {
     username: string;
     password: string;
     sessionDuration?: number;
-    deviceToken?: string;
     pushSubscriptionOptions?: NotiflyPushSubscriptionOptions;
 };
 

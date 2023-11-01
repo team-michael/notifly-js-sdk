@@ -1,6 +1,6 @@
 {
   "name": "notifly-js-sdk",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Notifly JS SDK for browser.",
   "main": "lib/cjs/index.js",
   "module": "lib/esm/index.js",
@@ -10,7 +10,7 @@
     "pretty": "prettier --write \"src/**/*.{js,jsx,json,ts}\"",
     "lint": "eslint .",
     "prepublishOnly": "npm run build",
-    "build": "npm run clean && npm run build:es5 && npm run build:esm && npm run build:umd && npm run build:umd:min && npm run build:sw",
+    "build": "npm run clean && npm run write-version && npm run build:es5 && npm run build:esm && npm run build:umd && npm run build:umd:min && npm run build:sw",
     "start": "http-server --cors",
     "deploy-cdn-dev": "aws s3 sync dist s3://notifly-content/notifly-js-sdk/dev && aws cloudfront create-invalidation --distribution-id E2M7VD2WC9S1MI --paths \"/notifly-js-sdk/dev/*\"",
     "clean": "rm -rf dist lib",
@@ -19,6 +19,7 @@
     "build:umd": "cross-env NODE_ENV=development rollup -c -o dist/index.js",
     "build:umd:min": "cross-env NODE_ENV=production rollup -c -o dist/index.min.js",
     "build:sw": "tsc -p ./tsconfig.sw.json",
+    "write-version": "node ./scripts/write_version.js",
     "type-check": "tsc -p ./tsconfig.json",
     "apply-changes-react": "source ./scripts/playground/apply-changes-react.sh"
   },

@@ -21,6 +21,10 @@ export class SdkStateManager {
         this._observers.push(observer);
     }
 
+    static get state(): SdkState {
+        return this._state;
+    }
+
     static set state(state: SdkState) {
         const previousState = this._state;
         this._state = state;
@@ -46,21 +50,5 @@ export class SdkStateManager {
 
     static setSource(source: 'cafe24' | null): void {
         this.source = source;
-    }
-
-    static isReady(): boolean {
-        return this._state === SdkState.READY;
-    }
-
-    static isRefreshing(): boolean {
-        return this._state === SdkState.REFRESHING;
-    }
-
-    static isNotInitialized(): boolean {
-        return this._state === SdkState.NOT_INITIALIZED;
-    }
-
-    static isFailed(): boolean {
-        return this._state === SdkState.FAILED;
     }
 }

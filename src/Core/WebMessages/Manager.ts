@@ -1,13 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type {
-    Campaign,
-    Condition,
-    UserData,
-    DeviceProperties,
-    SegmentOperator,
-    SegmentConditionUnitType,
-    UserMetadataProperties,
-} from '../../Types';
+import type { Campaign, Condition, SegmentOperator, SegmentConditionUnitType } from '../Interfaces/Campaign';
+import type { UserData, DeviceProperties, UserMetadataProperties } from '../Interfaces/User';
 
 import { UserStateManager } from '../User/State';
 import { WebMessageScheduler } from './Scheduler';
@@ -18,10 +11,6 @@ export class WebMessageManager {
     static async initialize(hard = false) {
         await UserStateManager.sync(!hard);
         WebMessageScheduler.initialize();
-    }
-
-    static async refreshState() {
-        await UserStateManager.refresh();
     }
 
     static maybeTriggerWebMessagesAndUpdateEventCounts(

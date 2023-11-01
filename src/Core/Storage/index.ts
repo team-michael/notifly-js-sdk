@@ -13,25 +13,23 @@ export enum NotiflyStorageKeys {
     NOTIFLY_USER_ID = '__notiflyUserID',
     EXTERNAL_USER_ID = '__notiflyExternalUserID',
     NOTIFLY_DEVICE_ID = '__notiflyDeviceID',
-    NOTIFLY_DEVICE_TOKEN = '__notiflyDeviceToken',
     NOTIFLY_USER_STATE = '__notiflyUserState',
 
     // Misc
     LAST_SESSION_TIME = '__notiflyLastSessionTime',
     NOTIFLY_NOTIFICATION_PERMISSION = '__notiflyNotificationPermission',
     SW_VERSION = '__notiflySWVersion',
-    SEED_STRING = '__notiflySeedString',
 }
 
 export class NotiflyStorage {
-    private static _internalStorage: Map<NotiflyStorageKeys, string> = new Map();
+    private static _internalMemStorage: Map<NotiflyStorageKeys, string> = new Map();
 
     static async getItems(keys: NotiflyStorageKeys[]): Promise<Array<string | null>> {
         return Promise.all(keys.map((key) => this.getItem(key)));
     }
 
     static async getItem(key: NotiflyStorageKeys): Promise<string | null> {
-        return this._internalStorage.get(key) ?? (await this._get(key)) ?? null;
+        return this._internalMemStorage.get(key) ?? (await this._get(key)) ?? null;
     }
 
     static async setItems(data: Partial<Record<NotiflyStorageKeys, string>>): Promise<void> {
@@ -39,8 +37,8 @@ export class NotiflyStorage {
     }
 
     static async setItem(key: NotiflyStorageKeys, value: string): Promise<void> {
-        if (value !== this._internalStorage.get(key)) {
-            this._internalStorage.set(key, value);
+        if (value !== this._internalMemStorage.get(key)) {
+            this._internalMemStorage.set(key, value);
             await this._set(key, value);
         }
     }
@@ -50,7 +48,7 @@ export class NotiflyStorage {
     }
 
     static async removeItem(key: NotiflyStorageKeys): Promise<void> {
-        this._internalStorage.delete(key);
+        this._internalMemStorage.delete(key);
         await this._remove(key);
     }
 

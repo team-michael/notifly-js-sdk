@@ -1,10 +1,5 @@
-import { v5 } from 'uuid';
-
-import { NAMESPACE } from '../Constants';
-
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
-
-import { EventManager } from './Event/Manager';
+import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
+import { EventLogger } from './Event';
 
 export async function registerServiceWorker(
     vapidPublicKey: string,
@@ -84,21 +79,10 @@ export async function _getSubscription(
 }
 
 async function _logSubscription(subscription: PushSubscription): Promise<void> {
-    const subscriptionStr = JSON.stringify(subscription);
-
-    let notiflyDeviceID;
-    const notiflyDeviceIDLocalStore = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_DEVICE_ID);
-    if (notiflyDeviceIDLocalStore) {
-        notiflyDeviceID = notiflyDeviceIDLocalStore;
-    } else {
-        notiflyDeviceID = v5(subscriptionStr, NAMESPACE.DEVICEID).replace(/-/g, '');
-        await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_DEVICE_ID, notiflyDeviceID);
-    }
-
-    return await EventManager.logEvent(
+    return await EventLogger.logEvent(
         'set_device_properties',
         {
-            device_token: subscriptionStr, // Use deviceToken to store the subscription
+            device_token: JSON.stringify(subscription), // Use deviceToken to store the subscription
         },
         null,
         true

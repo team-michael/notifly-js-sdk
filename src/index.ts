@@ -1,6 +1,14 @@
-import { initialize, trackEvent, setSdkType, setSource } from './Client';
-import { setUserId, setUserProperties, getUserId, getUserProperties, deleteUser } from './Client/User';
-import { setDeviceToken } from './Client/Device';
+import {
+    initialize,
+    trackEvent,
+    setUserId,
+    setUserProperties,
+    getUserId,
+    getUserProperties,
+    deleteUser,
+    setSdkType,
+    setSource,
+} from './Client';
 
 const notifly = {
     initialize,
@@ -8,7 +16,6 @@ const notifly = {
     setUserProperties,
     deleteUser,
     setUserId,
-    setDeviceToken,
     setSdkType,
     setSource,
     getUserId,

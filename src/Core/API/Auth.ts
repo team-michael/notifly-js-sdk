@@ -11,7 +11,12 @@ import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
  * @example
  * const token = await getCognitoIdToken('myUserName', 'myPassword');
  */
-export async function getCognitoIdToken(userName: string, password: string): Promise<string> {
+export async function getCognitoIdToken(userName: string, password: string): Promise<string | null> {
+    if (!userName || !password) {
+        console.error('[Notifly]: Username or password not provided.');
+        return null;
+    }
+
     const body = JSON.stringify({
         userName,
         password,
@@ -28,15 +33,18 @@ export async function getCognitoIdToken(userName: string, password: string): Pro
         if (result.error) {
             throw new Error(result.error);
         }
-        return result.data ?? '';
+        return result.data || null;
     } catch (error) {
         console.warn('[Notifly]: ', error);
-        return '';
+        return null;
     }
 }
 
-export async function saveCognitoIdToken(userName: string, password: string): Promise<string> {
-    const cognitoIDToken = await getCognitoIdToken(userName, password);
-    await NotiflyStorage.setItem(NotiflyStorageKeys.COGNITO_ID_TOKEN, cognitoIDToken);
-    return cognitoIDToken;
+export async function saveCognitoIdToken(userName: string, password: string): Promise<string | null> {
+    const cognitoIdToken = await getCognitoIdToken(userName, password);
+    if (!cognitoIdToken) {
+        return null;
+    }
+    await NotiflyStorage.setItem(NotiflyStorageKeys.COGNITO_ID_TOKEN, cognitoIdToken);
+    return cognitoIdToken;
 }

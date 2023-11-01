@@ -1,7 +1,7 @@
-import type { Campaign } from '../../src/Types';
+import type { Campaign } from '../../src/Core/Interfaces';
 
-import { UserStateManager } from '../../src/Client/User/State';
-import { WebMessageManager } from '../../src/Client/WebMessages/Manager';
+import { UserStateManager } from '../../src/Core/User/State';
+import { WebMessageManager } from '../../src/Core/WebMessages/Manager';
 
 jest.mock('localforage', () => ({
     config: jest.fn(),

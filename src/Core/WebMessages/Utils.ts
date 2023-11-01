@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { SegmentConditionValueType } from '../../Types';
+import { SegmentConditionValueType } from '../Interfaces/Campaign';
 
 export type PopupVersion = 1 | 2;
 

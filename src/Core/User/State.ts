@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Campaign, EventIntermediateCounts, UserData } from '../../Types';
+import type { Campaign } from '../Interfaces/Campaign';
+import type { EventIntermediateCounts, UserData } from '../Interfaces/User';
 
-import { NotiflyStorage, NotiflyStorageKeys } from '../../Storage';
-import { APIManager } from '../../API/Manager';
+import { SdkState, SdkStateManager } from '../SdkState';
+import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
+import { NotiflyAPI } from '../API';
 
 import {
     getKSTCalendarDateString,
@@ -11,8 +13,6 @@ import {
     isValidUserData,
     isValidWebMessageState,
 } from './Utils';
-import { generateNotiflyUserId } from '../../Utils';
-import { SdkState, SdkStateManager } from '../SdkState';
 
 export class UserStateManager {
     static eventIntermediateCounts: EventIntermediateCounts[] = [];
@@ -33,7 +33,7 @@ export class UserStateManager {
     }
 
     static async refresh() {
-        if (!SdkStateManager.isReady()) {
+        if (SdkStateManager.state !== SdkState.READY) {
             console.error('[Notifly] Cannot refresh state when the SDK is not ready. Ignoring refreshState call.');
             return;
         }
@@ -119,32 +119,19 @@ export class UserStateManager {
             }
         }
 
-        const [projectID, deviceToken, notiflyDeviceID, externalUserID] = await NotiflyStorage.getItems([
+        const [projectId, notiflyDeviceId, notiflyUserId] = await NotiflyStorage.getItems([
             NotiflyStorageKeys.PROJECT_ID,
-            NotiflyStorageKeys.NOTIFLY_DEVICE_TOKEN,
             NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
-            NotiflyStorageKeys.EXTERNAL_USER_ID,
+            NotiflyStorageKeys.NOTIFLY_USER_ID,
         ]);
 
-        if (!projectID) {
-            throw new Error('Project ID should be set before logging an event.');
+        if (!projectId || !notiflyDeviceId || !notiflyUserId) {
+            throw new Error('Project ID, device ID, Notifly User ID should be set before logging an event.');
         }
 
-        let notiflyUserID = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_USER_ID);
-        if (!notiflyUserID) {
-            const generatedNotiflyUserID = await generateNotiflyUserId(
-                projectID,
-                externalUserID,
-                deviceToken,
-                notiflyDeviceID
-            );
-            notiflyUserID = generatedNotiflyUserID;
-            await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_ID, generatedNotiflyUserID);
-        }
-
-        const data = await APIManager.call(
-            `https://api.notifly.tech/user-state/${projectID}/${notiflyUserID}?${
-                notiflyDeviceID ? `deviceId=${notiflyDeviceID}` : ''
+        const data = await NotiflyAPI.call(
+            `https://api.notifly.tech/user-state/${projectId}/${notiflyUserId}?${
+                notiflyDeviceId ? `deviceId=${notiflyDeviceId}` : ''
             }`,
             'GET'
         );
