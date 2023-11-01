@@ -20,8 +20,7 @@
     "build:umd:min": "cross-env NODE_ENV=production rollup -c -o dist/index.min.js",
     "build:sw": "tsc -p ./tsconfig.sw.json",
     "write-version": "node ./scripts/write_version.js",
-    "type-check": "tsc -p ./tsconfig.json",
-    "apply-changes-react": "source ./scripts/playground/apply-changes-react.sh"
+    "type-check": "tsc -p ./tsconfig.json"
   },
   "author": "Grey Box Inc.",
   "license": "ISC",
