@@ -1,4 +1,4 @@
-import type { Campaign } from '../../src/Core/Interfaces';
+import type { Campaign } from '../../src/Core/Interfaces/Campaign';
 
 import { UserStateManager } from '../../src/Core/User/State';
 import { WebMessageManager } from '../../src/Core/WebMessages/Manager';
