@@ -1,15 +1,20 @@
-// import { v5 } from 'uuid';
+import uuid from 'uuid';
 import localForage from 'localforage';
-// import { NAMESPACE } from '../../src/Constants';
-import { getInitialNotiflyUserId, getPlatform } from '../../src/Utils';
-// import { NotiflyStorage } from '../../src/Storage';
+import { NAMESPACE } from '../../src/Constants';
+import { getPlatform, storeUserIdentity } from '../../src/Core/Utils';
 
 jest.mock('localforage', () => ({
     config: jest.fn(),
     getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
+    setItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
 }));
 
-describe('getNotiflyUserID', () => {
+jest.mock('uuid', () => ({
+    v4: jest.fn().mockImplementation(() => Promise.resolve(null)),
+    v5: jest.fn().mockImplementation(() => Promise.resolve(null)),
+}));
+
+describe('store user identity', () => {
     beforeEach(() => {
         jest.clearAllMocks(); // Clears the mock.calls and mock.instances properties of all mocks.
     });
@@ -18,53 +23,50 @@ describe('getNotiflyUserID', () => {
         jest.restoreAllMocks(); // Restores all mocks back to their original value.
     });
 
-    test('should return notifly user ID when notifly user ID is available in localForage', async () => {
+    test('Correctly store user identity', async () => {
         const projectID = 'test';
-        const deviceToken = 'deviceToken';
         const externalUserID = 'externalUserID';
-        const notiflyUserID = 'notiflyUserID';
-        const expectedUserID = notiflyUserID;
 
-        jest.spyOn(localForage, 'getItem').mockImplementation(() => Promise.resolve(notiflyUserID));
-        const result = await getInitialNotiflyUserId(projectID, externalUserID, deviceToken);
-        expect(localForage.getItem).toHaveBeenCalledWith('__notiflyUserID');
-        expect(result).toBe(expectedUserID);
+        const expectedNotiflyUserId = `${projectID}${externalUserID}-${NAMESPACE.REGISTERED_USERID}`.replace(/-/g, '');
+        const expectedDeviceId = 'uuid-v4-mocked-string';
+
+        const mockStorage = <any>{
+            __notiflyProjectID: projectID,
+            __notiflyExternalUserID: externalUserID,
+        };
+
+        jest.spyOn(localForage, 'getItem').mockImplementation((key: string) => {
+            switch (key) {
+                case '__notiflyProjectID':
+                    return mockStorage.__notiflyProjectID;
+                case '__notiflyUserID':
+                    return mockStorage.__notiflyUserID;
+                case '__notiflyExternalUserID':
+                    return mockStorage.__notiflyExternalUserID;
+                default:
+                    return Promise.resolve(null);
+            }
+        });
+        jest.spyOn(localForage, 'setItem').mockImplementation((key: string, value: unknown) => {
+            mockStorage[key] = value;
+            return Promise.resolve();
+        });
+
+        jest.spyOn(uuid, 'v4').mockImplementation(() => 'uuid-v4-mocked-string');
+        jest.spyOn(uuid, 'v5').mockImplementation(
+            (name: string | ArrayLike<number>, namespace: string | ArrayLike<number>) => {
+                if (typeof name === 'string' && typeof namespace === 'string') {
+                    return `${name}-${namespace}`;
+                }
+                return '';
+            }
+        );
+
+        await storeUserIdentity();
+
+        expect(mockStorage.__notiflyUserID).toEqual(expectedNotiflyUserId);
+        expect(mockStorage.__notiflyDeviceID).toEqual(expectedDeviceId);
     });
-
-    // test('should return registered user ID when external user ID is available in localForage', async () => {
-    //     const projectID = 'test';
-    //     const deviceToken = 'deviceToken';
-    //     const externalUserID = 'externalUserID';
-    //     const expectedUserID = v5(`${projectID}${externalUserID}`, NAMESPACE.REGISTERED_USERID).replace(/-/g, '');
-    //     jest.spyOn(NotiflyStorage, 'getItem').mockImplementation((key: string) => {
-    //         if (key === '__notiflyExternalUserID') {
-    //             return Promise.resolve(externalUserID);
-    //         } else if (key === '__notiflyDeviceToken') {
-    //             return Promise.resolve(deviceToken);
-    //         } else {
-    //             return Promise.resolve(null);
-    //         }
-    //     });
-
-    //     const result = await getInitialNotiflyUserId(projectID, undefined, deviceToken);
-    //     expect(result).toBe(expectedUserID);
-    // });
-
-    // test('should return unregistered user ID when external user ID is not available in localForage', async () => {
-    //     const projectID = 'test';
-    //     const deviceToken = 'deviceToken';
-    //     const expectedUserID = v5(`${projectID}${deviceToken}`, NAMESPACE.UNREGISTERED_USERID).replace(/-/g, '');
-    //     jest.spyOn(localForage, 'getItem').mockImplementation((key: string) => {
-    //         if (key === '__notiflyDeviceToken') {
-    //             return Promise.resolve(deviceToken);
-    //         } else {
-    //             return Promise.resolve(null);
-    //         }
-    //     });
-
-    //     const result = await getInitialNotiflyUserId(projectID);
-    //     expect(result).toBe(expectedUserID);
-    // });
 });
 
 describe('getPlatform', () => {

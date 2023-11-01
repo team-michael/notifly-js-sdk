@@ -1,14 +1,12 @@
-import { v5 } from 'uuid';
 import localForage from 'localforage';
-import { NAMESPACE } from '../src/Constants';
-import { saveCognitoIdToken } from '../src/API/Auth';
-import { EventManager } from '../src/Event/Manager';
+import { saveCognitoIdToken } from '../src/Core/API/Auth';
+import { EventLogger } from '../src/Core/Event';
 
-import notifly from '../index';
-import { SdkState, SdkStateManager } from '../src/SdkState';
+import notifly from '../src/index';
+import { SdkState, SdkStateManager } from '../src/Core/SdkState';
 
-jest.mock('../src/API/Auth');
-jest.mock('../src/Event/Manager');
+jest.mock('../src/Core/API/Auth');
+jest.mock('../src/Core/Event');
 jest.mock('localforage', () => ({
     config: jest.fn(),
     getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
@@ -20,11 +18,10 @@ describe('Notifly SDK', () => {
         const projectID = 'project-id';
         const userName = 'user-name';
         const password = 'password';
-        const deviceToken = 'device-token';
 
         beforeEach(() => {
             (saveCognitoIdToken as jest.MockedFunction<typeof saveCognitoIdToken>).mockClear();
-            (EventManager.sessionStart as jest.MockedFunction<typeof EventManager.sessionStart>).mockClear();
+            (EventLogger.sessionStart as jest.MockedFunction<typeof EventLogger.sessionStart>).mockClear();
         });
 
         afterEach(() => {
@@ -37,23 +34,22 @@ describe('Notifly SDK', () => {
                     projectId: '',
                     username: userName,
                     password,
-                    deviceToken,
                 })
             ).toBe(false);
+            SdkStateManager.state = SdkState.NOT_INITIALIZED; // Reset
             expect(
                 await notifly.initialize({
                     projectId: projectID,
                     username: '',
                     password,
-                    deviceToken,
                 })
             ).toBe(false);
+            SdkStateManager.state = SdkState.NOT_INITIALIZED; // Reset
             expect(
                 await notifly.initialize({
                     projectId: projectID,
                     username: userName,
                     password: '',
-                    deviceToken,
                 })
             ).toBe(false);
         });
@@ -63,7 +59,6 @@ describe('Notifly SDK', () => {
                 projectId: projectID,
                 username: userName,
                 password,
-                deviceToken,
             });
 
             expect(saveCognitoIdToken).toHaveBeenCalledWith(userName, password);
@@ -74,17 +69,11 @@ describe('Notifly SDK', () => {
                 projectId: projectID,
                 username: userName,
                 password,
-                deviceToken,
             });
 
             expect(localForage.setItem).toHaveBeenCalledWith('__notiflyProjectID', projectID);
             expect(localForage.setItem).toHaveBeenCalledWith('__notiflyUserName', userName);
             expect(localForage.setItem).toHaveBeenCalledWith('__notiflyPassword', password);
-            expect(localForage.setItem).toHaveBeenCalledWith('__notiflyDeviceToken', deviceToken);
-            expect(localForage.setItem).toHaveBeenCalledWith(
-                '__notiflyDeviceID',
-                v5(deviceToken, NAMESPACE.DEVICEID).replace(/-/g, '')
-            );
         });
 
         it('should not call __notiflyDeviceToken and __notiflyDeviceID when no device token is provided', async () => {

@@ -7,10 +7,12 @@ html,
 body {
     font-size: 10px; /* 1rem = 10px */
     font-family: 'lato', Arial, sans-serif;
-}
-body {
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+}
+body > * + * {
+    margin-top: 2rem;
 }

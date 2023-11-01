@@ -1,6 +1,7 @@
-import type { Campaign } from '../../src/Types';
+import type { Campaign } from '../../src/Core/Interfaces/Campaign';
 
-import { WebMessageManager } from '../../src/WebMessages/Manager';
+import { UserStateManager } from '../../src/Core/User/State';
+import { WebMessageManager } from '../../src/Core/WebMessages/Manager';
 
 jest.mock('localforage', () => ({
     config: jest.fn(),
@@ -12,18 +13,18 @@ jest.useFakeTimers().setSystemTime(new Date('2023-05-31'));
 
 describe('updateEventIntermediateCounts', () => {
     beforeEach(() => {
-        WebMessageManager.eventIntermediateCounts = [];
+        UserStateManager.eventIntermediateCounts = [];
     });
 
     test('should update the count of an existing row', () => {
-        WebMessageManager.eventIntermediateCounts = [
+        UserStateManager.eventIntermediateCounts = [
             { dt: '2023-05-26', name: 'Event A', count: 3, event_params: {} },
             { dt: '2023-05-26', name: 'Event B', count: 5, event_params: {} },
         ];
 
-        WebMessageManager.updateEventCounts('Event A', {});
+        UserStateManager.updateEventCounts('Event A', {});
 
-        const eventIntermediateCounts = WebMessageManager.eventIntermediateCounts;
+        const eventIntermediateCounts = UserStateManager.eventIntermediateCounts;
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].count === 4);
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].dt === '2023-05-26');
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event B')[0].count === 5);
@@ -31,14 +32,14 @@ describe('updateEventIntermediateCounts', () => {
     });
 
     test('should add a new entry when no existing row is found', () => {
-        WebMessageManager.eventIntermediateCounts = [
+        UserStateManager.eventIntermediateCounts = [
             { dt: '2023-05-26', name: 'Event A', count: 4, event_params: {} },
             { dt: '2023-05-26', name: 'Event B', count: 5, event_params: {} },
         ];
 
-        WebMessageManager.updateEventCounts('Event C', {});
+        UserStateManager.updateEventCounts('Event C', {});
 
-        const eventIntermediateCounts = WebMessageManager.eventIntermediateCounts;
+        const eventIntermediateCounts = UserStateManager.eventIntermediateCounts;
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].count === 4);
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].dt === '2023-05-26');
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event B')[0].count === 5);
@@ -48,29 +49,29 @@ describe('updateEventIntermediateCounts', () => {
     });
 
     test('should create a new entry when the array is empty', () => {
-        WebMessageManager.updateEventCounts('Event A', {});
+        UserStateManager.updateEventCounts('Event A', {});
 
-        const eventIntermediateCounts = WebMessageManager.eventIntermediateCounts;
+        const eventIntermediateCounts = UserStateManager.eventIntermediateCounts;
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].count === 1);
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].dt === '2023-05-26');
     });
 
     test('should increase the count of an existing row', () => {
-        WebMessageManager.eventIntermediateCounts = [{ dt: '2023-05-26', name: 'Event A', count: 2, event_params: {} }];
+        UserStateManager.eventIntermediateCounts = [{ dt: '2023-05-26', name: 'Event A', count: 2, event_params: {} }];
 
-        WebMessageManager.updateEventCounts('Event A', {});
+        UserStateManager.updateEventCounts('Event A', {});
 
-        const eventIntermediateCounts = WebMessageManager.eventIntermediateCounts;
+        const eventIntermediateCounts = UserStateManager.eventIntermediateCounts;
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].count === 3);
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].dt === '2023-05-26');
     });
 
     test('should not modify the array when the event name does not match an existing row', () => {
-        WebMessageManager.eventIntermediateCounts = [{ dt: '2023-05-26', name: 'Event A', count: 2, event_params: {} }];
+        UserStateManager.eventIntermediateCounts = [{ dt: '2023-05-26', name: 'Event A', count: 2, event_params: {} }];
 
-        WebMessageManager.updateEventCounts('Event B', {});
+        UserStateManager.updateEventCounts('Event B', {});
 
-        const eventIntermediateCounts = WebMessageManager.eventIntermediateCounts;
+        const eventIntermediateCounts = UserStateManager.eventIntermediateCounts;
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].count === 2);
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].dt === '2023-05-26');
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event B')[0].count === 1);
@@ -80,12 +81,12 @@ describe('updateEventIntermediateCounts', () => {
 
 // describe('getCampaignsToSchedule', () => {
 //     beforeAll(() => {
-//         jest.spyOn(WebMessageManager, '_matchCondition').mockImplementation(() => {
+//         jest.spyOn(UserStateManager, '_matchCondition').mockImplementation(() => {
 //             return true;
 //         });
 //     });
 //     afterAll(() => {
-//         (WebMessageManager._matchCondition as any).mockRestore();
+//         (UserStateManager._matchCondition as any).mockRestore();
 //     });
 
 //     const campaigns: Campaign[] = [
@@ -137,20 +138,20 @@ describe('updateEventIntermediateCounts', () => {
 //     ];
 
 //     it('Test case 1: Valid event name with matching campaigns', () => {
-//         const result = WebMessageManager.getCampaignsToSchedule(campaigns, 'event1', {}, null);
+//         const result = UserStateManager.getCampaignsToSchedule(campaigns, 'event1', {}, null);
 //         expect(result.map((campaign) => campaign.id)).toEqual(['test-campaign-1', 'test-campaign-3']);
 //     });
 
 //     it('Test case 2: Valid event name with no matching campaigns', () => {
 //         const nonExistingEventName = 'event3';
-//         const result = WebMessageManager.getCampaignsToSchedule(campaigns, nonExistingEventName, {}, null);
+//         const result = UserStateManager.getCampaignsToSchedule(campaigns, nonExistingEventName, {}, null);
 //         expect(result).toEqual([]);
 //     });
 // });
 
 describe('checkCondition', () => {
     beforeEach(() => {
-        WebMessageManager.eventIntermediateCounts = [];
+        UserStateManager.eventIntermediateCounts = [];
     });
 
     test('should return false for non-condition segment type', () => {
@@ -222,7 +223,7 @@ describe('checkCondition', () => {
             { dt: formattedDate, name: 'Event A', count: 3, event_params: {} },
             { dt: formattedDate, name: 'Event B', count: 5, event_params: {} },
         ];
-        WebMessageManager.eventIntermediateCounts = eventIntermediateCounts;
+        UserStateManager.eventIntermediateCounts = eventIntermediateCounts;
 
         const campaign: Campaign = {
             id: 'test-id',
@@ -266,7 +267,7 @@ describe('checkCondition', () => {
             { dt: formattedDate, name: 'Event A', count: 3, event_params: {} },
             { dt: formattedDate, name: 'Event B', count: 5, event_params: {} },
         ];
-        WebMessageManager.eventIntermediateCounts = eventIntermediateCounts;
+        UserStateManager.eventIntermediateCounts = eventIntermediateCounts;
 
         const campaign: Campaign = {
             id: 'test-id',
@@ -310,7 +311,7 @@ describe('checkCondition', () => {
             { dt: formattedDate, name: 'Event A', count: 1, event_params: {} },
             { dt: formattedDate, name: 'Event B', count: 5, event_params: {} },
         ];
-        WebMessageManager.eventIntermediateCounts = eventIntermediateCounts;
+        UserStateManager.eventIntermediateCounts = eventIntermediateCounts;
 
         const campaign: Campaign = {
             id: 'test-id',
@@ -354,7 +355,7 @@ describe('checkCondition', () => {
             { dt: formattedDate, name: 'Event A', count: 10, event_params: {} },
             { dt: formattedDate, name: 'Event B', count: 5, event_params: {} },
         ];
-        WebMessageManager.eventIntermediateCounts = eventIntermediateCounts;
+        UserStateManager.eventIntermediateCounts = eventIntermediateCounts;
 
         const campaign: Campaign = {
             id: 'test-id',
@@ -390,7 +391,7 @@ describe('checkCondition', () => {
     });
 
     test('should return true for user property condition with matching value', () => {
-        WebMessageManager.userData = {
+        UserStateManager.userData = {
             user_properties: {
                 age: 30,
                 gender: 'male',
@@ -429,7 +430,7 @@ describe('checkCondition', () => {
     });
 
     test('should return false for user property condition with non-matching value', () => {
-        WebMessageManager.userData = {
+        UserStateManager.userData = {
             user_properties: {
                 age: 30,
                 gender: 'male',
@@ -468,7 +469,7 @@ describe('checkCondition', () => {
     });
     test('should return true for when one of two conditions are met (two conditions are in two separate groups)', () => {
         // Meets age condition but not country condition
-        WebMessageManager.userData = {
+        UserStateManager.userData = {
             user_properties: {
                 age: 30,
                 gender: 'male',
@@ -519,7 +520,7 @@ describe('checkCondition', () => {
         expect(result).toBe(true);
     });
     test('should return false for conditions in groups are all not satisfied', () => {
-        WebMessageManager.userData = {
+        UserStateManager.userData = {
             user_properties: {
                 age: 30,
                 gender: 'male',
@@ -582,7 +583,7 @@ describe('checkCondition', () => {
         expect(result).toBe(false);
     });
     test('should return true for when group with multiple conditions is satisfied while other groups are not satisfied', () => {
-        WebMessageManager.userData = {
+        UserStateManager.userData = {
             user_properties: {
                 age: 30,
                 gender: 'male',
@@ -659,7 +660,7 @@ describe('checkCondition', () => {
         expect(result).toBe(true);
     });
     test('should return true for when group with single conditions is satisfied while other groups are not satisfied', () => {
-        WebMessageManager.userData = {
+        UserStateManager.userData = {
             user_properties: {
                 age: 30,
                 gender: 'male',
@@ -736,7 +737,7 @@ describe('checkCondition', () => {
         expect(result).toBe(true);
     });
     test('test group mix with user condition and event condition', () => {
-        WebMessageManager.userData = {
+        UserStateManager.userData = {
             user_properties: {
                 age: 30,
                 gender: 'male',
@@ -747,7 +748,7 @@ describe('checkCondition', () => {
             { dt: '2023-05-26', name: 'Event A', count: 3, event_params: {} },
             { dt: '2023-05-26', name: 'Event B', count: 5, event_params: {} },
         ];
-        WebMessageManager.eventIntermediateCounts = eventIntermediateCounts;
+        UserStateManager.eventIntermediateCounts = eventIntermediateCounts;
 
         const campaign: Campaign = {
             id: 'test-id',
@@ -823,7 +824,7 @@ describe('checkCondition', () => {
         currentDate.setDate(currentDate.getDate() - 5);
         const formattedDate = currentDate.toISOString().split('T')[0];
 
-        WebMessageManager.userData = {
+        UserStateManager.userData = {
             user_properties: {
                 age: 30,
                 gender: 'male',
@@ -834,7 +835,7 @@ describe('checkCondition', () => {
             { dt: formattedDate, name: 'Event A', count: 3, event_params: {} },
             { dt: formattedDate, name: 'Event B', count: 5, event_params: {} },
         ];
-        WebMessageManager.eventIntermediateCounts = eventIntermediateCounts;
+        UserStateManager.eventIntermediateCounts = eventIntermediateCounts;
 
         const campaign: Campaign = {
             id: 'test-id',

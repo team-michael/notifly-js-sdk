@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Link, Outlet } from 'react-router-dom';
 
-import notifly from 'notifly-js-sdk-dev';
+import notifly from 'notifly-js-sdk';
 import logo from './logo.svg';
 import './App.css';
 import Playground from './Playground';
@@ -9,6 +9,8 @@ import Playground from './Playground';
 function App() {
     useEffect(() => {
         if (typeof window !== 'undefined') {
+            notifly.trackEvent('hello', { from: 'react' });
+            notifly.trackEvent('hello2', { from: 'react' });
             notifly.initialize({
                 projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID,
                 username: process.env.REACT_APP_NOTIFLY_USERNAME,
@@ -41,13 +43,7 @@ function HomePage() {
             </p>
             <UserIdSetter />
             <UserPropertySetter />
-            <EventButton name="event_react_1" />
-            <EventButton name="event_react_2" />
-            <EventButton name="event_react_3" />
-            <EventButton name="event_react_4" />
-            <EventButton name="event_react_5" />
-            <EventButton name="가즈아아아아아" />
-            <EventButtonWithParams name="event_react_6" />
+            <TrackEventSection />
             <RemoveUserIdButton />
             <DeleteUserIdButton />
             <Link to="/playground">Go to playground</Link>
@@ -56,20 +52,9 @@ function HomePage() {
     );
 }
 
-function EventButton({ name }) {
-    const handleButtonClick = (buttonName) => {
-        notifly.trackEvent(buttonName);
-        console.log(`Button ${buttonName} clicked`);
-    };
-    return (
-        <button style={{ margin: '10px' }} onClick={() => handleButtonClick(name)}>
-            {name}
-        </button>
-    );
-}
-
-function EventButtonWithParams({ name }) {
+function TrackEventSection() {
     const keyRef = useRef(null);
+    const [eventName, setEventName] = useState('');
     const [value, setValue] = useState('');
 
     const valueTypeOptions = [
@@ -93,11 +78,18 @@ function EventButtonWithParams({ name }) {
 
     return (
         <div style={{ margin: '10px' }}>
-            <input type="text" name="setUserId" ref={keyRef} placeholder="key" />
+            <input
+                type="text"
+                placeholder="Event Name"
+                onChange={(e) => {
+                    setEventName(e.target.value);
+                }}
+                value={eventName}
+            />
+            <input type="text" ref={keyRef} placeholder="key" />
             {valueType === 'TEXT' ? (
                 <input
                     type="text"
-                    name="setUserId"
                     placeholder="value"
                     onChange={(e) => {
                         setValue(e.target.value);
@@ -107,7 +99,6 @@ function EventButtonWithParams({ name }) {
             ) : valueType === 'INT' ? (
                 <input
                     type="number"
-                    name="setUserId"
                     placeholder="value"
                     onChange={(e) => {
                         const parsedValue = parseInt(e.target.value);
@@ -139,12 +130,20 @@ function EventButtonWithParams({ name }) {
             </select>
             <button
                 onClick={() => {
-                    notifly.trackEvent(name, {
-                        [keyRef.current.value]: value,
+                    let eventParams = {};
+                    if (keyRef.current.value) {
+                        eventParams = {
+                            [keyRef.current.value]: value,
+                        };
+                    }
+                    notifly.trackEvent(eventName, eventParams).then(() => {
+                        console.log(
+                            `Event ${eventName} tracked successfully with params ${JSON.stringify(eventParams)}`
+                        );
                     });
                 }}
             >
-                {name}
+                Track Event
             </button>
         </div>
     );

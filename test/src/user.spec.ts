@@ -1,9 +1,9 @@
 import localForage from 'localforage';
-import { SdkState, SdkStateManager } from '../../src/SdkState';
-import { setUserProperties } from '../../src/User';
-import { EventManager } from '../../src/Event/Manager';
+import { SdkState, SdkStateManager } from '../../src/Core/SdkState';
+import { EventLogger } from '../../src/Core/Event';
+import { UserIdentityManager } from '../../src/Core/User';
 
-jest.mock('../../src/Event/Manager');
+jest.mock('../../src/Core/Event');
 jest.mock('localforage', () => ({
     config: jest.fn(),
     getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
@@ -23,6 +23,8 @@ describe('setUserProperties', () => {
         jest.spyOn(localForage, 'getItem').mockImplementation((key: string) => {
             if (key === '__notiflyProjectID') {
                 return Promise.resolve('test');
+            } else if (key === '__notiflyUserID') {
+                return Promise.resolve('previous_notifly_user_id');
             } else {
                 return Promise.resolve(null);
             }
@@ -34,18 +36,18 @@ describe('setUserProperties', () => {
         const expectedParams = {
             external_user_id: '1234567890',
             previous_external_user_id: null,
-            previous_notifly_user_id: null,
+            previous_notifly_user_id: 'previous_notifly_user_id',
         };
 
         // Assume sdk is initialized
         SdkStateManager.state = SdkState.READY;
-        await setUserProperties(params);
+        await UserIdentityManager.setUserProperties(params);
 
         expect(localForage.getItem).toHaveBeenCalledWith('__notiflyProjectID');
         expect(localForage.getItem).toHaveBeenCalledWith('__notiflyUserID');
         expect(localForage.getItem).toHaveBeenCalledWith('__notiflyExternalUserID');
         expect(localForage.setItem).toHaveBeenCalledWith('__notiflyExternalUserID', '1234567890');
-        expect(EventManager.logEvent).toHaveBeenCalledWith('set_user_properties', expectedParams, null, true);
+        expect(EventLogger.logEvent).toHaveBeenCalledWith('set_user_properties', expectedParams, null, true);
     });
 
     test('does not set external_user_id in localForage and logs the event when params do not include external_user_id', async () => {
@@ -58,8 +60,8 @@ describe('setUserProperties', () => {
             email: 'john@example.com',
         };
 
-        await setUserProperties(params);
+        await UserIdentityManager.setUserProperties(params);
 
-        expect(EventManager.logEvent).toHaveBeenCalledWith('set_user_properties', expectedParams, null, true);
+        expect(EventLogger.logEvent).toHaveBeenCalledWith('set_user_properties', expectedParams, null, true);
     });
 });

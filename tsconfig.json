@@ -1,19 +1,37 @@
 {
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["src/NotiflyServiceWorker.ts"],
   "compilerOptions": {
-    /* Language and Environment */
-    "target": "esnext" /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,
-    /* Modules */
-    "module": "esnext" /* Specify what module code is generated. */,
-    "moduleResolution": "node" /* Specify how TypeScript looks up a file from a given module specifier. */,
-    /* Emit */
-    "declaration": true /* Generate .d.ts files from TypeScript and JavaScript files in your project. */,
-    "esModuleInterop": true /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */,
-    "forceConsistentCasingInFileNames": true /* Ensure that casing is correct in imports. */,
-    /* Type Checking */
-    "strict": true /* Enable all strict type-checking options. */,
-    /* Completeness */
-    "skipLibCheck": true /* Skip type checking all .d.ts files. */
-  },
-  "include": ["src/**/*.ts", "index.ts", "src/data.js", "src/data.js"],
-  "exclude": ["node_modules", "test/**/*", "example-vanillajs/**/*", "example-react/**/*", "notifly-service-worker.js"]
+    "esModuleInterop": true,
+    "alwaysStrict": false,
+    "declaration": true,
+    "declarationMap": true,
+    "downlevelIteration": true,
+    "inlineSources": true,
+    "importHelpers": true,
+    "lib": ["DOM"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noEmitHelpers": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "pretty": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "strictBindCallApply": true,
+    "target": "ES5",
+    "types": ["jest", "node"],
+    "noEmit": true,
+    "rootDir": ".",
+    "baseUrl": ".",
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+      "tslib": ["node_modules/tslib/tslib.d.ts"]
+    }
+  }
 }

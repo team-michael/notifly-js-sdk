@@ -11,4 +11,4 @@ const config: Config.InitialOptions = {
     collectCoverage: false,
 };
 
-export default config
+export default config;
