@@ -19,7 +19,24 @@
             <input type="text" id="event_name_input" />
             <button id="track_event_button">Track Event</button>
         </div>
-        <script src="https://cdn.notifly.tech/notifly-js-sdk/dev/index.js"></script>
         <script src="js/app.js"></script>
+        <script>
+            (function (w, d, p, u, a, o) {
+                var s = d.createElement('script');
+                s.async = !0;
+                s.src = 'https://cdn.jsdelivr.net/npm/notifly-js-sdk@2/dist/index.min.js';
+                s.onload = function () {
+                    w.notifly.initialize({ projectId: p, username: u, password: a, pushSubscriptionOptions: o });
+                };
+                s.onerror = function () {
+                    console.error('Failed to load Notifly Browser SDK.');
+                };
+                d.getElementsByTagName('head')[0].appendChild(s);
+            })(window, document, 'b80c3f0e2fbd5eb986df4f1d32ea2871', 'minyong', '000000', {
+                vapidPublicKey:
+                    'BGkEcbk7nbeozYYvs7EXqWDuqcDPBdxJ5p51jM9vx2ERj5iGSntBXFhIociva1boO9LuCec-ZCCAI_HC82NUIuQ',
+                askPermission: true,
+            });
+        </script>
     </body>
 </html>

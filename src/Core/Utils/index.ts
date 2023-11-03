@@ -3,6 +3,7 @@ import { NAMESPACE } from '../../Constants';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 export async function initializeNotiflyStorage(projectId: string, username: string, password: string) {
+    await NotiflyStorage.ensureInitialized();
     await NotiflyStorage.setItems({
         [NotiflyStorageKeys.PROJECT_ID]: projectId,
         [NotiflyStorageKeys.USERNAME]: username,

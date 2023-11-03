@@ -24,6 +24,10 @@ export enum NotiflyStorageKeys {
 export class NotiflyStorage {
     private static _internalMemStorage: Map<NotiflyStorageKeys, string> = new Map();
 
+    static async ensureInitialized() {
+        await localForage.ready();
+    }
+
     static async getItems(keys: NotiflyStorageKeys[]): Promise<Array<string | null>> {
         return Promise.all(keys.map((key) => this.getItem(key)));
     }

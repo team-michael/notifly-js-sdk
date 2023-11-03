@@ -43,7 +43,17 @@ export class SessionManager {
         await this._initializeInternal();
     }
 
-    static onWindowFocus() {
+    static onWindowVisibilityChanged() {
+        if (document.visibilityState === 'visible') {
+            this._onWindowVisible();
+        }
+
+        if (document.visibilityState === 'hidden') {
+            this._onWindowHidden();
+        }
+    }
+
+    private static _onWindowVisible() {
         if (this._storageSaverIntervalId) {
             // This might not happen, but just in case
             clearInterval(this._storageSaverIntervalId);
@@ -57,7 +67,7 @@ export class SessionManager {
         });
     }
 
-    static onWindowBlur() {
+    private static _onWindowHidden() {
         if (this._storageSaverIntervalId) {
             clearInterval(this._storageSaverIntervalId);
             this._storageSaverIntervalId = null;
@@ -116,7 +126,6 @@ export class SessionManager {
         }
 
         // Register listeners
-        window.addEventListener('focus', this.onWindowFocus.bind(this));
-        window.addEventListener('blur', this.onWindowBlur.bind(this));
+        window.addEventListener('visibilitychange', this.onWindowVisibilityChanged.bind(this));
     }
 }
