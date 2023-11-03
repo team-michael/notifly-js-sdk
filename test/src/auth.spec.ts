@@ -2,6 +2,7 @@ import { getCognitoIdToken } from '../../src/Core/API/Auth';
 
 jest.mock('localforage', () => ({
     config: jest.fn(),
+    ready: jest.fn().mockImplementation(() => Promise.resolve(true)),
 }));
 
 describe('getCognitoIdToken', () => {

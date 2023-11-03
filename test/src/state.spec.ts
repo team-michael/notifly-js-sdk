@@ -7,6 +7,7 @@ jest.mock('localforage', () => ({
     config: jest.fn(),
     getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
     setItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
+    ready: jest.fn().mockImplementation(() => Promise.resolve(true)),
 }));
 
 jest.useFakeTimers().setSystemTime(new Date('2023-05-31'));

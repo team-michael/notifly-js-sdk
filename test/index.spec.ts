@@ -8,6 +8,7 @@ import { SdkState, SdkStateManager } from '../src/Core/SdkState';
 jest.mock('../src/Core/API/Auth');
 jest.mock('../src/Core/Event');
 jest.mock('localforage', () => ({
+    ready: jest.fn().mockImplementation(() => Promise.resolve(true)),
     config: jest.fn(),
     getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
     setItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
