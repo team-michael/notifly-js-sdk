@@ -5,6 +5,7 @@ import NotiflyWebMessageRenderer from 'notifly-web-message-renderer';
 import { UserIdentityManager } from '../User';
 import { EventLogger } from '../Event';
 import { SdkStateManager, SdkStateObserver } from '../SdkState';
+import { UserStateManager } from '../User/State';
 
 class SdkStateObserverForWebMessageScheduler implements SdkStateObserver {
     onInitialized() {
@@ -41,6 +42,15 @@ export class WebMessageScheduler {
             return;
         }
 
+        const campaignHiddenUntilData = campaign.re_eligible_condition
+            ? UserStateManager.calculateCampaignHiddenUntilDataAccordingToReEligibleCondition(
+                  campaign.id,
+                  campaign.re_eligible_condition
+              )
+            : undefined;
+        if (campaignHiddenUntilData) {
+            UserStateManager.updateCampaignHiddenUntilData(campaignHiddenUntilData);
+        }
         this._isWebMessageOpen = true;
 
         const message = campaign.message;
@@ -55,6 +65,7 @@ export class WebMessageScheduler {
                         type: 'message_event',
                         channel: 'in-web-message',
                         campaign_id: campaign.id,
+                        hide_until_data: campaignHiddenUntilData,
                     },
                     null,
                     true

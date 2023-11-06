@@ -18,6 +18,12 @@ export interface Condition {
     useEventParamsAsConditionValue?: boolean;
 }
 
+export interface ReEligibleCondition {
+    unit: string;
+    value: number;
+    max_count?: number;
+}
+
 export interface Campaign {
     id: string;
     channel: string;
@@ -25,6 +31,7 @@ export interface Campaign {
     segment_type: string;
     testing?: boolean;
     whitelist?: string[];
+    re_eligible_condition?: ReEligibleCondition;
     message: {
         html_url: string;
         modal_properties: {

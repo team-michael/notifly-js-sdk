@@ -11,6 +11,10 @@ export interface UserProperties {
     user_properties?: Record<string, any>;
 }
 
+export interface CampaignHiddenUntil {
+    campaign_hidden_until?: Record<string, any>;
+}
+
 export interface UserMetadataProperties {
     external_user_id?: string | null;
 }
@@ -22,4 +26,4 @@ export interface EventIntermediateCounts {
     event_params: Record<string, any>;
 }
 
-export type UserData = DeviceProperties & UserProperties & UserMetadataProperties;
+export type UserData = DeviceProperties & UserProperties & UserMetadataProperties & CampaignHiddenUntil;
