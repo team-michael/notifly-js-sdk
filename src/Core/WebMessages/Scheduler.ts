@@ -6,7 +6,6 @@ import { UserIdentityManager } from '../User';
 import { EventLogger } from '../Event';
 import { SdkStateManager, SdkStateObserver } from '../SdkState';
 import { UserStateManager } from '../User/State';
-import Helper from './Helper';
 
 class SdkStateObserverForWebMessageScheduler implements SdkStateObserver {
     onInitialized() {
@@ -44,7 +43,10 @@ export class WebMessageScheduler {
         }
 
         const campaignHiddenUntilData = campaign.re_eligible_condition
-            ? Helper.getCampaignHiddenUntilData(campaign.id, campaign.re_eligible_condition)
+            ? UserStateManager.calculateCampaignHiddenUntilDataAccordingToReEligibleCondition(
+                  campaign.id,
+                  campaign.re_eligible_condition
+              )
             : undefined;
         if (campaignHiddenUntilData) {
             UserStateManager.updateCampaignHiddenUntilData(campaignHiddenUntilData);

@@ -35,6 +35,13 @@ export function isValidUserData(userData: any): boolean {
     return userData && typeof userData === 'object';
 }
 
+export const reEligibleConditionUnitToSec: Record<string, number> = {
+    h: 3600,
+    d: 24 * 3600,
+    w: 7 * 24 * 3600,
+    m: 30 * 24 * 3600,
+};
+
 function _isValidEventIntermediateCount(eic: any): boolean {
     // dt should be YYYY-MM-DD format
     if (

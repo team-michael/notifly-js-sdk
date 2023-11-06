@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Campaign } from '../Interfaces/Campaign';
+import type { Campaign, ReEligibleCondition } from '../Interfaces/Campaign';
 import type { EventIntermediateCounts, UserData } from '../Interfaces/User';
 
 import { SdkState, SdkStateManager } from '../SdkState';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { NotiflyAPI } from '../API';
+import { reEligibleConditionUnitToSec } from './Utils';
 
 import {
     getKSTCalendarDateString,
@@ -90,6 +91,27 @@ export class UserStateManager {
         });
 
         NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
+    }
+
+    static calculateCampaignHiddenUntilDataAccordingToReEligibleCondition(
+        campaignId: string,
+        reEligibleCondition: ReEligibleCondition
+    ) {
+        if (!this.userData.campaign_hidden_until) {
+            this.userData.campaign_hidden_until = {};
+        }
+        const previousLogs = this.getMessageLogs(campaignId);
+        const now = Math.floor(Date.now() / 1000);
+        const newLogs = [...(previousLogs ?? []), now];
+        const campaignHiddenUntilData: Record<string, any> = {};
+
+        if (newLogs.length >= (reEligibleCondition.max_count ?? 1)) {
+            const hiddenDuration = reEligibleConditionUnitToSec[reEligibleCondition.unit] * reEligibleCondition.value;
+            campaignHiddenUntilData[`${campaignId}`] = now + hiddenDuration;
+        }
+        campaignHiddenUntilData[`${campaignId}_message_logs`] = [...(previousLogs ?? []), now];
+
+        return campaignHiddenUntilData;
     }
 
     private static async _syncState(useStorageIfAvailable = true): Promise<void> {
