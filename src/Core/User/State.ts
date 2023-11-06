@@ -159,4 +159,19 @@ export class UserStateManager {
     private static async _updateExternalUserId() {
         this.userData.external_user_id = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
     }
+
+    static getMessageLogs(campaignId: string) {
+        const logs = UserStateManager.userData.campaign_hidden_until?.[`${campaignId}_message_logs`];
+        return logs;
+    }
+
+    static updateCampaignHiddenUntilData(campaignHiddenUntilData: Record<string, any>) {
+        if (!UserStateManager.userData.campaign_hidden_until) {
+            UserStateManager.userData.campaign_hidden_until = {};
+        }
+        UserStateManager.userData.campaign_hidden_until = {
+            ...UserStateManager.userData.campaign_hidden_until,
+            ...campaignHiddenUntilData,
+        };
+    }
 }

@@ -134,3 +134,10 @@ export function getKSTCalendarDateString(daysOffset = 0) {
 export function isValueNotPresent(value: any) {
     return typeof value === 'undefined' || value === null;
 }
+
+export const reEligibleConditionUnitToSec: Record<string, number> = {
+    h: 3600,
+    d: 24 * 3600,
+    w: 7 * 24 * 3600,
+    m: 30 * 24 * 3600,
+};

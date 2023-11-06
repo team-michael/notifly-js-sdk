@@ -132,6 +132,15 @@ export class WebMessageManager {
             return false;
         }
 
+        if (campaign.re_eligible_condition) {
+            const hideUntil = UserStateManager.userData.campaign_hidden_until?.[`${campaign.id}`];
+            const currentTimestamp = Math.floor(Date.now() / 1000);
+            if (hideUntil && currentTimestamp <= hideUntil) {
+                // Hidden
+                return false;
+            }
+        }
+
         const message = campaign.message;
         const modalProperties = message.modal_properties;
         const templateName = modalProperties.template_name;
