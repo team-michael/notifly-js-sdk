@@ -113,9 +113,9 @@ export class UserStateManager {
 
                     return;
                 }
-                console.warn('[Notifly] State from strorage might have been corrupted. Ignoring state from storage.');
+                console.warn('[Notifly] State from storage might have been corrupted. Ignoring state from storage.');
             } catch (error) {
-                console.warn('[Notifly] State from strorage might have been corrupted. Ignoring state from storage.');
+                console.warn('[Notifly] State from storage might have been corrupted. Ignoring state from storage.');
             }
         }
 
