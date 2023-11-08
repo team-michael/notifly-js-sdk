@@ -54,7 +54,7 @@ export class EventLogger {
                 segmentation_event_param_keys: segmentationEventParamKeys,
                 sdk_version: SDK_VERSION,
                 sdk_type: SdkStateManager.type,
-                time: Date.now() / 1000,
+                time: Date.now(),
                 platform: getPlatform(),
             };
             if (notiflyUserId) {
