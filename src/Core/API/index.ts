@@ -47,6 +47,7 @@ export class NotiflyAPI {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${this._cognitoIdToken}`,
             },
+            keepalive: true,
         };
         if (body) {
             request.body = JSON.stringify(body);
