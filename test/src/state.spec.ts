@@ -4,10 +4,14 @@ import { UserStateManager } from '../../src/Core/User/State';
 import { WebMessageManager } from '../../src/Core/WebMessages/Manager';
 
 jest.mock('localforage', () => ({
-    config: jest.fn(),
-    getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
-    setItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
-    ready: jest.fn().mockImplementation(() => Promise.resolve(true)),
+    createInstance: jest.fn(() => {
+        return {
+            config: jest.fn(),
+            getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
+            setItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
+            ready: jest.fn().mockImplementation(() => Promise.resolve(true)),
+        };
+    }),
 }));
 
 jest.useFakeTimers().setSystemTime(new Date('2023-05-31'));

@@ -1,4 +1,4 @@
-import localForage from './LocalForage';
+import storage from './LocalForage';
 
 export enum NotiflyStorageKeys {
     // Project
@@ -25,7 +25,7 @@ export class NotiflyStorage {
     private static _internalMemStorage: Map<NotiflyStorageKeys, string> = new Map();
 
     static async ensureInitialized() {
-        await localForage.ready();
+        await storage.ready();
     }
 
     static async getItems(keys: NotiflyStorageKeys[]): Promise<Array<string | null>> {
@@ -57,14 +57,14 @@ export class NotiflyStorage {
     }
 
     private static async _get(key: string): Promise<string | null> {
-        return localForage.getItem(key);
+        return storage.getItem(key);
     }
 
     private static async _set(key: string, value: string): Promise<void> {
-        await localForage.setItem(key, value);
+        await storage.setItem(key, value);
     }
 
     private static async _remove(key: string): Promise<void> {
-        await localForage.removeItem(key);
+        await storage.removeItem(key);
     }
 }

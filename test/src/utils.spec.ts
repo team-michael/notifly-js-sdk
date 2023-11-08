@@ -1,13 +1,17 @@
 import uuid from 'uuid';
-import localForage from 'localforage';
+import storage from '../../src/Core/Storage/LocalForage';
 import { NAMESPACE } from '../../src/Constants';
 import { getPlatform, storeUserIdentity } from '../../src/Core/Utils';
 
 jest.mock('localforage', () => ({
-    config: jest.fn(),
-    getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
-    setItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
-    ready: jest.fn().mockImplementation(() => Promise.resolve(true)),
+    createInstance: jest.fn(() => {
+        return {
+            config: jest.fn(),
+            getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
+            setItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
+            ready: jest.fn().mockImplementation(() => Promise.resolve(true)),
+        };
+    }),
 }));
 
 jest.mock('uuid', () => ({
@@ -36,7 +40,7 @@ describe('store user identity', () => {
             __notiflyExternalUserID: externalUserID,
         };
 
-        jest.spyOn(localForage, 'getItem').mockImplementation((key: string) => {
+        jest.spyOn(storage, 'getItem').mockImplementation((key: string) => {
             switch (key) {
                 case '__notiflyProjectID':
                     return mockStorage.__notiflyProjectID;
@@ -48,7 +52,7 @@ describe('store user identity', () => {
                     return Promise.resolve(null);
             }
         });
-        jest.spyOn(localForage, 'setItem').mockImplementation((key: string, value: unknown) => {
+        jest.spyOn(storage, 'setItem').mockImplementation((key: string, value: unknown) => {
             mockStorage[key] = value;
             return Promise.resolve();
         });

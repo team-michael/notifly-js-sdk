@@ -2,8 +2,12 @@ import { _urlBase64ToUint8Array, _getSubscription } from '../../src/Core/Push';
 
 global.PushSubscription = jest.fn();
 jest.mock('localforage', () => ({
-    config: jest.fn(),
-    ready: jest.fn().mockImplementation(() => Promise.resolve(true)),
+    createInstance: jest.fn(() => {
+        return {
+            config: jest.fn(),
+            ready: jest.fn().mockImplementation(() => Promise.resolve(true)),
+        };
+    }),
 }));
 
 describe('push', () => {

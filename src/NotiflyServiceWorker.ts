@@ -312,6 +312,7 @@ function _getRequestOptionsForLogEvent(token: string, body: string) {
         headers: myHeaders,
         body: body,
         redirect: 'follow',
+        keepalive: true,
     };
     return requestOptions;
 }
