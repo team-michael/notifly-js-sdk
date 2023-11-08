@@ -1,4 +1,4 @@
-import localForage from 'localforage';
+import storage from '../src/Core/Storage/LocalForage';
 import { saveCognitoIdToken } from '../src/Core/API/Auth';
 import { EventLogger } from '../src/Core/Event';
 
@@ -7,7 +7,7 @@ import { SdkState, SdkStateManager } from '../src/Core/SdkState';
 
 jest.mock('../src/Core/API/Auth');
 jest.mock('../src/Core/Event');
-jest.mock('localforage', () => ({
+jest.mock('../src/Core/Storage/LocalForage', () => ({
     ready: jest.fn().mockImplementation(() => Promise.resolve(true)),
     config: jest.fn(),
     getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
@@ -72,9 +72,9 @@ describe('Notifly SDK', () => {
                 password,
             });
 
-            expect(localForage.setItem).toHaveBeenCalledWith('__notiflyProjectID', projectID);
-            expect(localForage.setItem).toHaveBeenCalledWith('__notiflyUserName', userName);
-            expect(localForage.setItem).toHaveBeenCalledWith('__notiflyPassword', password);
+            expect(storage.setItem).toHaveBeenCalledWith('__notiflyProjectID', projectID);
+            expect(storage.setItem).toHaveBeenCalledWith('__notiflyUserName', userName);
+            expect(storage.setItem).toHaveBeenCalledWith('__notiflyPassword', password);
         });
 
         it('should not call __notiflyDeviceToken and __notiflyDeviceID when no device token is provided', async () => {
@@ -84,9 +84,9 @@ describe('Notifly SDK', () => {
                 password,
             });
 
-            expect(localForage.setItem).toHaveBeenCalledWith('__notiflyProjectID', projectID);
-            expect(localForage.setItem).toHaveBeenCalledWith('__notiflyUserName', userName);
-            expect(localForage.setItem).toHaveBeenCalledWith('__notiflyPassword', password);
+            expect(storage.setItem).toHaveBeenCalledWith('__notiflyProjectID', projectID);
+            expect(storage.setItem).toHaveBeenCalledWith('__notiflyUserName', userName);
+            expect(storage.setItem).toHaveBeenCalledWith('__notiflyPassword', password);
         });
 
         // it('should call sessionStart', async () => {

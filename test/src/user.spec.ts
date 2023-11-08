@@ -1,10 +1,10 @@
-import localForage from 'localforage';
+import storage from '../../src/Core/Storage/LocalForage';
 import { SdkState, SdkStateManager } from '../../src/Core/SdkState';
 import { EventLogger } from '../../src/Core/Event';
 import { UserIdentityManager } from '../../src/Core/User';
 
 jest.mock('../../src/Core/Event');
-jest.mock('localforage', () => ({
+jest.mock('../../src/Core/Storage/LocalForage', () => ({
     config: jest.fn(),
     getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
     setItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
@@ -21,7 +21,7 @@ describe('setUserProperties', () => {
     });
 
     test('sets external_user_id in localForage and logs the event', async () => {
-        jest.spyOn(localForage, 'getItem').mockImplementation((key: string) => {
+        jest.spyOn(storage, 'getItem').mockImplementation((key: string) => {
             if (key === '__notiflyProjectID') {
                 return Promise.resolve('test');
             } else if (key === '__notiflyUserID') {
@@ -44,10 +44,10 @@ describe('setUserProperties', () => {
         SdkStateManager.state = SdkState.READY;
         await UserIdentityManager.setUserProperties(params);
 
-        expect(localForage.getItem).toHaveBeenCalledWith('__notiflyProjectID');
-        expect(localForage.getItem).toHaveBeenCalledWith('__notiflyUserID');
-        expect(localForage.getItem).toHaveBeenCalledWith('__notiflyExternalUserID');
-        expect(localForage.setItem).toHaveBeenCalledWith('__notiflyExternalUserID', '1234567890');
+        expect(storage.getItem).toHaveBeenCalledWith('__notiflyProjectID');
+        expect(storage.getItem).toHaveBeenCalledWith('__notiflyUserID');
+        expect(storage.getItem).toHaveBeenCalledWith('__notiflyExternalUserID');
+        expect(storage.setItem).toHaveBeenCalledWith('__notiflyExternalUserID', '1234567890');
         expect(EventLogger.logEvent).toHaveBeenCalledWith('set_user_properties', expectedParams, null, true);
     });
 
