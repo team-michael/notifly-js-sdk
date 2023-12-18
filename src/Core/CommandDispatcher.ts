@@ -53,7 +53,7 @@ export class CommandDispatcher implements SdkStateObserver {
             // @ts-ignore
             case SdkState.NOT_INITIALIZED:
                 // Fallthrough
-                console.warn(
+                console.info(
                     '[Notifly] Notifly SDK is not initialized. This command will be executed as soon as the SDK is initialized.'
                 );
             // eslint-disable-next-line no-fallthrough

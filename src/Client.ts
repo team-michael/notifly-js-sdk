@@ -1,9 +1,10 @@
 import type { NotiflyInitializeOptions } from './Core/Interfaces/Options';
 import {
-    RemoveUserIdCommand,
     SetUserIdCommand,
     SetUserPropertiesCommand,
     TrackEventCommand,
+    RemoveUserIdCommand,
+    DeleteUserCommand,
 } from './Core/Interfaces/Command';
 
 import { CommandDispatcher } from './Core/CommandDispatcher';
@@ -210,7 +211,7 @@ export async function removeUserId(): Promise<void> {
  */
 export async function deleteUser(): Promise<void> {
     try {
-        await CommandDispatcher.getInstance().dispatch(new RemoveUserIdCommand());
+        await CommandDispatcher.getInstance().dispatch(new DeleteUserCommand());
     } catch (error) {
         SdkStateManager.state = SdkState.FAILED;
         console.error('[Notifly] Error deleting user: ', error);

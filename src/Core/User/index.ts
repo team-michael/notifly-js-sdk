@@ -2,6 +2,7 @@
 import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 
+import { SdkState, SdkStateManager } from '../SdkState';
 import { UserStateManager } from './State';
 import { EventLogger } from '../Event';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
@@ -23,10 +24,8 @@ import { storeUserIdentity } from '../Utils';
  */
 export class UserIdentityManager {
     static async setUserId(userId?: string | null | undefined) {
-        const previousExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
-
-        if ((!previousExternalUserId && !userId) || previousExternalUserId === userId) {
-            // No-op
+        if (await this._isIdenticalUserId(userId)) {
+            this._softRefresh();
             return;
         } else {
             if (!userId) {
@@ -90,7 +89,7 @@ export class UserIdentityManager {
     static async removeUserId(): Promise<void> {
         const previousExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
         if (!previousExternalUserId) {
-            // No-op
+            this._softRefresh();
             return;
         }
         await this._cleanUserIdInLocalStorage();
@@ -104,11 +103,20 @@ export class UserIdentityManager {
         await this._cleanUserIdInLocalStorage();
         await storeUserIdentity();
         await EventLogger.logEvent('remove_external_user_id', {}, null, true);
-        await UserStateManager.refresh();
-        return;
+        return await UserStateManager.refresh();
     }
 
     private static async _cleanUserIdInLocalStorage() {
         await NotiflyStorage.removeItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
+    }
+
+    private static async _isIdenticalUserId(userId: string | null | undefined): Promise<boolean> {
+        const previousExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
+        return previousExternalUserId === userId || (!previousExternalUserId && !userId);
+    }
+
+    private static async _softRefresh() {
+        SdkStateManager.state = SdkState.REFRESHING;
+        SdkStateManager.state = SdkState.READY;
     }
 }
