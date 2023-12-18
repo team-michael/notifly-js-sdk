@@ -25,7 +25,7 @@ import { storeUserIdentity } from '../Utils';
 export class UserIdentityManager {
     static async setUserId(userId?: string | null | undefined) {
         if (await this._isIdenticalUserId(userId)) {
-            this._simulateRefresh();
+            this._softRefresh();
             return;
         } else {
             if (!userId) {
@@ -89,7 +89,7 @@ export class UserIdentityManager {
     static async removeUserId(): Promise<void> {
         const previousExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
         if (!previousExternalUserId) {
-            this._simulateRefresh();
+            this._softRefresh();
             return;
         }
         await this._cleanUserIdInLocalStorage();
@@ -115,7 +115,7 @@ export class UserIdentityManager {
         return previousExternalUserId === userId || (!previousExternalUserId && !userId);
     }
 
-    private static async _simulateRefresh() {
+    private static async _softRefresh() {
         SdkStateManager.state = SdkState.REFRESHING;
         SdkStateManager.state = SdkState.READY;
     }
