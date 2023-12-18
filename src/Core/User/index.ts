@@ -2,12 +2,12 @@
 import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 
+import { SdkState, SdkStateManager } from '../SdkState';
 import { UserStateManager } from './State';
 import { EventLogger } from '../Event';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 import { storeUserIdentity } from '../Utils';
-import { SdkState, SdkStateManager } from '../SdkState';
 
 /**
  * Sets or removes user ID for the current user.
