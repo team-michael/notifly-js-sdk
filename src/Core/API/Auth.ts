@@ -4,21 +4,21 @@ import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
  * Fetches a Cognito ID token for the given user name and password.
  *
  * @async
- * @param {string} userName - The user name to use for authentication.
+ * @param {string} username - The user name to use for authentication.
  * @param {string} password - The password to use for authentication.
  * @returns {Promise<string>} A promise that resolves with the Cognito ID token, or rejects with an error.
  *
  * @example
  * const token = await getCognitoIdToken('myUserName', 'myPassword');
  */
-export async function getCognitoIdToken(userName: string, password: string): Promise<string | null> {
-    if (!userName || !password) {
+export async function getCognitoIdToken(username: string, password: string): Promise<string | null> {
+    if (!username || !password) {
         console.error('[Notifly]: Username or password not provided.');
         return null;
     }
 
     const body = JSON.stringify({
-        userName,
+        userName: username,
         password,
     });
 

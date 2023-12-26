@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// NotiflyServiceWorker.ts
 /// <reference no-default-lib="true"/>
 /// <reference lib="es2015" />
 /// <reference lib="webworker" />
 
-const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.2.1';
+const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.3.0';
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
+const NOTIFLY_OBJECT_STORE_NAME = 'notiflyconfig';
 
 const sw: ServiceWorkerGlobalScope & typeof globalThis = self as any;
 
@@ -123,8 +123,8 @@ async function swActivate() {
 async function getItemFromIndexedDB(dbName: string, key: IDBValidKey) {
     try {
         const db = await openDB(dbName);
-        const transaction = db.transaction('notiflyconfig');
-        const store = transaction.objectStore('notiflyconfig');
+        const transaction = db.transaction(NOTIFLY_OBJECT_STORE_NAME);
+        const store = transaction.objectStore(NOTIFLY_OBJECT_STORE_NAME);
         const value = await getValue(store, key);
         return value !== undefined ? value : null; // localForage returns null if key is not found
     } catch (error) {
@@ -135,15 +135,15 @@ async function getItemFromIndexedDB(dbName: string, key: IDBValidKey) {
 
 function openDB(name: string): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
-        const openReq = indexedDB.open(name, 2);
+        const openReq = indexedDB.open(name);
         openReq.onerror = () => reject(openReq.error);
         openReq.onsuccess = () => resolve(openReq.result);
         openReq.onupgradeneeded = (event) => {
             if (!event.target) return;
             const request: IDBOpenDBRequest = event.target as IDBOpenDBRequest;
             const db = request.result;
-            if (!db.objectStoreNames.contains('notiflyconfig')) {
-                db.createObjectStore('notiflyconfig');
+            if (!db.objectStoreNames.contains(NOTIFLY_OBJECT_STORE_NAME)) {
+                db.createObjectStore(NOTIFLY_OBJECT_STORE_NAME);
             }
         };
     });
@@ -160,8 +160,8 @@ function getValue(store: IDBObjectStore, key: IDBValidKey): Promise<any> {
 async function setItemToIndexedDB(dbName: string, key: IDBValidKey, value: any) {
     try {
         const db = await openDB(dbName);
-        const transaction = db.transaction('notiflyconfig', 'readwrite');
-        const store = transaction.objectStore('notiflyconfig');
+        const transaction = db.transaction(NOTIFLY_OBJECT_STORE_NAME, 'readwrite');
+        const store = transaction.objectStore(NOTIFLY_OBJECT_STORE_NAME);
         await setValue(store, key, value);
     } catch (error) {
         console.warn('[Notifly Service Worker] Failed to set item to IndexedDB: ', error);

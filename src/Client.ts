@@ -50,7 +50,7 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
         return true;
     };
 
-    const { projectId, username, password, sessionDuration, pushSubscriptionOptions } = options;
+    const { projectId, username, password } = options;
 
     if (!(projectId && username && password)) {
         console.error('[Notifly] projectID, userName and password must not be empty');
@@ -67,7 +67,7 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
     try {
         await initializeNotiflyStorage(projectId, username, password);
         await NotiflyAPI.initialize();
-        await SessionManager.initialize(pushSubscriptionOptions, sessionDuration);
+        await SessionManager.initialize();
         return onInitializationSuccess();
     } catch (error) {
         console.error('[Notifly] Error initializing SDK: ', error);
