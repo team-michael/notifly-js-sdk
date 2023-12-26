@@ -1,4 +1,4 @@
-import type { NotiflyPushSubscriptionOptions } from './Interfaces/Options';
+import { getSdkConfiguration, type SdkConfiguration } from './API/Configuration';
 
 import { LAST_SESSION_TIME_LOGGING_INTERVAL } from '../Constants';
 
@@ -10,13 +10,12 @@ import { WebMessageManager } from './WebMessages/Manager';
 
 export class SessionManager {
     private static _lastSessionTime: number | null = null;
-    private static _sessionDuration: number = 30 * 60;
-    private static _pushSubscriptionOptions: NotiflyPushSubscriptionOptions | undefined;
+    private static _sdkConfiguration: SdkConfiguration | undefined;
     private static _storageSaverIntervalId: ReturnType<typeof setInterval> | null = null;
 
-    static async initialize(pushSubscriptionOptions?: NotiflyPushSubscriptionOptions, sessionDuration?: number) {
+    static async initialize() {
         const parsedLastSessionTime = parseInt(
-            (await NotiflyStorage.getItem(NotiflyStorageKeys.LAST_SESSION_TIME)) ?? '0',
+            (await NotiflyStorage.getItem(NotiflyStorageKeys.LAST_SESSION_TIME)) || '0',
             10
         );
 
@@ -26,17 +25,7 @@ export class SessionManager {
             this._lastSessionTime = parsedLastSessionTime;
         }
 
-        if (sessionDuration) {
-            if (sessionDuration < 5 * 60) {
-                console.warn('[Notifly] Session duration must be at least 5 minutes. Defaulting to 30 minutes.');
-            } else {
-                this._sessionDuration = sessionDuration;
-            }
-        }
-
-        if (pushSubscriptionOptions) {
-            this._pushSubscriptionOptions = pushSubscriptionOptions;
-        }
+        this._sdkConfiguration = await getSdkConfiguration();
 
         await WebMessageManager.initialize(this._isSessionExpired());
         await this._maybeStartSession();
@@ -78,9 +67,12 @@ export class SessionManager {
         if (!this._lastSessionTime) {
             return true;
         }
+        if (!this._sdkConfiguration) {
+            return true;
+        }
 
         const now = Math.floor(Date.now() / 1000);
-        const expiration = this._lastSessionTime + this._sessionDuration;
+        const expiration = this._lastSessionTime + this._sdkConfiguration.sessionDuration;
 
         return now > expiration;
     }
@@ -107,11 +99,13 @@ export class SessionManager {
     }
 
     private static async _initializePushSubscription() {
-        if (this._pushSubscriptionOptions) {
-            const { vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis } =
-                this._pushSubscriptionOptions;
-            await registerServiceWorker(vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis);
+        if (!this._sdkConfiguration || !this._sdkConfiguration.useWebPush || !this._sdkConfiguration.webPushOptions) {
+            return;
         }
+
+        const { vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis } =
+            this._sdkConfiguration.webPushOptions;
+        await registerServiceWorker(vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis);
     }
 
     private static async _initializeInternal() {

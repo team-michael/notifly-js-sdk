@@ -15,11 +15,6 @@ function App() {
                 projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID,
                 username: process.env.REACT_APP_NOTIFLY_USERNAME,
                 password: process.env.REACT_APP_NOTIFLY_PASSWORD,
-                pushSubscriptionOptions: {
-                    vapidPublicKey:
-                        'BGkEcbk7nbeozYYvs7EXqWDuqcDPBdxJ5p51jM9vx2ERj5iGSntBXFhIociva1boO9LuCec-ZCCAI_HC82NUIuQ',
-                    askPermission: true,
-                },
             });
         }
     }, []);
