@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export type SegmentConditionUnitType = 'user' | 'user_metadata' | 'device' | 'event';
 export type ValueType = 'INT' | 'TEXT' | 'BOOL';
 export type GroupOperator = 'OR' | null;
