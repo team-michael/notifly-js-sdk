@@ -12,7 +12,7 @@ import {
     isValidCampaignData,
     isValidEventIntermediateCounts,
     isValidUserData,
-    isValidWebMessageState,
+    isValidUserState,
 } from './Utils';
 
 export enum SyncStatePolicy {
@@ -169,7 +169,7 @@ export class UserStateManager {
             const storedState = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_USER_STATE);
             try {
                 const parsedStateJSON = storedState ? JSON.parse(storedState) : null;
-                if (isValidWebMessageState(parsedStateJSON)) {
+                if (isValidUserState(parsedStateJSON)) {
                     const parsedState = parsedStateJSON as {
                         eventIntermediateCounts: EventIntermediateCounts[];
                         inWebMessageCampaigns: Campaign[];
@@ -251,6 +251,8 @@ export class UserStateManager {
             default:
                 throw new Error(`Invalid policy: ${policy}`);
         }
+
+        console.log(JSON.stringify(this.state, null, 2));
     }
 
     private static async _updateExternalUserId() {

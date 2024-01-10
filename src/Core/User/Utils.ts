@@ -10,7 +10,7 @@ export function getKSTCalendarDateString(daysOffset = 0) {
     return kstDate.toISOString().split('T')[0];
 }
 
-export function isValidWebMessageState(state: any): boolean {
+export function isValidUserState(state: any): boolean {
     if (!state) {
         return false;
     }
