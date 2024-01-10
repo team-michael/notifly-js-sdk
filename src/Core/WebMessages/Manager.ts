@@ -1,11 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Campaign, Condition, SegmentOperator, SegmentConditionUnitType } from '../Interfaces/Campaign';
+import type {
+    Campaign,
+    Condition,
+    Operator,
+    SegmentConditionUnitType,
+    TriggeringEventFilterUnit,
+    TriggeringEventFilters,
+} from '../Interfaces/Campaign';
 import type { UserData, DeviceProperties, UserMetadataProperties } from '../Interfaces/User';
 
 import { UserStateManager } from '../User/State';
 import { WebMessageScheduler } from './Scheduler';
 
-import { ConditionValueComparator, getKSTCalendarDateString, isValueNotPresent } from './Utils';
+import { ValueComparator, getKSTCalendarDateString, isValueNotPresent } from './Utils';
 
 export class WebMessageManager {
     static async initialize(hard = false) {
@@ -56,9 +63,12 @@ export class WebMessageManager {
         eventParams: Record<string, any>,
         externalUserID: string | null
     ) {
-        return this._compactCampaigns(
-            campaigns.filter((campaign) => this._isEntityOfSegment(campaign, eventName, eventParams, externalUserID))
+        const campaignsToTrigger = campaigns.filter(
+            (campaign) =>
+                this._isEventApplicableForCampaign(campaign, eventName, eventParams) &&
+                this._isEntityOfSegment(campaign, eventParams, externalUserID)
         );
+        return this._compactCampaigns(campaignsToTrigger);
     }
 
     /**
@@ -108,19 +118,89 @@ export class WebMessageManager {
     /**
      * Functions below are helpers for checking whether a campaign should be scheduled or not.
      */
-    private static _isEntityOfSegment(
+    private static _isEventApplicableForCampaign(
         campaign: Campaign,
         eventName: string,
+        eventParams: Record<string, any>
+    ) {
+        if (campaign.triggering_event !== eventName) {
+            // This campaign is not triggered by the event
+            return false;
+        }
+
+        const triggeringEventFilters = campaign.triggering_event_filters;
+        if (triggeringEventFilters) {
+            if (!this._matchTriggeringEventFilters(triggeringEventFilters, eventParams)) {
+                // Event parameters do not match
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static _matchTriggeringEventFilters(
+        triggeringEventFilters: TriggeringEventFilters,
+        eventParams: Record<string, any>
+    ) {
+        for (const filter of triggeringEventFilters) {
+            if (filter.every((unit) => this._matchTriggeringEventFilterUnit(unit, eventParams))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static _matchTriggeringEventFilterUnit(
+        filterUnit: TriggeringEventFilterUnit,
+        eventParams: Record<string, any>
+    ) {
+        const { key, operator, value, value_type: valueType } = filterUnit;
+        if (!key) {
+            return false;
+        }
+
+        const paramValue = eventParams[key];
+        const isParamValueNotPresent = isValueNotPresent(paramValue);
+
+        if (operator === 'IS_NULL') {
+            return isParamValueNotPresent;
+        }
+        if (operator === 'IS_NOT_NULL') {
+            return !isParamValueNotPresent;
+        }
+
+        if (isParamValueNotPresent || !valueType) {
+            return false;
+        }
+
+        switch (operator) {
+            case '=':
+                return ValueComparator.IsEqual(paramValue, value, valueType);
+            case '<>':
+                return ValueComparator.IsNotEqual(paramValue, value, valueType);
+            case '>':
+                return ValueComparator.IsGreaterThan(paramValue, value, valueType);
+            case '>=':
+                return ValueComparator.IsGreaterThanOrEqual(paramValue, value, valueType);
+            case '<':
+                return ValueComparator.IsLessThan(paramValue, value, valueType);
+            case '<=':
+                return ValueComparator.IsLessThanOrEqual(paramValue, value, valueType);
+            case '@>':
+                return ValueComparator.Contains(paramValue, value, valueType);
+            // IS_NULL and IS_NOT_NULL are handled above
+            default:
+                return false;
+        }
+    }
+
+    private static _isEntityOfSegment(
+        campaign: Campaign,
         eventParams: Record<string, any>,
         externalUserID: string | null
     ): boolean {
         if (campaign.segment_type !== 'condition') {
             // This function should be called for condition-based user segmentation only
-            return false;
-        }
-
-        if (campaign.triggering_event !== eventName) {
-            // This campaign is not triggered by the event
             return false;
         }
 
@@ -193,7 +273,7 @@ export class WebMessageManager {
             return false;
         }
 
-        const _compare = (count: number, op: SegmentOperator, value: any) => {
+        const _compare = (count: number, op: Operator, value: any) => {
             switch (op) {
                 case '=':
                     return count === value;
@@ -265,19 +345,19 @@ export class WebMessageManager {
 
         switch (operator) {
             case '=':
-                return ConditionValueComparator.IsEqual(userAttributeValue, value, valueType);
+                return ValueComparator.IsEqual(userAttributeValue, value, valueType);
             case '<>':
-                return ConditionValueComparator.IsNotEqual(userAttributeValue, value, valueType);
+                return ValueComparator.IsNotEqual(userAttributeValue, value, valueType);
             case '>':
-                return ConditionValueComparator.IsGreaterThan(userAttributeValue, value, valueType);
+                return ValueComparator.IsGreaterThan(userAttributeValue, value, valueType);
             case '>=':
-                return ConditionValueComparator.IsGreaterThanOrEqual(userAttributeValue, value, valueType);
+                return ValueComparator.IsGreaterThanOrEqual(userAttributeValue, value, valueType);
             case '<':
-                return ConditionValueComparator.IsLessThan(userAttributeValue, value, valueType);
+                return ValueComparator.IsLessThan(userAttributeValue, value, valueType);
             case '<=':
-                return ConditionValueComparator.IsLessThanOrEqual(userAttributeValue, value, valueType);
+                return ValueComparator.IsLessThanOrEqual(userAttributeValue, value, valueType);
             case '@>':
-                return ConditionValueComparator.Contains(userAttributeValue, value, valueType);
+                return ValueComparator.Contains(userAttributeValue, value, valueType);
             // IS_NULL is handled above
             default:
                 return false;

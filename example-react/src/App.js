@@ -48,28 +48,8 @@ function HomePage() {
 }
 
 function TrackEventSection() {
-    const keyRef = useRef(null);
+    const eventParamsRef = useRef(null);
     const [eventName, setEventName] = useState('');
-    const [value, setValue] = useState('');
-
-    const valueTypeOptions = [
-        { value: 'TEXT', label: 'Text' },
-        { value: 'INT', label: 'Integer' },
-        { value: 'BOOL', label: 'Boolean' },
-    ];
-    const [valueType, setValueType] = useState(valueTypeOptions[0].value);
-
-    useEffect(() => {
-        if (valueType === 'TEXT') {
-            setValue('');
-        } else if (valueType === 'INT') {
-            setValue(0);
-        } else if (valueType === 'BOOL') {
-            setValue(true);
-        } else {
-            setValue('');
-        }
-    }, [valueType]);
 
     return (
         <div style={{ margin: '10px' }}>
@@ -81,55 +61,17 @@ function TrackEventSection() {
                 }}
                 value={eventName}
             />
-            <input type="text" ref={keyRef} placeholder="key" />
-            {valueType === 'TEXT' ? (
-                <input
-                    type="text"
-                    placeholder="value"
-                    onChange={(e) => {
-                        setValue(e.target.value);
-                    }}
-                    value={value}
-                />
-            ) : valueType === 'INT' ? (
-                <input
-                    type="number"
-                    placeholder="value"
-                    onChange={(e) => {
-                        const parsedValue = parseInt(e.target.value);
-                        if (isNaN(parsedValue)) {
-                            setValue(0);
-                        } else {
-                            setValue(parsedValue);
-                        }
-                    }}
-                    value={value}
-                />
-            ) : (
-                <select
-                    onChange={(e) => {
-                        setValue(e.target.value === 'true');
-                    }}
-                    value={value ? 'true' : 'false'}
-                >
-                    <option value="true">true</option>
-                    <option value="false">false</option>
-                </select>
-            )}
-            <select onChange={(e) => setValueType(e.target.value)}>
-                {valueTypeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                        {option.label}
-                    </option>
-                ))}
-            </select>
+            <textarea ref={eventParamsRef} placeholder="Event Params (JSON)" />
             <button
                 onClick={() => {
                     let eventParams = {};
-                    if (keyRef.current.value) {
-                        eventParams = {
-                            [keyRef.current.value]: value,
-                        };
+                    if (eventParamsRef.current.value) {
+                        try {
+                            eventParams = JSON.parse(eventParamsRef.current.value);
+                        } catch (e) {
+                            alert('Invalid JSON');
+                            console.error(e);
+                        }
                     }
                     notifly.trackEvent(eventName, eventParams).then(() => {
                         console.log(
