@@ -4,7 +4,6 @@ import {
     SetUserPropertiesCommand,
     TrackEventCommand,
     RemoveUserIdCommand,
-    DeleteUserCommand,
 } from './Core/Interfaces/Command';
 
 import { CommandDispatcher } from './Core/CommandDispatcher';
@@ -67,6 +66,7 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
     try {
         await initializeNotiflyStorage(projectId, username, password);
         await NotiflyAPI.initialize();
+        UserStateManager.initialize();
         await SessionManager.initialize();
         return onInitializationSuccess();
     } catch (error) {
@@ -113,7 +113,7 @@ export async function trackEvent(
  * await setUserId(null) // Removes the user ID
  * await setUserId() // Removes the user ID
  */
-export async function setUserId(userId?: string | null | undefined) {
+export async function setUserId(userId?: string | null | undefined): Promise<void> {
     try {
         await CommandDispatcher.getInstance().dispatch(
             new SetUserIdCommand({
@@ -197,24 +197,6 @@ export async function removeUserId(): Promise<void> {
     } catch (error) {
         SdkStateManager.state = SdkState.FAILED;
         console.error('[Notifly] Failed to remove userID');
-    }
-}
-
-/**
- * Permanently deletes the current user from Notifly.
- *
- * @async
- * @returns {Promise<void>}
- *
- * @example
- * await deleteUser();
- */
-export async function deleteUser(): Promise<void> {
-    try {
-        await CommandDispatcher.getInstance().dispatch(new DeleteUserCommand());
-    } catch (error) {
-        SdkStateManager.state = SdkState.FAILED;
-        console.error('[Notifly] Error deleting user: ', error);
     }
 }
 

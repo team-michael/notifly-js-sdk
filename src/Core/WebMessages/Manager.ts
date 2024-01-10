@@ -16,7 +16,9 @@ import { ValueComparator, getKSTCalendarDateString, isValueNotPresent } from './
 
 export class WebMessageManager {
     static async initialize(hard = false) {
-        await UserStateManager.sync(!hard);
+        await UserStateManager.sync({
+            useStorageIfAvailable: !hard,
+        });
         WebMessageScheduler.initialize();
     }
 
@@ -382,5 +384,6 @@ export class WebMessageManager {
     }
 
     public static isEntityOfSegment = this._isEntityOfSegment;
+    public static isEventApplicableForCampaign = this._isEventApplicableForCampaign;
     public static getCampaignsToSchedule = this._getCampaignsToSchedule;
 }

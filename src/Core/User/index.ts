@@ -3,7 +3,7 @@ import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 
 import { SdkState, SdkStateManager } from '../SdkState';
-import { UserStateManager } from './State';
+import { SyncStatePolicy, UserStateManager } from './State';
 import { EventLogger } from '../Event';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
@@ -24,17 +24,12 @@ import { storeUserIdentity } from '../Utils';
  */
 export class UserIdentityManager {
     static async setUserId(userId?: string | null | undefined) {
-        if (await this._isIdenticalUserId(userId)) {
-            this._softRefresh();
-            return;
+        if (!userId) {
+            await this.removeUserId();
         } else {
-            if (!userId) {
-                await this.removeUserId();
-            } else {
-                await this.setUserProperties({
-                    external_user_id: userId,
-                });
-            }
+            await this.setUserProperties({
+                external_user_id: userId,
+            });
         }
     }
 
@@ -43,27 +38,41 @@ export class UserIdentityManager {
     }
 
     static async setUserProperties(params: Record<string, any>) {
-        if (params.external_user_id) {
-            const externalUserId = params.external_user_id;
+        const externalUserId = params.external_user_id as unknown;
 
-            const [projectID, previousNotiflyUserID, previousExternalUserID] = await NotiflyStorage.getItems([
+        if (typeof externalUserId === 'string' && externalUserId) {
+            const [projectId, previousNotiflyUserId, previousExternalUserId] = await NotiflyStorage.getItems([
                 NotiflyStorageKeys.PROJECT_ID,
                 NotiflyStorageKeys.NOTIFLY_USER_ID,
                 NotiflyStorageKeys.EXTERNAL_USER_ID,
             ]);
 
-            if (!projectID || !previousNotiflyUserID) {
+            if (!projectId) {
                 throw new Error('[Notifly] Project ID should be set before setting user properties.');
             }
 
-            params['previous_notifly_user_id'] = previousNotiflyUserID;
-            params['previous_external_user_id'] = previousExternalUserID;
+            params.previous_notifly_user_id = previousNotiflyUserId;
+            params.previous_external_user_id = previousExternalUserId;
 
-            await NotiflyStorage.setItem(NotiflyStorageKeys.EXTERNAL_USER_ID, externalUserId);
-            await storeUserIdentity();
+            if (!this._areUserIdsIdentical(externalUserId, previousExternalUserId)) {
+                // Caution: order matters here!
+                await NotiflyStorage.setItem(NotiflyStorageKeys.EXTERNAL_USER_ID, externalUserId);
+                await storeUserIdentity();
+                await EventLogger.logEvent('set_user_properties', params, null, true);
 
-            await EventLogger.logEvent('set_user_properties', params, null, true);
-            await UserStateManager.refresh();
+                const policy = previousExternalUserId
+                    ? SyncStatePolicy.OVERWRITE // A -> B
+                    : SyncStatePolicy.MERGE; // null -> A
+                await UserStateManager.refresh(policy);
+            } else {
+                SdkStateManager.state = SdkState.REFRESHING;
+
+                // Even if the user ID is the same, we opted to log the event to ensure for logging purposes that the user ID is set.
+                // See https://www.notion.so/greyboxhq/User-Set-User-Id-e3ab764388724a878fc56d8e54c95bc8
+                await EventLogger.logEvent('set_user_properties', params, null, true);
+
+                SdkStateManager.state = SdkState.READY;
+            }
         } else {
             // Update local state
             const diff: Record<string, any> = {};
@@ -76,7 +85,7 @@ export class UserIdentityManager {
             });
 
             if (!isEmpty(diff)) {
-                UserStateManager.updateUserData(diff);
+                UserStateManager.updateUserProperties(diff);
                 await EventLogger.logEvent('set_user_properties', diff, null, true);
             }
         }
@@ -87,36 +96,28 @@ export class UserIdentityManager {
     }
 
     static async removeUserId(): Promise<void> {
-        const previousExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
-        if (!previousExternalUserId) {
-            this._softRefresh();
-            return;
-        }
-        await this._cleanUserIdInLocalStorage();
-        await storeUserIdentity();
-        await EventLogger.logEvent('remove_external_user_id', {}, null, true);
-        await UserStateManager.refresh();
-    }
+        SdkStateManager.state = SdkState.REFRESHING;
 
-    static async deleteUser(): Promise<void> {
-        await EventLogger.logEvent('delete_user', {}, null, true);
-        await this._cleanUserIdInLocalStorage();
-        await storeUserIdentity();
+        const previousExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
+        if (previousExternalUserId) {
+            // A -> null
+            await this._cleanUserIdInLocalStorage();
+            await storeUserIdentity();
+        }
         await EventLogger.logEvent('remove_external_user_id', {}, null, true);
-        return await UserStateManager.refresh();
+        UserStateManager.clearAll();
+
+        SdkStateManager.state = SdkState.READY;
     }
 
     private static async _cleanUserIdInLocalStorage() {
         await NotiflyStorage.removeItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
     }
 
-    private static async _isIdenticalUserId(userId: string | null | undefined): Promise<boolean> {
-        const previousExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
-        return previousExternalUserId === userId || (!previousExternalUserId && !userId);
-    }
-
-    private static async _softRefresh() {
-        SdkStateManager.state = SdkState.REFRESHING;
-        SdkStateManager.state = SdkState.READY;
+    private static _areUserIdsIdentical(
+        userId: string | null | undefined,
+        anotherUserId: string | null | undefined
+    ): boolean {
+        return (!userId && !anotherUserId) || userId === anotherUserId;
     }
 }

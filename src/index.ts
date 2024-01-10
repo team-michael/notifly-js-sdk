@@ -5,7 +5,6 @@ import {
     setUserProperties,
     getUserId,
     getUserProperties,
-    deleteUser,
     setSdkType,
     setSource,
 } from './Client';
@@ -14,7 +13,6 @@ const notifly = {
     initialize,
     trackEvent,
     setUserProperties,
-    deleteUser,
     setUserId,
     setSdkType,
     setSource,

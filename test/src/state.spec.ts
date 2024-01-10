@@ -159,6 +159,99 @@ describe('checkCondition', () => {
         UserStateManager.eventIntermediateCounts = [];
     });
 
+    test('should correctly filter event based on provided triggering event filters - 1', () => {
+        const campaign: Campaign = {
+            id: 'test-id',
+            channel: 'in-web-message',
+            last_updated_timestamp: 0,
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            triggering_event: 'test-event',
+            triggering_event_filters: [
+                [
+                    {
+                        key: 'test-key-1',
+                        operator: '=',
+                        value: 'test-value-1',
+                        value_type: 'TEXT',
+                    },
+                    {
+                        key: 'test-key-2',
+                        operator: '=',
+                        value: 'test-value-2',
+                        value_type: 'TEXT',
+                    },
+                ],
+            ],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [],
+                group_operator: null,
+            },
+            delay: 0,
+        };
+
+        const result = WebMessageManager.isEventApplicableForCampaign(campaign, 'test-event', {
+            'test-key-1': 'test-value-1',
+            'test-key-2': 'test-value-2',
+        });
+
+        expect(result).toBe(true);
+    });
+
+    test('should correctly filter event based on provided triggering event filters - 2', () => {
+        const campaign: Campaign = {
+            id: 'test-id',
+            channel: 'in-web-message',
+            last_updated_timestamp: 0,
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            triggering_event: 'test-event',
+            triggering_event_filters: [
+                [
+                    {
+                        key: 'test-key-1',
+                        operator: 'IS_NULL',
+                    },
+                    {
+                        key: 'test-key-2',
+                        operator: 'IS_NOT_NULL',
+                    },
+                ],
+                [
+                    {
+                        key: 'test-key-3',
+                        operator: '@>',
+                        value: 'test-value-3',
+                        value_type: 'TEXT',
+                    },
+                ],
+            ],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [],
+                group_operator: null,
+            },
+            delay: 0,
+        };
+
+        const result1 = WebMessageManager.isEventApplicableForCampaign(campaign, 'test-event', {
+            'test-key-2': 'test-value-2',
+        });
+        const result2 = WebMessageManager.isEventApplicableForCampaign(campaign, 'test-event', {
+            'test-key-1': 'test-value-1',
+        });
+        const result3 = WebMessageManager.isEventApplicableForCampaign(campaign, 'test-event', {
+            'test-key-3': ['test-value-3'],
+        });
+        const result4 = WebMessageManager.isEventApplicableForCampaign(campaign, 'test-event', {
+            'test-key-3': ['test-value'],
+        });
+
+        expect(result1).toBe(true);
+        expect(result2).toBe(false);
+        expect(result3).toBe(true);
+        expect(result4).toBe(false);
+    });
+
     test('should return false for non-condition segment type', () => {
         const campaign: Campaign = {
             id: 'test-id',
@@ -169,7 +262,7 @@ describe('checkCondition', () => {
             segment_type: 'some_other_type',
         };
 
-        const result = WebMessageManager.isEntityOfSegment(campaign, 'test-event', {}, null);
+        const result = WebMessageManager.isEntityOfSegment(campaign, {}, null);
 
         expect(result).toBe(false);
     });
@@ -189,7 +282,7 @@ describe('checkCondition', () => {
             delay: 0,
         };
 
-        const result = WebMessageManager.isEntityOfSegment(campaign, 'test-event', {}, null);
+        const result = WebMessageManager.isEntityOfSegment(campaign, {}, null);
 
         expect(result).toBe(true);
     });
@@ -214,7 +307,7 @@ describe('checkCondition', () => {
             delay: 0,
         };
 
-        const result = WebMessageManager.isEntityOfSegment(campaign, 'test-event', {}, null);
+        const result = WebMessageManager.isEntityOfSegment(campaign, {}, null);
 
         expect(result).toBe(false);
     });
@@ -258,7 +351,7 @@ describe('checkCondition', () => {
             delay: 0,
         };
 
-        const result = WebMessageManager.isEntityOfSegment(campaign, 'test-event', {}, null);
+        const result = WebMessageManager.isEntityOfSegment(campaign, {}, null);
 
         expect(result).toBe(true);
     });
@@ -302,7 +395,7 @@ describe('checkCondition', () => {
             delay: 0,
         };
 
-        const result = WebMessageManager.isEntityOfSegment(campaign, 'test-event', {}, null);
+        const result = WebMessageManager.isEntityOfSegment(campaign, {}, null);
 
         expect(result).toBe(false);
     });
@@ -346,7 +439,7 @@ describe('checkCondition', () => {
             delay: 0,
         };
 
-        const result = WebMessageManager.isEntityOfSegment(campaign, 'test-event', {}, null);
+        const result = WebMessageManager.isEntityOfSegment(campaign, {}, null);
 
         expect(result).toBe(false);
     });
@@ -390,7 +483,7 @@ describe('checkCondition', () => {
             delay: 0,
         };
 
-        const result = WebMessageManager.isEntityOfSegment(campaign, 'test-event', {}, null);
+        const result = WebMessageManager.isEntityOfSegment(campaign, {}, null);
 
         expect(result).toBe(true);
     });
@@ -429,7 +522,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = WebMessageManager.isEntityOfSegment(campaign, 'test-event', {}, null);
+        const result = WebMessageManager.isEntityOfSegment(campaign, {}, null);
 
         expect(result).toBe(true);
     });
@@ -468,7 +561,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = WebMessageManager.isEntityOfSegment(campaign, 'test-event', {}, null);
+        const result = WebMessageManager.isEntityOfSegment(campaign, {}, null);
 
         expect(result).toBe(false);
     });
@@ -520,7 +613,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = WebMessageManager.isEntityOfSegment(campaign, 'test-event', {}, null);
+        const result = WebMessageManager.isEntityOfSegment(campaign, {}, null);
 
         expect(result).toBe(true);
     });
@@ -583,7 +676,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = WebMessageManager.isEntityOfSegment(campaign, 'test-event', {}, null);
+        const result = WebMessageManager.isEntityOfSegment(campaign, {}, null);
 
         expect(result).toBe(false);
     });
@@ -660,7 +753,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = WebMessageManager.isEntityOfSegment(campaign, 'test-event', {}, null);
+        const result = WebMessageManager.isEntityOfSegment(campaign, {}, null);
 
         expect(result).toBe(true);
     });
@@ -737,7 +830,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = WebMessageManager.isEntityOfSegment(campaign, 'test-event', {}, null);
+        const result = WebMessageManager.isEntityOfSegment(campaign, {}, null);
 
         expect(result).toBe(true);
     });
@@ -820,7 +913,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = WebMessageManager.isEntityOfSegment(campaign, 'test-event', {}, null);
+        const result = WebMessageManager.isEntityOfSegment(campaign, {}, null);
 
         expect(result).toBe(true);
     });
@@ -907,7 +1000,7 @@ describe('checkCondition', () => {
             },
         };
 
-        const result = WebMessageManager.isEntityOfSegment(campaign, 'test-event', {}, null);
+        const result = WebMessageManager.isEntityOfSegment(campaign, {}, null);
 
         expect(result).toBe(true);
     });

@@ -40,7 +40,6 @@ function HomePage() {
             <UserPropertySetter />
             <TrackEventSection />
             <RemoveUserIdButton />
-            <DeleteUserIdButton />
             <Link to="/playground">Go to playground</Link>
             <Outlet />
         </div>
@@ -224,18 +223,6 @@ function RemoveUserIdButton() {
     return (
         <div style={{ margin: '10px' }}>
             <button onClick={handleClick}>Remove User Id</button>
-        </div>
-    );
-}
-
-function DeleteUserIdButton() {
-    const handleClick = () => {
-        notifly.deleteUser();
-    };
-
-    return (
-        <div style={{ margin: '10px' }}>
-            <button onClick={handleClick}>Delete User Id</button>
         </div>
     );
 }
