@@ -207,12 +207,12 @@ export class UserStateManager {
             'GET'
         );
 
-        this._writeStateBasedOnPolicy(data, policy);
+        this._writeStatesBasedOnPolicy(data, policy);
 
         await this._updateExternalUserId();
     }
 
-    private static _writeStateBasedOnPolicy(data: any, policy: SyncStatePolicy) {
+    private static _writeStatesBasedOnPolicy(data: any, policy: SyncStatePolicy) {
         const incomingCampaignData: Campaign[] = isValidCampaignData(data.campaignData)
             ? data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message')
             : [];
@@ -251,8 +251,6 @@ export class UserStateManager {
             default:
                 throw new Error(`Invalid policy: ${policy}`);
         }
-
-        console.log(JSON.stringify(this.state, null, 2));
     }
 
     private static async _updateExternalUserId() {
