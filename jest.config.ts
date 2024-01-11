@@ -9,6 +9,7 @@ const config: Config.InitialOptions = {
         color: 'blue',
     },
     collectCoverage: false,
+    testPathIgnorePatterns: ['node_modules/', 'dist/', 'lib/', 'example-react/', 'example-vanillajs/'],
 };
 
 export default config;
