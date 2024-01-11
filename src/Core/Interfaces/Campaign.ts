@@ -1,22 +1,32 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export type SegmentConditionUnitType = 'user' | 'user_metadata' | 'device' | 'event';
-export type SegmentConditionValueType = 'INT' | 'TEXT' | 'BOOL';
+export type ValueType = 'INT' | 'TEXT' | 'BOOL';
 export type GroupOperator = 'OR' | null;
 export type ConditionOperator = 'AND' | null;
-export type SegmentOperator = '=' | '<>' | '>' | '>=' | '<' | '<=' | '@>' | 'IS_NULL' | 'IS_NOT_NULL';
+export type Operator = '=' | '<>' | '>' | '>=' | '<' | '<=' | '@>' | 'IS_NULL' | 'IS_NOT_NULL';
 export type EventBasedConditionType = 'count X' | 'count X in Y days';
 
 export interface Condition {
     unit: SegmentConditionUnitType;
-    operator: SegmentOperator;
+    operator: Operator;
     value: any;
     attribute?: string;
     event?: string;
     event_condition_type?: EventBasedConditionType;
     secondary_value?: number;
-    valueType?: SegmentConditionValueType;
+    valueType?: ValueType;
     comparison_parameter?: string;
     useEventParamsAsConditionValue?: boolean;
 }
+
+export interface TriggeringEventFilterUnit {
+    key: string;
+    operator: Operator;
+    value?: any;
+    value_type?: ValueType;
+}
+export type TriggeringEventFilter = TriggeringEventFilterUnit[];
+export type TriggeringEventFilters = TriggeringEventFilter[];
 
 export interface ReEligibleCondition {
     unit: string;
@@ -59,5 +69,6 @@ export interface Campaign {
         group_operator: GroupOperator;
     };
     triggering_event: string;
+    triggering_event_filters?: TriggeringEventFilter[];
     delay?: number;
 }

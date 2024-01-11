@@ -8,8 +8,13 @@ module.exports = {
     },
     parser: '@typescript-eslint/parser',
     plugins: ['react', '@typescript-eslint'],
-    extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:@typescript-eslint/recommended', 'plugin:react-hooks/recommended'],
-    ignorePatterns: ["*.d.ts", "/dist/**"],
+    extends: [
+        'eslint:recommended',
+        'plugin:react/recommended',
+        'plugin:@typescript-eslint/recommended',
+        'plugin:react-hooks/recommended',
+    ],
+    ignorePatterns: ['*.d.ts', '/dist/**', '/lib/**', '/example-react/**', 'example-vanillajs/**', 'node_modules/**'],
     rules: {
         'react/prop-types': 'off',
         'react/react-in-jsx-scope': 'off',

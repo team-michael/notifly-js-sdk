@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { v4 } from 'uuid';
 
 import { SDK_VERSION } from '../Version';

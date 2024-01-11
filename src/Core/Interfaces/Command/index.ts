@@ -36,14 +36,6 @@ export class RemoveUserIdCommand implements CommandBase {
     }
 }
 
-export class DeleteUserCommand implements CommandBase {
-    public type = CommandType.SET_USER_ID;
-
-    execute(): Promise<void> {
-        return UserIdentityManager.deleteUser.call(UserIdentityManager);
-    }
-}
-
 export class SetUserPropertiesCommand implements CommandBase {
     public type = CommandType.SET_USER_PROPERTIES;
     private _params: SetUserPropertiesCommandParams;

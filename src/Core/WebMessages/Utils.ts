@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { SegmentConditionValueType } from '../Interfaces/Campaign';
+import { ValueType } from '../Interfaces/Campaign';
 
 export type PopupVersion = 1 | 2;
 
-export class ConditionValueComparator {
-    private static _safeCast(value: any, type: SegmentConditionValueType | 'ARRAY') {
+export class ValueComparator {
+    private static _safeCast(value: any, type: ValueType | 'ARRAY') {
         switch (type) {
             case 'TEXT':
                 if (typeof value !== 'string') {
@@ -51,7 +51,7 @@ export class ConditionValueComparator {
         }
     }
 
-    static IsEqual(a: any, b: any, type: SegmentConditionValueType): boolean {
+    static IsEqual(a: any, b: any, type: ValueType): boolean {
         try {
             return this._safeCast(a, type) === this._safeCast(b, type);
         } catch (error) {
@@ -60,7 +60,7 @@ export class ConditionValueComparator {
         }
     }
 
-    static IsNotEqual(a: any, b: any, type: SegmentConditionValueType): boolean {
+    static IsNotEqual(a: any, b: any, type: ValueType): boolean {
         try {
             return this._safeCast(a, type) !== this._safeCast(b, type);
         } catch (error) {
@@ -69,7 +69,7 @@ export class ConditionValueComparator {
         }
     }
 
-    static IsGreaterThan(a: any, b: any, type: SegmentConditionValueType): boolean {
+    static IsGreaterThan(a: any, b: any, type: ValueType): boolean {
         try {
             return this._safeCast(a, type) > this._safeCast(b, type);
         } catch (error) {
@@ -78,7 +78,7 @@ export class ConditionValueComparator {
         }
     }
 
-    static IsGreaterThanOrEqual(a: any, b: any, type: SegmentConditionValueType): boolean {
+    static IsGreaterThanOrEqual(a: any, b: any, type: ValueType): boolean {
         try {
             return this._safeCast(a, type) >= this._safeCast(b, type);
         } catch (error) {
@@ -87,7 +87,7 @@ export class ConditionValueComparator {
         }
     }
 
-    static IsLessThan(a: any, b: any, type: SegmentConditionValueType): boolean {
+    static IsLessThan(a: any, b: any, type: ValueType): boolean {
         try {
             return this._safeCast(a, type) < this._safeCast(b, type);
         } catch (error) {
@@ -96,7 +96,7 @@ export class ConditionValueComparator {
         }
     }
 
-    static IsLessThanOrEqual(a: any, b: any, type: SegmentConditionValueType): boolean {
+    static IsLessThanOrEqual(a: any, b: any, type: ValueType): boolean {
         try {
             return this._safeCast(a, type) <= this._safeCast(b, type);
         } catch (error) {
@@ -105,7 +105,7 @@ export class ConditionValueComparator {
         }
     }
 
-    static Contains(a: any, b: any, type: SegmentConditionValueType): boolean {
+    static Contains(a: any, b: any, type: ValueType): boolean {
         try {
             const array = this._safeCast(a, 'ARRAY') as any[];
             const value = this._safeCast(b, type);

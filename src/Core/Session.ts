@@ -32,22 +32,17 @@ export class SessionManager {
         await this._initializeInternal();
     }
 
-    static onWindowVisibilityChanged() {
-        if (document.visibilityState === 'visible') {
-            this._onWindowVisible();
-        }
-
-        if (document.visibilityState === 'hidden') {
-            this._onWindowHidden();
-        }
+    static async saveLastSessionTime() {
+        const now = Math.floor(Date.now() / 1000);
+        this._lastSessionTime = now;
+        await NotiflyStorage.setItem(NotiflyStorageKeys.LAST_SESSION_TIME, now.toString());
     }
 
-    private static _onWindowVisible() {
+    static onWindowFocus() {
         if (this._storageSaverIntervalId) {
             // This might not happen, but just in case
             clearInterval(this._storageSaverIntervalId);
         }
-
         this._maybeRefreshSession().then(() => {
             this._storageSaverIntervalId = setInterval(
                 this.saveLastSessionTime.bind(this),
@@ -56,7 +51,7 @@ export class SessionManager {
         });
     }
 
-    private static _onWindowHidden() {
+    static onWindowBlur() {
         if (this._storageSaverIntervalId) {
             clearInterval(this._storageSaverIntervalId);
             this._storageSaverIntervalId = null;
@@ -75,12 +70,6 @@ export class SessionManager {
         const expiration = this._lastSessionTime + this._sdkConfiguration.sessionDuration;
 
         return now > expiration;
-    }
-
-    static async saveLastSessionTime() {
-        const now = Math.floor(Date.now() / 1000);
-        this._lastSessionTime = now;
-        await NotiflyStorage.setItem(NotiflyStorageKeys.LAST_SESSION_TIME, now.toString());
     }
 
     private static async _maybeStartSession() {
@@ -120,6 +109,7 @@ export class SessionManager {
         }
 
         // Register listeners
-        window.addEventListener('visibilitychange', this.onWindowVisibilityChanged.bind(this));
+        window.addEventListener('focus', this.onWindowFocus.bind(this));
+        window.addEventListener('blur', this.onWindowBlur.bind(this));
     }
 }

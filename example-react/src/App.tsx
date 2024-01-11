@@ -12,9 +12,9 @@ function App() {
             notifly.trackEvent('hello', { from: 'react' });
             notifly.trackEvent('hello2', { from: 'react' });
             notifly.initialize({
-                projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID,
-                username: process.env.REACT_APP_NOTIFLY_USERNAME,
-                password: process.env.REACT_APP_NOTIFLY_PASSWORD,
+                projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID!,
+                username: process.env.REACT_APP_NOTIFLY_USERNAME!,
+                password: process.env.REACT_APP_NOTIFLY_PASSWORD!,
             });
         }
     }, []);
@@ -40,7 +40,6 @@ function HomePage() {
             <UserPropertySetter />
             <TrackEventSection />
             <RemoveUserIdButton />
-            <DeleteUserIdButton />
             <Link to="/playground">Go to playground</Link>
             <Outlet />
         </div>
@@ -48,28 +47,8 @@ function HomePage() {
 }
 
 function TrackEventSection() {
-    const keyRef = useRef(null);
+    const eventParamsRef = useRef<HTMLTextAreaElement>(null);
     const [eventName, setEventName] = useState('');
-    const [value, setValue] = useState('');
-
-    const valueTypeOptions = [
-        { value: 'TEXT', label: 'Text' },
-        { value: 'INT', label: 'Integer' },
-        { value: 'BOOL', label: 'Boolean' },
-    ];
-    const [valueType, setValueType] = useState(valueTypeOptions[0].value);
-
-    useEffect(() => {
-        if (valueType === 'TEXT') {
-            setValue('');
-        } else if (valueType === 'INT') {
-            setValue(0);
-        } else if (valueType === 'BOOL') {
-            setValue(true);
-        } else {
-            setValue('');
-        }
-    }, [valueType]);
 
     return (
         <div style={{ margin: '10px' }}>
@@ -81,55 +60,17 @@ function TrackEventSection() {
                 }}
                 value={eventName}
             />
-            <input type="text" ref={keyRef} placeholder="key" />
-            {valueType === 'TEXT' ? (
-                <input
-                    type="text"
-                    placeholder="value"
-                    onChange={(e) => {
-                        setValue(e.target.value);
-                    }}
-                    value={value}
-                />
-            ) : valueType === 'INT' ? (
-                <input
-                    type="number"
-                    placeholder="value"
-                    onChange={(e) => {
-                        const parsedValue = parseInt(e.target.value);
-                        if (isNaN(parsedValue)) {
-                            setValue(0);
-                        } else {
-                            setValue(parsedValue);
-                        }
-                    }}
-                    value={value}
-                />
-            ) : (
-                <select
-                    onChange={(e) => {
-                        setValue(e.target.value === 'true');
-                    }}
-                    value={value ? 'true' : 'false'}
-                >
-                    <option value="true">true</option>
-                    <option value="false">false</option>
-                </select>
-            )}
-            <select onChange={(e) => setValueType(e.target.value)}>
-                {valueTypeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                        {option.label}
-                    </option>
-                ))}
-            </select>
+            <textarea ref={eventParamsRef} placeholder="Event Params (JSON)" />
             <button
                 onClick={() => {
                     let eventParams = {};
-                    if (keyRef.current.value) {
-                        eventParams = {
-                            [keyRef.current.value]: value,
-                        };
+                    if (eventParamsRef.current && eventParamsRef.current.value) {
+                        try {
+                            eventParams = JSON.parse(eventParamsRef.current.value);
+                        } catch (e) {
+                            alert('Invalid JSON');
+                            console.error(e);
+                        }
                     }
                     notifly.trackEvent(eventName, eventParams).then(() => {
                         console.log(
@@ -147,7 +88,7 @@ function TrackEventSection() {
 function UserIdSetter() {
     const [userIdInput, setUserIdInput] = useState('');
 
-    const handleInputChange = (event) => {
+    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setUserIdInput(event.target.value);
     };
 
@@ -171,8 +112,8 @@ function UserIdSetter() {
 }
 
 function UserPropertySetter() {
-    const keyRef = useRef(null);
-    const [value, setValue] = useState('');
+    const keyRef = useRef<HTMLInputElement>(null);
+    const [value, setValue] = useState<string | string[] | number | boolean>('');
 
     const valueTypeOptions = [
         { value: 'TEXT', label: 'Text' },
@@ -206,7 +147,7 @@ function UserPropertySetter() {
                         onChange={(e) => {
                             setValue(e.target.value);
                         }}
-                        value={value}
+                        value={value.toString()}
                     />
                 ) : valueType === 'INT' ? (
                     <input
@@ -221,7 +162,7 @@ function UserPropertySetter() {
                                 setValue(parsedValue);
                             }
                         }}
-                        value={value}
+                        value={value.toString()}
                     />
                 ) : valueType === 'BOOL' ? (
                     <select
@@ -240,7 +181,7 @@ function UserPropertySetter() {
                         onChange={(e) => {
                             setValue(e.target.value.split(',').map((v) => v.trim()));
                         }}
-                        value={Array.isArray(value) ? value.join(', ') : value}
+                        value={Array.isArray(value) ? value.join(', ') : value.toString()}
                     />
                 )}
                 <select onChange={(e) => setValueType(e.target.value)}>
@@ -252,9 +193,11 @@ function UserPropertySetter() {
                 </select>
                 <button
                     onClick={() => {
-                        notifly.setUserProperties({
-                            [keyRef.current.value]: value,
-                        });
+                        if (keyRef.current) {
+                            notifly.setUserProperties({
+                                [keyRef.current.value]: value,
+                            });
+                        }
                     }}
                 >
                     Set User Property
@@ -282,18 +225,6 @@ function RemoveUserIdButton() {
     return (
         <div style={{ margin: '10px' }}>
             <button onClick={handleClick}>Remove User Id</button>
-        </div>
-    );
-}
-
-function DeleteUserIdButton() {
-    const handleClick = () => {
-        notifly.deleteUser();
-    };
-
-    return (
-        <div style={{ margin: '10px' }}>
-            <button onClick={handleClick}>Delete User Id</button>
         </div>
     );
 }

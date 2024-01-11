@@ -1,1 +1,2 @@
-self.importScripts('https://cdn.notifly.tech/notifly-js-sdk/dist/NotiflyServiceWorker.js');
+// eslint-disable-next-line no-restricted-globals
+self.importScripts('https://cdn.jsdelivr.net/npm/notifly-js-sdk@2/dist/NotiflyServiceWorker.js');

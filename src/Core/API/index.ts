@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { saveCognitoIdToken } from './Auth';
 

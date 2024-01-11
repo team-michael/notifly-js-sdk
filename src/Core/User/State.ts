@@ -5,15 +5,25 @@ import type { EventIntermediateCounts, UserData } from '../Interfaces/User';
 import { SdkState, SdkStateManager } from '../SdkState';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { NotiflyAPI } from '../API';
-import { reEligibleConditionUnitToSec } from './Utils';
+import { mergeEventCounts, mergeObjects, reEligibleConditionUnitToSec } from './Utils';
 
 import {
     getKSTCalendarDateString,
     isValidCampaignData,
     isValidEventIntermediateCounts,
     isValidUserData,
-    isValidWebMessageState,
+    isValidUserState,
 } from './Utils';
+
+export enum SyncStatePolicy {
+    OVERWRITE,
+    MERGE,
+}
+
+type SyncStateOptions = {
+    policy?: SyncStatePolicy;
+    useStorageIfAvailable?: boolean;
+};
 
 export class UserStateManager {
     static eventIntermediateCounts: EventIntermediateCounts[] = [];
@@ -28,24 +38,57 @@ export class UserStateManager {
         };
     }
 
-    static async sync(useStorageIfAvailable = true): Promise<void> {
-        await this._syncState(useStorageIfAvailable);
+    static initialize() {
+        // Save user state before window is closed
+        window.addEventListener('beforeunload', this.saveState.bind(this));
+    }
+
+    static async saveState() {
+        await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
+    }
+
+    static async sync(options: SyncStateOptions): Promise<void> {
+        await this._syncState(options);
         await this._updateExternalUserId();
     }
 
-    static async refresh() {
+    static async refresh(policy: SyncStatePolicy = SyncStatePolicy.OVERWRITE) {
         if (SdkStateManager.state !== SdkState.READY) {
             console.error('[Notifly] Cannot refresh state when the SDK is not ready. Ignoring refreshState call.');
             return;
         }
         SdkStateManager.state = SdkState.REFRESHING;
         try {
-            await this._syncState(false);
+            await this._syncState({
+                policy,
+                useStorageIfAvailable: false,
+            });
             SdkStateManager.state = SdkState.READY;
         } catch (error) {
             console.error('[Notifly] Failed to refresh state: ', error);
             SdkStateManager.state = SdkState.FAILED;
         }
+    }
+
+    static calculateCampaignHiddenUntilDataAccordingToReEligibleCondition(
+        campaignId: string,
+        reEligibleCondition: ReEligibleCondition
+    ) {
+        if (!this.userData.campaign_hidden_until) {
+            this.userData.campaign_hidden_until = {};
+        }
+        const previousLogs = this.getMessageLogs(campaignId);
+        const now = Math.floor(Date.now() / 1000);
+        const newLogs = [...(previousLogs ?? []), now];
+        const campaignHiddenUntilData: Record<string, any> = {};
+
+        if (newLogs.length >= (reEligibleCondition.max_count ?? 1)) {
+            const hiddenDuration = reEligibleConditionUnitToSec[reEligibleCondition.unit] * reEligibleCondition.value;
+            campaignHiddenUntilData[`${campaignId}`] = now + hiddenDuration;
+        }
+        campaignHiddenUntilData[`${campaignId}_message_logs`] = [...(previousLogs ?? []), now];
+
+        return campaignHiddenUntilData;
     }
 
     static updateEventCounts(
@@ -77,11 +120,13 @@ export class UserStateManager {
                 event_params: eventParams || {},
             });
         }
-
-        NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
     }
 
-    static updateUserData(params: Record<string, any>) {
+    static clearEventCounts() {
+        this.eventIntermediateCounts = [];
+    }
+
+    static updateUserProperties(params: Record<string, any>) {
         if (!this.userData.user_properties) {
             this.userData.user_properties = {};
         }
@@ -89,38 +134,42 @@ export class UserStateManager {
         Object.keys(params).forEach((key) => {
             this.userData.user_properties && (this.userData.user_properties[key] = params[key]);
         });
-
-        NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
     }
 
-    static calculateCampaignHiddenUntilDataAccordingToReEligibleCondition(
-        campaignId: string,
-        reEligibleCondition: ReEligibleCondition
-    ) {
-        if (!this.userData.campaign_hidden_until) {
-            this.userData.campaign_hidden_until = {};
-        }
-        const previousLogs = this.getMessageLogs(campaignId);
-        const now = Math.floor(Date.now() / 1000);
-        const newLogs = [...(previousLogs ?? []), now];
-        const campaignHiddenUntilData: Record<string, any> = {};
-
-        if (newLogs.length >= (reEligibleCondition.max_count ?? 1)) {
-            const hiddenDuration = reEligibleConditionUnitToSec[reEligibleCondition.unit] * reEligibleCondition.value;
-            campaignHiddenUntilData[`${campaignId}`] = now + hiddenDuration;
-        }
-        campaignHiddenUntilData[`${campaignId}_message_logs`] = [...(previousLogs ?? []), now];
-
-        return campaignHiddenUntilData;
+    static clearUserProperties() {
+        this.userData.user_properties = {};
     }
 
-    private static async _syncState(useStorageIfAvailable = true): Promise<void> {
+    static updateCampaignHiddenUntilData(campaignHiddenUntilData: Record<string, any>) {
+        if (!UserStateManager.userData.campaign_hidden_until) {
+            UserStateManager.userData.campaign_hidden_until = {};
+        }
+        UserStateManager.userData.campaign_hidden_until = {
+            ...UserStateManager.userData.campaign_hidden_until,
+            ...campaignHiddenUntilData,
+        };
+    }
+
+    static clearCampaignHiddenUntilData() {
+        UserStateManager.userData.campaign_hidden_until = {};
+    }
+
+    static clearAll() {
+        this.clearEventCounts();
+        this.clearUserProperties();
+        this.clearCampaignHiddenUntilData();
+    }
+
+    private static async _syncState(options: SyncStateOptions): Promise<void> {
+        const useStorageIfAvailable = options.useStorageIfAvailable ?? true;
+        const policy = options.policy ?? SyncStatePolicy.OVERWRITE;
+
         if (useStorageIfAvailable) {
             // Get state from storage, if available
             const storedState = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_USER_STATE);
             try {
                 const parsedStateJSON = storedState ? JSON.parse(storedState) : null;
-                if (isValidWebMessageState(parsedStateJSON)) {
+                if (isValidUserState(parsedStateJSON)) {
                     const parsedState = parsedStateJSON as {
                         eventIntermediateCounts: EventIntermediateCounts[];
                         inWebMessageCampaigns: Campaign[];
@@ -158,24 +207,50 @@ export class UserStateManager {
             'GET'
         );
 
-        if (isValidEventIntermediateCounts(data.eventIntermediateCountsData)) {
-            this.eventIntermediateCounts = data.eventIntermediateCountsData;
-        } else {
-            this.eventIntermediateCounts = [];
-        }
-        if (isValidCampaignData(data.campaignData)) {
-            this.inWebMessageCampaigns = data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message');
-        } else {
-            this.inWebMessageCampaigns = [];
-        }
-        if (isValidUserData(data.userData)) {
-            this.userData = data.userData;
-        } else {
-            this.userData = {};
-        }
+        this._writeStatesBasedOnPolicy(data, policy);
 
         await this._updateExternalUserId();
-        await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
+    }
+
+    private static _writeStatesBasedOnPolicy(data: any, policy: SyncStatePolicy) {
+        const incomingCampaignData: Campaign[] = isValidCampaignData(data.campaignData)
+            ? data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message')
+            : [];
+        const incomingEventIntermediateCountsData: EventIntermediateCounts[] = isValidEventIntermediateCounts(
+            data.eventIntermediateCountsData
+        )
+            ? data.eventIntermediateCountsData
+            : [];
+        const incomingUserData: UserData = isValidUserData(data.userData) ? data.userData : {};
+
+        switch (policy) {
+            case SyncStatePolicy.OVERWRITE:
+                this.inWebMessageCampaigns = incomingCampaignData;
+                this.eventIntermediateCounts = incomingEventIntermediateCountsData;
+                this.userData = incomingUserData;
+                break;
+            case SyncStatePolicy.MERGE:
+                // Should merge data
+                this.inWebMessageCampaigns = incomingCampaignData;
+                this.eventIntermediateCounts = mergeEventCounts(
+                    this.eventIntermediateCounts,
+                    incomingEventIntermediateCountsData
+                );
+                this.userData = {
+                    ...this.userData,
+                    user_properties: mergeObjects(
+                        this.userData.user_properties || {},
+                        incomingUserData.user_properties || {}
+                    ),
+                    campaign_hidden_until: mergeObjects(
+                        this.userData.campaign_hidden_until || {},
+                        incomingUserData.campaign_hidden_until || {}
+                    ),
+                };
+                break;
+            default:
+                throw new Error(`Invalid policy: ${policy}`);
+        }
     }
 
     private static async _updateExternalUserId() {
@@ -185,15 +260,5 @@ export class UserStateManager {
     static getMessageLogs(campaignId: string) {
         const logs = UserStateManager.userData.campaign_hidden_until?.[`${campaignId}_message_logs`];
         return logs;
-    }
-
-    static updateCampaignHiddenUntilData(campaignHiddenUntilData: Record<string, any>) {
-        if (!UserStateManager.userData.campaign_hidden_until) {
-            UserStateManager.userData.campaign_hidden_until = {};
-        }
-        UserStateManager.userData.campaign_hidden_until = {
-            ...UserStateManager.userData.campaign_hidden_until,
-            ...campaignHiddenUntilData,
-        };
     }
 }

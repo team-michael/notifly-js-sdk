@@ -1,6 +1,6 @@
 {
   "name": "notifly-js-sdk",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "Notifly JS SDK for browser.",
   "main": "lib/cjs/index.js",
   "module": "lib/esm/index.js",
@@ -28,7 +28,7 @@
     "@types/uuid": "^9.0.1",
     "localforage": "^1.10.0",
     "lodash": "^4.17.21",
-    "notifly-web-message-renderer": "^1.7.0",
+    "notifly-web-message-renderer": "^1.7.1",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
