@@ -12,9 +12,9 @@ function App() {
             notifly.trackEvent('hello', { from: 'react' });
             notifly.trackEvent('hello2', { from: 'react' });
             notifly.initialize({
-                projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID,
-                username: process.env.REACT_APP_NOTIFLY_USERNAME,
-                password: process.env.REACT_APP_NOTIFLY_PASSWORD,
+                projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID!,
+                username: process.env.REACT_APP_NOTIFLY_USERNAME!,
+                password: process.env.REACT_APP_NOTIFLY_PASSWORD!,
             });
         }
     }, []);
@@ -47,7 +47,7 @@ function HomePage() {
 }
 
 function TrackEventSection() {
-    const eventParamsRef = useRef(null);
+    const eventParamsRef = useRef<HTMLTextAreaElement>(null);
     const [eventName, setEventName] = useState('');
 
     return (
@@ -64,7 +64,7 @@ function TrackEventSection() {
             <button
                 onClick={() => {
                     let eventParams = {};
-                    if (eventParamsRef.current.value) {
+                    if (eventParamsRef.current && eventParamsRef.current.value) {
                         try {
                             eventParams = JSON.parse(eventParamsRef.current.value);
                         } catch (e) {
@@ -88,7 +88,7 @@ function TrackEventSection() {
 function UserIdSetter() {
     const [userIdInput, setUserIdInput] = useState('');
 
-    const handleInputChange = (event) => {
+    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setUserIdInput(event.target.value);
     };
 
@@ -112,8 +112,8 @@ function UserIdSetter() {
 }
 
 function UserPropertySetter() {
-    const keyRef = useRef(null);
-    const [value, setValue] = useState('');
+    const keyRef = useRef<HTMLInputElement>(null);
+    const [value, setValue] = useState<string | string[] | number | boolean>('');
 
     const valueTypeOptions = [
         { value: 'TEXT', label: 'Text' },
@@ -147,7 +147,7 @@ function UserPropertySetter() {
                         onChange={(e) => {
                             setValue(e.target.value);
                         }}
-                        value={value}
+                        value={value.toString()}
                     />
                 ) : valueType === 'INT' ? (
                     <input
@@ -162,7 +162,7 @@ function UserPropertySetter() {
                                 setValue(parsedValue);
                             }
                         }}
-                        value={value}
+                        value={value.toString()}
                     />
                 ) : valueType === 'BOOL' ? (
                     <select
@@ -181,7 +181,7 @@ function UserPropertySetter() {
                         onChange={(e) => {
                             setValue(e.target.value.split(',').map((v) => v.trim()));
                         }}
-                        value={Array.isArray(value) ? value.join(', ') : value}
+                        value={Array.isArray(value) ? value.join(', ') : value.toString()}
                     />
                 )}
                 <select onChange={(e) => setValueType(e.target.value)}>
@@ -193,9 +193,11 @@ function UserPropertySetter() {
                 </select>
                 <button
                     onClick={() => {
-                        notifly.setUserProperties({
-                            [keyRef.current.value]: value,
-                        });
+                        if (keyRef.current) {
+                            notifly.setUserProperties({
+                                [keyRef.current.value]: value,
+                            });
+                        }
                     }}
                 >
                     Set User Property
