@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import uuid from 'uuid';
 import storage from '../../src/Core/Storage/LocalForage';
 import { NAMESPACE } from '../../src/Constants';

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { NotiflyInitializeOptions } from './Core/Interfaces/Options';
 import {
     SetUserIdCommand,
