@@ -40,7 +40,12 @@ export class UserStateManager {
 
     static initialize() {
         // Save user state before window is closed
-        window.addEventListener('beforeunload', this.saveState.bind(this));
+        const handler = () => {
+            if (document.visibilityState === 'hidden') {
+                this.saveState();
+            }
+        };
+        window.addEventListener('visibilitychange', handler.bind(this));
     }
 
     static async saveState() {

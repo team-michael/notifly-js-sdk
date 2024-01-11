@@ -14,7 +14,15 @@ module.exports = {
         'plugin:@typescript-eslint/recommended',
         'plugin:react-hooks/recommended',
     ],
-    ignorePatterns: ['*.d.ts', '/dist/**', '/lib/**', '/example-react/**', 'example-vanillajs/**', 'node_modules/**'],
+    ignorePatterns: [
+        '*.d.ts',
+        '/scripts/**',
+        '/dist/**',
+        '/lib/**',
+        '/example-react/**',
+        'example-vanillajs/**',
+        'node_modules/**',
+    ],
     rules: {
         'react/prop-types': 'off',
         'react/react-in-jsx-scope': 'off',
