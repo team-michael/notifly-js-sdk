@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { CommandBase, CommandType } from './Interfaces/Command';
 import { IComparable } from './Interfaces/Comparable';
 
@@ -7,7 +8,7 @@ import PriorityQueue from './Utils/PriorityQueue';
 class CommandWrapper implements IComparable<CommandWrapper> {
     constructor(
         public command: CommandBase,
-        public resolver: (value?: void | PromiseLike<void>) => void,
+        public resolver: (value?: any | PromiseLike<any>) => void,
         private _priority: number
     ) {}
 
@@ -44,11 +45,10 @@ export class CommandDispatcher implements SdkStateObserver {
         this._flush();
     }
 
-    async dispatch(command: CommandBase): Promise<void> {
+    async dispatch<T>(command: CommandBase<T>): Promise<T> {
         switch (SdkStateManager.state) {
             case SdkState.FAILED:
-                console.error(`[Notifly] Notifly SDK has failed to operate. Cannot execute command ${command.type}`);
-                return;
+                throw new Error(`[Notifly] Notifly SDK has failed to operate. Cannot execute command ${command.type}`);
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             case SdkState.NOT_INITIALIZED:
@@ -58,7 +58,7 @@ export class CommandDispatcher implements SdkStateObserver {
                 );
             // eslint-disable-next-line no-fallthrough
             case SdkState.REFRESHING:
-                return new Promise<void>((resolve) => {
+                return new Promise<T>((resolve) => {
                     this._commandQueue.enqueue(new CommandWrapper(command, resolve, this._currentPriority++));
                 });
             case SdkState.READY:

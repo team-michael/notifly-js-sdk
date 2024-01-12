@@ -4,9 +4,9 @@ import { LAST_SESSION_TIME_LOGGING_INTERVAL } from '../Constants';
 
 import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 import { UserStateManager } from './User/State';
-import { registerServiceWorker } from './Push';
 import { EventLogger } from './Event';
 import { WebMessageManager } from './WebMessages/Manager';
+import { NotiflyWebPushManager } from './Push';
 
 export class SessionManager {
     private static _lastSessionTime: number | null = null;
@@ -28,6 +28,7 @@ export class SessionManager {
         this._sdkConfiguration = await getSdkConfiguration();
 
         await WebMessageManager.initialize(this._isSessionExpired());
+        await this._initializePushManager();
         await this._maybeStartSession();
         await this._initializeInternal();
     }
@@ -74,27 +75,31 @@ export class SessionManager {
 
     private static async _maybeStartSession() {
         if (this._isSessionExpired()) {
-            await this._initializePushSubscription();
             await EventLogger.sessionStart();
         }
     }
 
     private static async _maybeRefreshSession() {
         if (this._isSessionExpired()) {
-            await this._initializePushSubscription();
             await EventLogger.sessionStart();
             await UserStateManager.refresh();
         }
     }
 
-    private static async _initializePushSubscription() {
+    private static async _initializePushManager() {
         if (!this._sdkConfiguration || !this._sdkConfiguration.useWebPush || !this._sdkConfiguration.webPushOptions) {
             return;
         }
 
-        const { vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis } =
+        const { vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis, promptDesignParams } =
             this._sdkConfiguration.webPushOptions;
-        await registerServiceWorker(vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis);
+        await NotiflyWebPushManager.initialize(
+            vapidPublicKey,
+            askPermission,
+            serviceWorkerPath,
+            promptDelayMillis,
+            promptDesignParams
+        );
     }
 
     private static async _initializeInternal() {

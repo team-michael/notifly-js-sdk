@@ -37,6 +37,10 @@ export class UserIdentityManager {
         return NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
     }
 
+    static async getUserProperties(): Promise<Record<string, any> | null> {
+        return UserStateManager.state.userData.user_properties || null;
+    }
+
     static async setUserProperties(params: Record<string, any>) {
         const externalUserId = params.external_user_id as unknown;
 
@@ -89,10 +93,6 @@ export class UserIdentityManager {
                 await EventLogger.logEvent('set_user_properties', diff, null, true);
             }
         }
-    }
-
-    static async getUserProperties(): Promise<Record<string, any> | null> {
-        return UserStateManager.state.userData.user_properties || null;
     }
 
     static async removeUserId(): Promise<void> {
