@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { EventLogger } from '../../Event';
 import { UserIdentityManager } from '../../User';
+import { NotiflyWebPushManager } from '../../Push';
 
 import { SetUserIdCommandParams, SetUserPropertiesCommandParams, TrackEventCommandParams } from './Params';
 
@@ -7,14 +9,17 @@ export enum CommandType {
     SET_USER_ID,
     SET_USER_PROPERTIES,
     TRACK_EVENT,
+    REQUEST_PERMISSON,
+    GET_USER_ID,
+    GET_USER_PROPERTIES,
 }
 
-export interface CommandBase {
+export interface CommandBase<T = any> {
     type: CommandType;
-    execute(): Promise<void>;
+    execute(): Promise<T>;
 }
 
-export class SetUserIdCommand implements CommandBase {
+export class SetUserIdCommand implements CommandBase<void> {
     public type = CommandType.SET_USER_ID;
     private _params: SetUserIdCommandParams;
 
@@ -28,7 +33,7 @@ export class SetUserIdCommand implements CommandBase {
     }
 }
 
-export class RemoveUserIdCommand implements CommandBase {
+export class RemoveUserIdCommand implements CommandBase<void> {
     public type = CommandType.SET_USER_ID;
 
     execute(): Promise<void> {
@@ -36,7 +41,7 @@ export class RemoveUserIdCommand implements CommandBase {
     }
 }
 
-export class SetUserPropertiesCommand implements CommandBase {
+export class SetUserPropertiesCommand implements CommandBase<void> {
     public type = CommandType.SET_USER_PROPERTIES;
     private _params: SetUserPropertiesCommandParams;
 
@@ -50,7 +55,7 @@ export class SetUserPropertiesCommand implements CommandBase {
     }
 }
 
-export class TrackEventCommand implements CommandBase {
+export class TrackEventCommand implements CommandBase<void> {
     public type = CommandType.TRACK_EVENT;
     private _params: TrackEventCommandParams;
 
@@ -61,5 +66,30 @@ export class TrackEventCommand implements CommandBase {
     execute(): Promise<void> {
         const { eventName, eventParams, segmentationEventParamKeys } = this._params;
         return EventLogger.logEvent.call(EventLogger, eventName, eventParams, segmentationEventParamKeys);
+    }
+}
+
+export class RequestPermissonCommand implements CommandBase<void> {
+    public type = CommandType.REQUEST_PERMISSON;
+
+    execute(): Promise<void> {
+        return Promise.resolve(NotiflyWebPushManager.requestPermission.call(NotiflyWebPushManager));
+    }
+}
+
+export class GetUserIdCommand implements CommandBase<string | null> {
+    public type = CommandType.GET_USER_ID;
+
+    execute() {
+        return UserIdentityManager.getUserId.call(UserIdentityManager);
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export class getUserPropertiesCommand implements CommandBase<Record<string, any> | null> {
+    public type = CommandType.GET_USER_PROPERTIES;
+
+    execute() {
+        return UserIdentityManager.getUserProperties.call(UserIdentityManager);
     }
 }

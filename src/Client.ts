@@ -5,13 +5,15 @@ import {
     SetUserPropertiesCommand,
     TrackEventCommand,
     RemoveUserIdCommand,
+    GetUserIdCommand,
+    getUserPropertiesCommand,
+    RequestPermissonCommand,
 } from './Core/Interfaces/Command';
 
 import { CommandDispatcher } from './Core/CommandDispatcher';
 import { NotiflyAPI } from './Core/API';
 import { SdkStateManager, SdkState } from './Core/SdkState';
 import { SessionManager } from './Core/Session';
-import { UserIdentityManager } from './Core/User';
 import { UserStateManager } from './Core/User/State';
 import { initializeNotiflyStorage } from './Core/Utils';
 
@@ -96,7 +98,6 @@ export async function trackEvent(
             })
         );
     } catch (error) {
-        SdkStateManager.state = SdkState.FAILED;
         console.error('[Notifly] Error tracking event: ', error);
     }
 }
@@ -158,13 +159,12 @@ export async function setUserProperties(params: Record<string, any>): Promise<vo
  * @example
  * const currentUserId = await getUserId();
  */
-export async function getUserId(): Promise<string | null> {
+export async function getUserId(): Promise<string | null | undefined> {
     try {
-        return await UserIdentityManager.getUserId();
+        return await CommandDispatcher.getInstance().dispatch(new GetUserIdCommand());
     } catch (error) {
-        SdkStateManager.state = SdkState.FAILED;
         console.error('[Notifly] Failed to get userID');
-        return null;
+        return;
     }
 }
 
@@ -173,13 +173,12 @@ export async function getUserId(): Promise<string | null> {
  * @async
  * @returns {Promise<Record<string, any> | null>}
  */
-export async function getUserProperties(): Promise<Record<string, any> | null> {
+export async function getUserProperties(): Promise<Record<string, any> | null | undefined> {
     try {
-        return UserStateManager.state.userData.user_properties || null;
+        return await CommandDispatcher.getInstance().dispatch(new getUserPropertiesCommand());
     } catch (error) {
-        SdkStateManager.state = SdkState.FAILED;
         console.error('[Notifly] Failed to get user properties');
-        return null;
+        return;
     }
 }
 
@@ -199,6 +198,14 @@ export async function removeUserId(): Promise<void> {
         SdkStateManager.state = SdkState.FAILED;
         console.error('[Notifly] Failed to remove userID');
     }
+}
+
+export function requestPermisson(): void {
+    CommandDispatcher.getInstance()
+        .dispatch(new RequestPermissonCommand())
+        .catch((error) => {
+            console.error('[Notifly] Failed to request permission', error);
+        });
 }
 
 // Function below is only for cafe24 scripts
