@@ -19,7 +19,7 @@ class SdkStateObserverForWebMessageScheduler implements SdkStateObserver {
     }
 
     onRefreshStarted() {
-        WebMessageScheduler.descheduleInWebMessage();
+        WebMessageScheduler.descheduleInWebMessage(); // fixme: ultimately, we should re-evaluate campaign visibilities
     }
 }
 

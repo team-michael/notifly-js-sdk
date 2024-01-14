@@ -49,6 +49,7 @@ export function sanitizeRandomBucketNumber(randomBucketNumber: unknown): number 
         if (isNaN(parsed)) {
             return 0;
         }
+        return parsed;
     }
     return 0;
 }

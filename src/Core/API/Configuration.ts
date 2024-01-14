@@ -21,7 +21,7 @@ export interface SdkConfiguration {
 export async function getSdkConfiguration(): Promise<SdkConfiguration> {
     const projectId = await NotiflyStorage.getItem(NotiflyStorageKeys.PROJECT_ID);
     if (!projectId) {
-        throw new Error('Project ID not found. Forgot to call Notifly.initialize()?');
+        throw new Error('Project ID not found. Did you forget to call Notifly.initialize()?');
     }
 
     const url = `https://api.notifly.tech/sdk-configurations?project_id=${projectId}&type=website`;

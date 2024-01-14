@@ -2,7 +2,6 @@
 import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 
-import { SdkState, SdkStateManager } from '../SdkState';
 import { SyncStatePolicy, UserStateManager } from './State';
 import { EventLogger } from '../Event';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
@@ -69,13 +68,9 @@ export class UserIdentityManager {
                     : SyncStatePolicy.MERGE; // null -> A
                 await UserStateManager.refresh(policy);
             } else {
-                SdkStateManager.state = SdkState.REFRESHING;
-
                 // Even if the user ID is the same, we opted to log the event to ensure for logging purposes that the user ID is set.
                 // See https://www.notion.so/greyboxhq/User-Set-User-Id-e3ab764388724a878fc56d8e54c95bc8
                 await EventLogger.logEvent('set_user_properties', params, null, true);
-
-                SdkStateManager.state = SdkState.READY;
             }
         } else {
             // Update local state
@@ -96,8 +91,6 @@ export class UserIdentityManager {
     }
 
     static async removeUserId(): Promise<void> {
-        SdkStateManager.state = SdkState.REFRESHING;
-
         const previousExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
         if (previousExternalUserId) {
             // A -> null
@@ -107,8 +100,6 @@ export class UserIdentityManager {
         }
         await EventLogger.logEvent('remove_external_user_id', {}, null, true);
         UserStateManager.clearAll();
-
-        SdkStateManager.state = SdkState.READY;
     }
 
     private static async _cleanUserIdInLocalStorage() {

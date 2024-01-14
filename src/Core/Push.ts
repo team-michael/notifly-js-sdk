@@ -114,6 +114,7 @@ export class NotiflyWebPushManager {
             return;
         }
         if (!this._canManuallyShowPermissionRequestPrompt()) {
+            console.error('[Notifly] Cannot manually show permission request prompt. Did you disable askPermission?');
             return;
         }
 

@@ -123,7 +123,6 @@ export async function setUserId(userId?: string | null | undefined): Promise<voi
             })
         );
     } catch (error) {
-        SdkStateManager.state = SdkState.FAILED;
         console.error('[Notifly] Error setting user ID: ', error);
     }
 }
@@ -185,17 +184,16 @@ export async function removeUserId(): Promise<void> {
     try {
         await CommandDispatcher.getInstance().dispatch(new RemoveUserIdCommand());
     } catch (error) {
-        SdkStateManager.state = SdkState.FAILED;
         console.error('[Notifly] Failed to remove userID');
     }
 }
 
-export function requestPermisson(): void {
-    CommandDispatcher.getInstance()
-        .dispatch(new RequestPermissonCommand())
-        .catch((error) => {
-            console.error('[Notifly] Failed to request permission', error);
-        });
+export async function requestPermisson(): Promise<void> {
+    try {
+        await CommandDispatcher.getInstance().dispatch(new RequestPermissonCommand());
+    } catch (error) {
+        console.error('[Notifly] Failed to request permission', error);
+    }
 }
 
 // Function below is only for cafe24 scripts
