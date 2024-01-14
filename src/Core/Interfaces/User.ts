@@ -18,6 +18,7 @@ export interface CampaignHiddenUntil {
 
 export interface UserMetadataProperties {
     external_user_id?: string | null;
+    random_bucket_number?: number;
 }
 
 export interface EventIntermediateCounts {

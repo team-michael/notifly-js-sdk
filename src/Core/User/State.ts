@@ -5,7 +5,7 @@ import type { EventIntermediateCounts, UserData } from '../Interfaces/User';
 import { SdkState, SdkStateManager } from '../SdkState';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { NotiflyAPI } from '../API';
-import { mergeEventCounts, mergeObjects, reEligibleConditionUnitToSec } from './Utils';
+import { mergeEventCounts, mergeObjects, reEligibleConditionUnitToSec, sanitizeRandomBucketNumber } from './Utils';
 
 import {
     getKSTCalendarDateString,
@@ -54,7 +54,6 @@ export class UserStateManager {
 
     static async sync(options: SyncStateOptions): Promise<void> {
         await this._syncState(options);
-        await this._updateExternalUserId();
     }
 
     static async refresh(policy: SyncStatePolicy = SyncStatePolicy.OVERWRITE) {
@@ -227,6 +226,9 @@ export class UserStateManager {
             ? data.eventIntermediateCountsData
             : [];
         const incomingUserData: UserData = isValidUserData(data.userData) ? data.userData : {};
+
+        this.userData.random_bucket_number = sanitizeRandomBucketNumber(incomingUserData.random_bucket_number);
+        console.log('randombucket', this.userData.random_bucket_number);
 
         switch (policy) {
             case SyncStatePolicy.OVERWRITE:

@@ -103,6 +103,7 @@ export class UserIdentityManager {
             // A -> null
             await this._cleanUserIdInLocalStorage();
             await storeUserIdentity();
+            await UserStateManager.refresh(); // Should refresh data due to the random bucket number
         }
         await EventLogger.logEvent('remove_external_user_id', {}, null, true);
         UserStateManager.clearAll();

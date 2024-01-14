@@ -159,13 +159,8 @@ export async function setUserProperties(params: Record<string, any>): Promise<vo
  * @example
  * const currentUserId = await getUserId();
  */
-export async function getUserId(): Promise<string | null | undefined> {
-    try {
-        return await CommandDispatcher.getInstance().dispatch(new GetUserIdCommand());
-    } catch (error) {
-        console.error('[Notifly] Failed to get userID');
-        return;
-    }
+export async function getUserId(): Promise<string | null> {
+    return await CommandDispatcher.getInstance().dispatch(new GetUserIdCommand());
 }
 
 /**
@@ -173,13 +168,8 @@ export async function getUserId(): Promise<string | null | undefined> {
  * @async
  * @returns {Promise<Record<string, any> | null>}
  */
-export async function getUserProperties(): Promise<Record<string, any> | null | undefined> {
-    try {
-        return await CommandDispatcher.getInstance().dispatch(new getUserPropertiesCommand());
-    } catch (error) {
-        console.error('[Notifly] Failed to get user properties');
-        return;
-    }
+export async function getUserProperties(): Promise<Record<string, any> | null> {
+    return await CommandDispatcher.getInstance().dispatch(new getUserPropertiesCommand());
 }
 
 /**
