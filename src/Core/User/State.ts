@@ -2,10 +2,9 @@
 import type { Campaign, ReEligibleCondition } from '../Interfaces/Campaign';
 import type { EventIntermediateCounts, UserData } from '../Interfaces/User';
 
-import { SdkState, SdkStateManager } from '../SdkState';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { NotiflyAPI } from '../API';
-import { mergeEventCounts, mergeObjects, reEligibleConditionUnitToSec } from './Utils';
+import { mergeEventCounts, mergeObjects, reEligibleConditionUnitToSec, sanitizeRandomBucketNumber } from './Utils';
 
 import {
     getKSTCalendarDateString,
@@ -54,24 +53,16 @@ export class UserStateManager {
 
     static async sync(options: SyncStateOptions): Promise<void> {
         await this._syncState(options);
-        await this._updateExternalUserId();
     }
 
     static async refresh(policy: SyncStatePolicy = SyncStatePolicy.OVERWRITE) {
-        if (SdkStateManager.state !== SdkState.READY) {
-            console.error('[Notifly] Cannot refresh state when the SDK is not ready. Ignoring refreshState call.');
-            return;
-        }
-        SdkStateManager.state = SdkState.REFRESHING;
         try {
             await this._syncState({
                 policy,
                 useStorageIfAvailable: false,
             });
-            SdkStateManager.state = SdkState.READY;
         } catch (error) {
             console.error('[Notifly] Failed to refresh state: ', error);
-            SdkStateManager.state = SdkState.FAILED;
         }
     }
 
@@ -227,6 +218,8 @@ export class UserStateManager {
             ? data.eventIntermediateCountsData
             : [];
         const incomingUserData: UserData = isValidUserData(data.userData) ? data.userData : {};
+
+        this.userData.random_bucket_number = sanitizeRandomBucketNumber(incomingUserData.random_bucket_number);
 
         switch (policy) {
             case SyncStatePolicy.OVERWRITE:

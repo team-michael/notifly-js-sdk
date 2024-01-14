@@ -123,7 +123,6 @@ export async function setUserId(userId?: string | null | undefined): Promise<voi
             })
         );
     } catch (error) {
-        SdkStateManager.state = SdkState.FAILED;
         console.error('[Notifly] Error setting user ID: ', error);
     }
 }
@@ -159,13 +158,8 @@ export async function setUserProperties(params: Record<string, any>): Promise<vo
  * @example
  * const currentUserId = await getUserId();
  */
-export async function getUserId(): Promise<string | null | undefined> {
-    try {
-        return await CommandDispatcher.getInstance().dispatch(new GetUserIdCommand());
-    } catch (error) {
-        console.error('[Notifly] Failed to get userID');
-        return;
-    }
+export async function getUserId(): Promise<string | null> {
+    return await CommandDispatcher.getInstance().dispatch(new GetUserIdCommand());
 }
 
 /**
@@ -173,13 +167,8 @@ export async function getUserId(): Promise<string | null | undefined> {
  * @async
  * @returns {Promise<Record<string, any> | null>}
  */
-export async function getUserProperties(): Promise<Record<string, any> | null | undefined> {
-    try {
-        return await CommandDispatcher.getInstance().dispatch(new getUserPropertiesCommand());
-    } catch (error) {
-        console.error('[Notifly] Failed to get user properties');
-        return;
-    }
+export async function getUserProperties(): Promise<Record<string, any> | null> {
+    return await CommandDispatcher.getInstance().dispatch(new getUserPropertiesCommand());
 }
 
 /**
@@ -195,17 +184,16 @@ export async function removeUserId(): Promise<void> {
     try {
         await CommandDispatcher.getInstance().dispatch(new RemoveUserIdCommand());
     } catch (error) {
-        SdkStateManager.state = SdkState.FAILED;
         console.error('[Notifly] Failed to remove userID');
     }
 }
 
-export function requestPermisson(): void {
-    CommandDispatcher.getInstance()
-        .dispatch(new RequestPermissonCommand())
-        .catch((error) => {
-            console.error('[Notifly] Failed to request permission', error);
-        });
+export async function requestPermisson(): Promise<void> {
+    try {
+        await CommandDispatcher.getInstance().dispatch(new RequestPermissonCommand());
+    } catch (error) {
+        console.error('[Notifly] Failed to request permission', error);
+    }
 }
 
 // Function below is only for cafe24 scripts

@@ -5,20 +5,21 @@ import { IComparable } from './Interfaces/Comparable';
 import { SdkState, SdkStateManager, SdkStateObserver } from './SdkState';
 import PriorityQueue from './Utils/PriorityQueue';
 
-class CommandWrapper implements IComparable<CommandWrapper> {
+class CommandWrapper<T> implements IComparable<CommandWrapper<unknown>> {
     constructor(
-        public command: CommandBase,
-        public resolver: (value?: any | PromiseLike<any>) => void,
+        public command: CommandBase<T>,
+        public resolver: (value: T | PromiseLike<T>) => void,
+        public rejecter: (reason?: any) => void,
         private _priority: number
     ) {}
 
-    compareTo(other: CommandWrapper): number {
+    compareTo(other: CommandWrapper<unknown>): number {
         return this._priority - other._priority;
     }
 }
 
 export class CommandDispatcher implements SdkStateObserver {
-    private _commandQueue = new PriorityQueue<CommandWrapper>();
+    private _commandQueue = new PriorityQueue<CommandWrapper<any>>();
     private _currentPriority = 0;
     private static _instance: CommandDispatcher | null;
 
@@ -58,22 +59,51 @@ export class CommandDispatcher implements SdkStateObserver {
                 );
             // eslint-disable-next-line no-fallthrough
             case SdkState.REFRESHING:
-                return new Promise<T>((resolve) => {
-                    this._commandQueue.enqueue(new CommandWrapper(command, resolve, this._currentPriority++));
+                return new Promise<T>((resolve, reject) => {
+                    this._commandQueue.enqueue(
+                        new CommandWrapper<T>(command, resolve, reject, this._currentPriority++)
+                    );
                 });
-            case SdkState.READY:
-                return command.execute();
+            case SdkState.READY: {
+                if (command.type === CommandType.SET_USER_ID) {
+                    SdkStateManager.state = SdkState.REFRESHING;
+                }
+                const result = await command.execute();
+                if (command.type === CommandType.SET_USER_ID) {
+                    SdkStateManager.state = SdkState.READY;
+                }
+
+                return result;
+            }
         }
     }
 
+    // This funcion can only be called when the SDK state is changed to READY
     private async _flush() {
         while (!this._commandQueue.isEmpty()) {
+            if (SdkStateManager.state !== SdkState.READY) {
+                console.error(`[Notifly] Unexpected SDK state ${SdkStateManager.state}. Cannot flush command queue.`);
+                return;
+            }
+
             const commandWrapper = this._commandQueue.dequeue();
             if (commandWrapper) {
-                await commandWrapper.command.execute();
-                commandWrapper.resolver();
                 if (commandWrapper.command.type === CommandType.SET_USER_ID) {
-                    break;
+                    SdkStateManager.state = SdkState.REFRESHING;
+                }
+
+                try {
+                    const result = await commandWrapper.command.execute();
+                    commandWrapper.resolver(result);
+                } catch (error) {
+                    commandWrapper.rejecter(error);
+                    SdkStateManager.state = SdkState.FAILED;
+                    return;
+                }
+
+                if (commandWrapper.command.type === CommandType.SET_USER_ID) {
+                    SdkStateManager.state = SdkState.READY;
+                    return; // Should return here to avoid duplicated flush
                 }
             }
         }

@@ -40,6 +40,20 @@ export function isValidUserData(userData: any): boolean {
     return userData && typeof userData === 'object';
 }
 
+export function sanitizeRandomBucketNumber(randomBucketNumber: unknown): number {
+    if (typeof randomBucketNumber === 'number') {
+        return randomBucketNumber;
+    }
+    if (typeof randomBucketNumber === 'string') {
+        const parsed = parseInt(randomBucketNumber, 10);
+        if (isNaN(parsed)) {
+            return 0;
+        }
+        return parsed;
+    }
+    return 0;
+}
+
 export const reEligibleConditionUnitToSec: Record<string, number> = {
     h: 3600,
     d: 24 * 3600,
