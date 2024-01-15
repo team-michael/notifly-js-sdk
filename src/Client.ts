@@ -12,7 +12,7 @@ import {
 
 import { CommandDispatcher } from './Core/CommandDispatcher';
 import { NotiflyAPI } from './Core/API';
-import { SdkStateManager, SdkState } from './Core/SdkState';
+import { SdkStateManager, SdkState, type SdkType } from './Core/SdkState';
 import { SessionManager } from './Core/Session';
 import { UserStateManager } from './Core/User/State';
 import { initializeNotiflyStorage } from './Core/Utils';
@@ -106,7 +106,7 @@ export async function trackEvent(
  * Sets or removes user ID for the current user.
  *
  * @async
- * @param {string | null | undefined} params - A nullable, optional string containing the user ID to set.
+ * @param {string | null | undefined} userId - A nullable, optional string containing the user ID to set.
  * @returns {Promise<void>}
  * @summary If the user ID is null or undefined, the user ID will be removed. Otherwise, the user ID will be set to the provided value.
  *
@@ -196,11 +196,11 @@ export async function requestPermisson(): Promise<void> {
     }
 }
 
-// Function below is only for cafe24 scripts
-export function setSdkType(sdkType: 'js' | 'js-cafe24') {
+export function setSdkType(sdkType: SdkType) {
     SdkStateManager.setSdkType(sdkType);
 }
 
+// Function below is only for cafe24 scripts
 export function setSource(source: 'cafe24' | null) {
     SdkStateManager.setSource(source);
 }
