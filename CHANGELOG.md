@@ -1,21 +1,21 @@
-# 2.6.0
+# 2.7.3
 
--   Improve stability of user state management
--   Implement triggering event filters for in web messages
+-   Add `js-flutter` sdk type
 
-# 2.6.1
+# 2.7.1
 
--   Change updating policy: user states are saved when window is hidden
+-   Support `random_bucket_number` segmentation
 
 # 2.7.0
 
 -   Add `requestPermisson` method to manually trigger web push notification permission request popup
 -   Support customization of web push notification permission request popup design
 
-# 2.7.1
+# 2.6.1
 
--   Support `random_bucket_number` segmentation
+-   Change updating policy: user states are saved when window is hidden
 
-# 2.7.3
+# 2.6.0
 
--   Add `js-flutter` sdk type
+-   Improve stability of user state management
+-   Implement triggering event filters for in web messages
