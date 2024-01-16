@@ -1,45 +1,39 @@
 <!DOCTYPE html>
 <html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Example web app for Notifly JS SDK</title>
+        <link rel="stylesheet" href="css/style.css" type="text/css" />
+        <link rel="shortcut icon" href="#" />
+    </head>
 
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Example web app for Notifly JS SDK</title>
-    <link rel="stylesheet" href="css/style.css" type="text/css" />
-    <link rel="shortcut icon" href="#" />
-</head>
-
-<body>
-    <div>
-        <h1>Example web app for Notifly JS SDK</h1>
-    </div>
-    <div>
-        <input type="text" id="userIdInput" />
-        <button id="userIdSave">Set User Id</button>
-    </div>
-    <div>
-        <input type="text" id="event_name_input" />
-        <button id="track_event_button">Track Event</button>
-    </div>
-    <script src="js/app.js"></script>
-    <script>
-        (function (w, d, p, u, a, o) {
-            var s = d.createElement('script');
-            s.async = !0;
-            s.src = '../dist/index.min.js';
-            s.onload = function () {
-                w.notifly.initialize({ projectId: p, username: u, password: a, pushSubscriptionOptions: o });
-            };
-            s.onerror = function () {
-                console.error('Failed to load Notifly Browser SDK.');
-            };
-            d.getElementsByTagName('head')[0].appendChild(s);
-        })(window, document, 'b80c3f0e2fbd5eb986df4f1d32ea2871', 'minyong', '000000', {
-            vapidPublicKey:
-                'BGkEcbk7nbeozYYvs7EXqWDuqcDPBdxJ5p51jM9vx2ERj5iGSntBXFhIociva1boO9LuCec-ZCCAI_HC82NUIuQ',
-            askPermission: true,
-        });
-    </script>
-</body>
-
+    <body>
+        <div>
+            <h1>Example web app for Notifly JS SDK</h1>
+        </div>
+        <div>
+            <input type="text" id="userIdInput" />
+            <button id="userIdSave">Set User Id</button>
+        </div>
+        <div>
+            <input type="text" id="event_name_input" />
+            <button id="track_event_button">Track Event</button>
+        </div>
+        <script src="js/app.js"></script>
+        <script>
+            (function (w, d, p, u, a) {
+                var s = d.createElement('script');
+                s.async = !0;
+                s.src = '../dist/index.min.js';
+                s.onload = function () {
+                    w.notifly.initialize({ projectId: p, username: u, password: a });
+                };
+                s.onerror = function () {
+                    console.error('Failed to load Notifly Browser SDK.');
+                };
+                d.getElementsByTagName('head')[0].appendChild(s);
+            })(window, document, 'b80c3f0e2fbd5eb986df4f1d32ea2871', 'minyong', '000000');
+        </script>
+    </body>
 </html>
