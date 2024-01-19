@@ -1,3 +1,8 @@
+# 2.7.5
+
+- Add setSdkVersion method to set sdk version
+- Change requestPermisson method name to requestPermission
+
 # 2.7.3
 
 -   Add `js-flutter` sdk type

@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { v4 } from 'uuid';
 
-import { SDK_VERSION } from '../Version';
-
 import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 
 import { SdkStateManager } from './SdkState';
@@ -53,7 +51,7 @@ export class EventLogger {
                 event_params: eventParams,
                 is_internal_event: isInternalEvent,
                 segmentation_event_param_keys: segmentationEventParamKeys,
-                sdk_version: SDK_VERSION,
+                sdk_version: SdkStateManager.version,
                 sdk_type: SdkStateManager.type,
                 time: Date.now(),
                 platform: getPlatform(),

@@ -6,8 +6,9 @@ import {
     getUserId,
     getUserProperties,
     setSdkType,
+    setSdkVersion,
     setSource,
-    requestPermisson,
+    requestPermission,
 } from './Client';
 
 const notifly = {
@@ -16,10 +17,11 @@ const notifly = {
     setUserProperties,
     setUserId,
     setSdkType,
+    setSdkVersion,
     setSource,
     getUserId,
     getUserProperties,
-    requestPermisson,
+    requestPermission,
 };
 
 export default notifly;
