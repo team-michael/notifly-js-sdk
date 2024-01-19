@@ -1,3 +1,5 @@
+import { SDK_VERSION } from '../Version';
+
 export enum SdkState {
     NOT_INITIALIZED = 0, // SDK is not initialized
     READY = 1, // SDK is initialized and ready to use
@@ -21,6 +23,7 @@ export class SdkStateManager {
     private static _state: SdkState = SdkState.NOT_INITIALIZED;
     private static _observers: SdkStateObserver[] = [];
     static type: SdkType = SdkType.JS;
+    static version: string = SDK_VERSION;
     static source: 'cafe24' | null = null;
 
     static registerObserver(observer: SdkStateObserver): void {
@@ -52,6 +55,10 @@ export class SdkStateManager {
 
     static setSdkType(type: SdkType): void {
         this.type = type;
+    }
+
+    static setSdkVersion(version: string): void {
+        this.version = version;
     }
 
     static setSource(source: 'cafe24' | null): void {

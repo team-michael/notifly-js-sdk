@@ -69,7 +69,7 @@ export class TrackEventCommand implements CommandBase<void> {
     }
 }
 
-export class RequestPermissonCommand implements CommandBase<void> {
+export class RequestPermissionCommand implements CommandBase<void> {
     public type = CommandType.REQUEST_PERMISSON;
 
     execute(): Promise<void> {

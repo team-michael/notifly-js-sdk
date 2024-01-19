@@ -1,4 +1,4 @@
-import { RequestPermissionPromptDesignParams } from '../Interfaces/RequestPermissonPromptDesignParams';
+import { RequestPermissionPromptDesignParams } from '../Interfaces/RequestPermissionPromptDesignParams';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 const DEFAULTS = {

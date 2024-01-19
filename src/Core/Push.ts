@@ -2,7 +2,7 @@ import type {
     ButtonDesignParams,
     RequestPermissionPromptDesignParams,
     TextDesignParams,
-} from './Interfaces/RequestPermissonPromptDesignParams';
+} from './Interfaces/RequestPermissionPromptDesignParams';
 import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 import { EventLogger } from './Event';
 

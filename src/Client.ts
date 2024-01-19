@@ -7,7 +7,7 @@ import {
     RemoveUserIdCommand,
     GetUserIdCommand,
     getUserPropertiesCommand,
-    RequestPermissonCommand,
+    RequestPermissionCommand,
 } from './Core/Interfaces/Command';
 
 import { CommandDispatcher } from './Core/CommandDispatcher';
@@ -188,9 +188,9 @@ export async function removeUserId(): Promise<void> {
     }
 }
 
-export async function requestPermisson(): Promise<void> {
+export async function requestPermission(): Promise<void> {
     try {
-        await CommandDispatcher.getInstance().dispatch(new RequestPermissonCommand());
+        await CommandDispatcher.getInstance().dispatch(new RequestPermissionCommand());
     } catch (error) {
         console.error('[Notifly] Failed to request permission', error);
     }
@@ -203,4 +203,8 @@ export function setSdkType(sdkType: SdkType) {
 // Function below is only for cafe24 scripts
 export function setSource(source: 'cafe24' | null) {
     SdkStateManager.setSource(source);
+}
+
+export function setSdkVersion(sdkVersion: string) {
+    SdkStateManager.setSdkVersion(sdkVersion);
 }
