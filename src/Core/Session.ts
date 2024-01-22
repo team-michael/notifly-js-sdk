@@ -43,12 +43,16 @@ export class SessionManager {
         if (this._storageSaverIntervalId) {
             // This might not happen, but just in case
             clearInterval(this._storageSaverIntervalId);
+            this._storageSaverIntervalId = null;
         }
-        this._maybeRefreshSession().then(() => {
-            this._storageSaverIntervalId = setInterval(
-                this.saveLastSessionTime.bind(this),
-                LAST_SESSION_TIME_LOGGING_INTERVAL
-            );
+
+        this._storageSaverIntervalId = setInterval(
+            this.saveLastSessionTime.bind(this),
+            LAST_SESSION_TIME_LOGGING_INTERVAL
+        );
+
+        this._maybeRefreshSession().catch((e) => {
+            console.error('[Notifly] Failed to refresh session', e);
         });
     }
 
@@ -81,6 +85,7 @@ export class SessionManager {
 
     private static async _maybeRefreshSession() {
         if (this._isSessionExpired()) {
+            await this.saveLastSessionTime();
             await EventLogger.sessionStart();
             await UserStateManager.refresh();
         }
@@ -104,7 +109,6 @@ export class SessionManager {
 
     private static async _initializeInternal() {
         await this.saveLastSessionTime();
-
         // Register saver if window is focused
         if (document.hasFocus()) {
             this._storageSaverIntervalId = setInterval(
