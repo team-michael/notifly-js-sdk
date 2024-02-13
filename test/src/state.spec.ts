@@ -84,75 +84,83 @@ describe('updateEventIntermediateCounts', () => {
     });
 });
 
-// describe('getCampaignsToSchedule', () => {
-//     beforeAll(() => {
-//         jest.spyOn(UserStateManager, '_matchCondition').mockImplementation(() => {
-//             return true;
-//         });
-//     });
-//     afterAll(() => {
-//         (UserStateManager._matchCondition as any).mockRestore();
-//     });
+describe('getCampaignsToSchedule', () => {
+    // now: 1685491200000
+    console.log(Date.now());
+    const campaigns: Campaign[] = [
+        {
+            id: 'test-campaign-1',
+            status: 1,
+            triggering_event: 'event1',
+            channel: 'in-web-message',
+            delay: 0,
+            last_updated_timestamp: 1625800000000,
+            starts: [1625800000],
+            end: null,
+            message: { html_url: '', modal_properties: { template_name: '' } },
+            segment_type: 'condition',
+        },
+        {
+            id: 'test-campaign-2',
+            status: 1,
+            triggering_event: 'event2',
+            channel: 'in-web-message',
+            delay: 10,
+            last_updated_timestamp: 1625700000000,
+            starts: [1685501200],
+            end: null,
+            message: { html_url: '', modal_properties: { template_name: '' } },
+            segment_type: 'condition',
+        },
+        {
+            id: 'test-campaign-3',
+            status: 2,
+            triggering_event: 'event1',
+            channel: 'in-web-message',
+            delay: 20,
+            last_updated_timestamp: 1625900000000,
+            starts: [1685511200],
+            end: null,
+            message: { html_url: '', modal_properties: { template_name: '' } },
+            segment_type: 'condition',
+        },
+        {
+            id: 'test-campaign-4',
+            status: 1,
+            triggering_event: 'event2',
+            channel: 'in-web-message',
+            delay: 5,
+            last_updated_timestamp: 1625600000000,
+            starts: [1685291200],
+            end: 1685391200,
+            message: { html_url: '', modal_properties: { template_name: '' } },
+            segment_type: 'condition',
+        },
+        {
+            id: 'test-campaign-5',
+            status: 1,
+            triggering_event: 'event1',
+            channel: 'in-web-message',
+            delay: 20,
+            last_updated_timestamp: 1625700000000,
+            starts: [1685891100],
+            end: null,
+            message: { html_url: '', modal_properties: { template_name: '' } },
+            segment_type: 'condition',
+        },
+    ];
 
-//     const campaigns: Campaign[] = [
-//         {
-//             id: 'test-campaign-1',
-//             triggering_event: 'event1',
-//             channel: 'in-web-message',
-//             delay: 0,
-//             last_updated_timestamp: 1625800000000,
-//             message: { html_url: '', modal_properties: { template_name: '' } },
-//             segment_type: 'condition',
-//         },
-//         {
-//             id: 'test-campaign-2',
-//             triggering_event: 'event2',
-//             channel: 'in-web-message',
-//             delay: 10,
-//             last_updated_timestamp: 1625700000000,
-//             message: { html_url: '', modal_properties: { template_name: '' } },
-//             segment_type: 'condition',
-//         },
-//         {
-//             id: 'test-campaign-3',
-//             triggering_event: 'event1',
-//             channel: 'in-web-message',
-//             delay: 20,
-//             last_updated_timestamp: 1625900000000,
-//             message: { html_url: '', modal_properties: { template_name: '' } },
-//             segment_type: 'condition',
-//         },
-//         {
-//             id: 'test-campaign-4',
-//             triggering_event: 'event2',
-//             channel: 'in-web-message',
-//             delay: 5,
-//             last_updated_timestamp: 1625600000000,
-//             message: { html_url: '', modal_properties: { template_name: '' } },
-//             segment_type: 'condition',
-//         },
-//         {
-//             id: 'test-campaign-5',
-//             triggering_event: 'event1',
-//             channel: 'in-web-message',
-//             delay: 20,
-//             last_updated_timestamp: 1625700000000,
-//             message: { html_url: '', modal_properties: { template_name: '' } },
-//             segment_type: 'condition',
-//         },
-//     ];
+    it('Test case 1: Valid event name with matching campaigns', () => {
+        const result = WebMessageManager.getCampaignsToSchedule(campaigns, 'event1', {}, null);
+        expect(result.map((campaign) => campaign.id).sort()).toEqual(['test-campaign-1']);
+    });
 
-//     it('Test case 1: Valid event name with matching campaigns', () => {
-//         const result = UserStateManager.getCampaignsToSchedule(campaigns, 'event1', {}, null);
-//         expect(result.map((campaign) => campaign.id)).toEqual(['test-campaign-1', 'test-campaign-3']);
-//     });
-
-//     it('Test case 2: Valid event name with no matching campaigns', () => {
-//         const nonExistingEventName = 'event3';
-//         const result = UserStateManager.getCampaignsToSchedule(campaigns, nonExistingEventName, {}, null);
-//         expect(result).toEqual([]);
-//     });
-// });
+    it('Test case 2: Valid event name with no matching campaigns', () => {
+        const nonExistingEventName = 'event3';
+        const result = WebMessageManager.getCampaignsToSchedule(campaigns, nonExistingEventName, {}, null);
+        expect(result).toEqual([]);
+    });
+});
 
 describe('checkCondition', () => {
     beforeEach(() => {
@@ -162,6 +170,7 @@ describe('checkCondition', () => {
     test('should correctly filter event based on provided triggering event filters - 1', () => {
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
@@ -201,6 +210,7 @@ describe('checkCondition', () => {
     test('should correctly filter event based on provided triggering event filters - 2', () => {
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
@@ -255,6 +265,7 @@ describe('checkCondition', () => {
     test('should return false for non-condition segment type', () => {
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
             last_updated_timestamp: 0,
@@ -270,6 +281,7 @@ describe('checkCondition', () => {
     test('should return true when no groups are present', () => {
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
@@ -290,6 +302,7 @@ describe('checkCondition', () => {
     test('should return false when no conditions are present', () => {
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
@@ -325,6 +338,7 @@ describe('checkCondition', () => {
 
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
@@ -369,6 +383,7 @@ describe('checkCondition', () => {
 
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
@@ -413,6 +428,7 @@ describe('checkCondition', () => {
 
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
@@ -457,6 +473,7 @@ describe('checkCondition', () => {
 
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
@@ -498,6 +515,7 @@ describe('checkCondition', () => {
 
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
@@ -537,6 +555,7 @@ describe('checkCondition', () => {
 
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
@@ -577,6 +596,7 @@ describe('checkCondition', () => {
 
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
@@ -628,6 +648,7 @@ describe('checkCondition', () => {
 
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
@@ -691,6 +712,7 @@ describe('checkCondition', () => {
 
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
@@ -768,6 +790,7 @@ describe('checkCondition', () => {
 
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
@@ -850,6 +873,7 @@ describe('checkCondition', () => {
 
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
@@ -937,6 +961,7 @@ describe('checkCondition', () => {
 
         const campaign: Campaign = {
             id: 'test-id',
+            status: 1,
             channel: 'in-web-message',
             last_updated_timestamp: 0,
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },

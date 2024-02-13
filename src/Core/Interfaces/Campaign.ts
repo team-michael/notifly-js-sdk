@@ -34,9 +34,19 @@ export interface ReEligibleCondition {
     max_count?: number;
 }
 
+export enum CampaignStatus {
+    DRAFT = 0,
+    ACTIVE = 1,
+    INACTIVE = 2,
+    TERMINATED = 3,
+}
+
 export interface Campaign {
     id: string;
     channel: string;
+    status: CampaignStatus;
+    starts?: number[];
+    end?: number | null;
     last_updated_timestamp: number;
     segment_type: string;
     testing?: boolean;

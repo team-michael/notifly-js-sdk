@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type {
-    Campaign,
-    Condition,
-    Operator,
-    SegmentConditionUnitType,
-    TriggeringEventFilterUnit,
-    TriggeringEventFilters,
+import {
+    CampaignStatus,
+    type Campaign,
+    type Condition,
+    type Operator,
+    type SegmentConditionUnitType,
+    type TriggeringEventFilterUnit,
+    type TriggeringEventFilters,
 } from '../Interfaces/Campaign';
 import type { UserData, DeviceProperties, UserMetadataProperties } from '../Interfaces/User';
 
@@ -67,6 +68,7 @@ export class WebMessageManager {
     ) {
         const campaignsToTrigger = campaigns.filter(
             (campaign) =>
+                this._isCampaignActive(campaign) &&
                 this._isEventApplicableForCampaign(campaign, eventName, eventParams) &&
                 this._isEntityOfSegment(campaign, eventParams, externalUserID)
         );
@@ -120,6 +122,18 @@ export class WebMessageManager {
     /**
      * Functions below are helpers for checking whether a campaign should be scheduled or not.
      */
+    private static _isCampaignActive(campaign: Campaign) {
+        if (!campaign.starts?.[0]) {
+            return false;
+        }
+
+        return (
+            campaign.status === CampaignStatus.ACTIVE &&
+            campaign.starts[0] <= Math.floor(Date.now() / 1000) &&
+            (!campaign.end || campaign.end > Math.floor(Date.now() / 1000))
+        );
+    }
+
     private static _isEventApplicableForCampaign(
         campaign: Campaign,
         eventName: string,
