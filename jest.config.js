@@ -1,8 +1,4 @@
-import type { Config } from '@jest/types';
-
-// @ts-check
-
-const config: Config.InitialOptions = {
+module.exports = {
     testEnvironment: 'jsdom',
     displayName: {
         name: 'notifly-js-sdk',
@@ -11,5 +7,3 @@ const config: Config.InitialOptions = {
     collectCoverage: false,
     testPathIgnorePatterns: ['node_modules/', 'dist/', 'lib/', 'example-react/', 'example-vanillajs/'],
 };
-
-export default config;
