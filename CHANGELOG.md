@@ -28,3 +28,7 @@
 
 -   Improve stability of user state management
 -   Implement triggering event filters for in web messages
+
+# 2.7.8
+
+-   Fix campaign message being displayed even when campaign is either expired or not in active state
