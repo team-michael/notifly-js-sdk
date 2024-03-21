@@ -41,9 +41,9 @@ export class UserIdentityManager {
     }
 
     static async setUserProperties(params: Record<string, any>) {
-        const externalUserId = params.external_user_id as unknown;
+        const externalUserId = params.external_user_id?.toString();
 
-        if (typeof externalUserId === 'string' && externalUserId) {
+        if (externalUserId) {
             const [projectId, previousNotiflyUserId, previousExternalUserId] = await NotiflyStorage.getItems([
                 NotiflyStorageKeys.PROJECT_ID,
                 NotiflyStorageKeys.NOTIFLY_USER_ID,
