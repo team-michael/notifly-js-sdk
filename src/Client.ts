@@ -208,3 +208,7 @@ export function setSource(source: 'cafe24' | null) {
 export function setSdkVersion(sdkVersion: string) {
     SdkStateManager.setSdkVersion(sdkVersion);
 }
+
+export function getVersion(): string {
+    return SdkStateManager.getSdkVersion();
+}
