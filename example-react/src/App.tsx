@@ -6,13 +6,38 @@ import logo from './logo.svg';
 import './App.css';
 import Playground from './Playground';
 
+const USER_ID = 'javascript-sdk-react-test';
+
 function App() {
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            notifly.initialize({
-                projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID!,
-                username: process.env.REACT_APP_NOTIFLY_USERNAME!,
-                password: process.env.REACT_APP_NOTIFLY_PASSWORD!,
+            notifly.setUserId(USER_ID).then(() => {
+                console.log('User ID set');
+                console.log(Date.now());
+            });
+
+            // notifly
+            //     .setUserProperties({
+            //         test_property: 'test_value',
+            //     })
+            //     .then(() => {
+            //         console.log('User property set');
+            //         console.log(Date.now());
+            //     });
+
+            notifly
+                .initialize({
+                    projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID!,
+                    username: process.env.REACT_APP_NOTIFLY_USERNAME!,
+                    password: process.env.REACT_APP_NOTIFLY_PASSWORD!,
+                })
+                .then(() => {
+                    console.log('Notifly SDK initialized');
+                });
+
+            notifly.trackEvent('sdk_initialized').then(() => {
+                console.log('SDK initialized event tracked');
+                console.log(Date.now());
             });
         }
     }, []);
