@@ -1,7 +1,15 @@
-export interface TextContent {
-    ko?: string;
-    en?: string;
-}
+export const Language = Object.freeze({
+    KO: 'ko',
+    EN: 'en',
+    JA: 'ja', // Japanese
+    ZH: 'zh', // Chinese
+});
+
+export type Language = (typeof Language)[keyof typeof Language];
+
+export type TextContent = {
+    [lang in Language]?: string;
+};
 
 export interface ButtonDesignParams {
     backgroundColor?: string;

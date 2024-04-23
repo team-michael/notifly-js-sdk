@@ -4,6 +4,7 @@ import { UserIdentityManager } from '../../User';
 import { NotiflyWebPushManager } from '../../Push';
 
 import { SetUserIdCommandParams, SetUserPropertiesCommandParams, TrackEventCommandParams } from './Params';
+import { Language } from '../RequestPermissionPromptDesignParams';
 
 export enum CommandType {
     SET_USER_ID,
@@ -71,9 +72,16 @@ export class TrackEventCommand implements CommandBase<void> {
 
 export class RequestPermissionCommand implements CommandBase<void> {
     public type = CommandType.REQUEST_PERMISSON;
+    private _languageToForce?: Language;
+
+    constructor(languageToForce?: Language) {
+        this._languageToForce = languageToForce;
+    }
 
     execute(): Promise<void> {
-        return Promise.resolve(NotiflyWebPushManager.requestPermission.call(NotiflyWebPushManager));
+        return Promise.resolve(
+            NotiflyWebPushManager.requestPermission.call(NotiflyWebPushManager, this._languageToForce)
+        );
     }
 }
 
