@@ -61,6 +61,10 @@ export class SdkStateManager {
         this.version = version;
     }
 
+    static getSdkVersion(): string {
+        return this.version;
+    }
+
     static setSource(source: 'cafe24' | null): void {
         this.source = source;
     }

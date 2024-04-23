@@ -80,13 +80,13 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
 
 /**
  * @param {string} eventName - The name of the event to track.
- * @param {Record<string, any>} eventParams - An object containing the event parameters corresponding to the provided event.
- * @param {string[]} segmentationEventParamKeys - An array of event parameter keys to track as segmentation parameters.
+ * @param {Record<string, any> | undefined} eventParams - An object containing the event parameters corresponding to the provided event.
+ * @param {string[] | null | undefined} segmentationEventParamKeys - An array of event parameter keys to track as segmentation parameters.
  * @returns {Promise<void>}
  */
 export async function trackEvent(
     eventName: string,
-    eventParams: Record<string, any>,
+    eventParams: Record<string, any> = {},
     segmentationEventParamKeys: string[] | null = null
 ): Promise<void> {
     try {
@@ -207,4 +207,8 @@ export function setSource(source: 'cafe24' | null) {
 
 export function setSdkVersion(sdkVersion: string) {
     SdkStateManager.setSdkVersion(sdkVersion);
+}
+
+export function getVersion(): string {
+    return SdkStateManager.getSdkVersion();
 }
