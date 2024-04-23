@@ -9,6 +9,7 @@ import {
     getUserPropertiesCommand,
     RequestPermissionCommand,
 } from './Core/Interfaces/Command';
+import { Language } from './Core/Interfaces/RequestPermissionPromptDesignParams';
 
 import { CommandDispatcher } from './Core/CommandDispatcher';
 import { NotiflyAPI } from './Core/API';
@@ -188,9 +189,17 @@ export async function removeUserId(): Promise<void> {
     }
 }
 
-export async function requestPermission(): Promise<void> {
+export async function requestPermission(languageToForce?: Language): Promise<void> {
     try {
-        await CommandDispatcher.getInstance().dispatch(new RequestPermissionCommand());
+        let sanitizedLanguageToForce: Language | undefined = languageToForce;
+        if (typeof languageToForce !== 'undefined' && !Object.values(Language).includes(languageToForce)) {
+            console.error(
+                '[Notifly] Invalid language provided. Requesting permission with browser preferred language.'
+            );
+            sanitizedLanguageToForce = undefined;
+        }
+
+        await CommandDispatcher.getInstance().dispatch(new RequestPermissionCommand(sanitizedLanguageToForce));
     } catch (error) {
         console.error('[Notifly] Failed to request permission', error);
     }

@@ -1,7 +1,9 @@
-import type {
-    ButtonDesignParams,
-    RequestPermissionPromptDesignParams,
-    TextDesignParams,
+import {
+    Language,
+    TextContent,
+    type ButtonDesignParams,
+    type RequestPermissionPromptDesignParams,
+    type TextDesignParams,
 } from './Interfaces/RequestPermissionPromptDesignParams';
 import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 import { EventLogger } from './Event';
@@ -12,7 +14,7 @@ enum NotiflyServiceWorkerEvents {
 
 const REQUEST_PERMISSION_PROMPT_ID_PREFIX = '__notifly_push_prompt_';
 
-const DEFAULT_REQUEST_PERMISSION_PROMPT_DESIGN_PARAMS = {
+const DEFAULT_DESIGN_PARAMS = {
     backgroundColor: '#ffffff',
     borderColor: '#d3d3d3',
     headerDesign: {
@@ -20,6 +22,8 @@ const DEFAULT_REQUEST_PERMISSION_PROMPT_DESIGN_PARAMS = {
         text: {
             ko: '푸시 알림 받기',
             en: 'Receive Push Notifications',
+            ja: 'プッシュ通知を受け取る',
+            zh: '接收推送通知',
         },
     },
     messageDesign: {
@@ -27,6 +31,8 @@ const DEFAULT_REQUEST_PERMISSION_PROMPT_DESIGN_PARAMS = {
         text: {
             ko: '푸시 알림을 허용하고 중요한 정보를 실시간으로 받아보세요! ',
             en: 'Allow push notifications and receive important information in real-time!',
+            ja: 'プッシュ通知を許可し、リアルタイムで重要な情報を受け取りましょう！',
+            zh: '允许推送通知并实时接收重要信息！',
         },
     },
     grantButtonDesign: {
@@ -36,6 +42,8 @@ const DEFAULT_REQUEST_PERMISSION_PROMPT_DESIGN_PARAMS = {
         text: {
             ko: '알림 받기',
             en: 'Receive Notifications',
+            ja: '通知を受け取る',
+            zh: '接收通知',
         },
     },
     denyButtonDesign: {
@@ -45,11 +53,14 @@ const DEFAULT_REQUEST_PERMISSION_PROMPT_DESIGN_PARAMS = {
         text: {
             ko: '다음에',
             en: 'Not Now',
+            ja: '今は結構です',
+            zh: '暂不',
         },
     },
     bellIconColor: '#eab308',
     closeButtonColor: '#c6c6c6',
 };
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 export class NotiflyWebPushManager {
@@ -63,6 +74,7 @@ export class NotiflyWebPushManager {
     private static _vapidPublicKey: string | null = null;
     private static _askPermission = true;
     private static _promptDelayMillis = 5000;
+    private static _promptDefaultLanguage: Language = Language.EN;
     private static _promptDesignParams?: RequestPermissionPromptDesignParams;
 
     static async initialize(
@@ -70,6 +82,7 @@ export class NotiflyWebPushManager {
         askPermission = true,
         path = '/notifly-service-worker.js',
         promptDelayMillis = 5000,
+        promptDefaultLanguage: Language = Language.EN,
         promptDesignParams?: RequestPermissionPromptDesignParams
     ) {
         try {
@@ -86,10 +99,16 @@ export class NotiflyWebPushManager {
             this._serviceWorkerRegistration = registration;
             this._vapidPublicKey = vapidPublicKey;
             this._askPermission = askPermission;
+
             if (promptDelayMillis < 0) {
                 console.warn('[Notifly] Invalid prompt delay. Defaulting to 5000 milliseconds.');
             } else {
                 this._promptDelayMillis = promptDelayMillis;
+            }
+            if (Object.values(Language).indexOf(promptDefaultLanguage) < 0) {
+                console.warn('[Notifly] Invalid default language. Defaulting to English.');
+            } else {
+                this._promptDefaultLanguage = promptDefaultLanguage;
             }
             this._promptDesignParams = promptDesignParams;
 
@@ -108,7 +127,7 @@ export class NotiflyWebPushManager {
         }
     }
 
-    static requestPermission() {
+    static requestPermission(languageToForce?: Language) {
         if (!this._isInitialized) {
             console.error('[Notifly] PushManager is not initialized.');
             return;
@@ -117,7 +136,7 @@ export class NotiflyWebPushManager {
             return;
         }
 
-        this._showRequestPermissionPrompt();
+        this._showRequestPermissionPrompt(languageToForce);
     }
 
     private static _isWebPushSupported(): boolean {
@@ -256,9 +275,8 @@ export class NotiflyWebPushManager {
         popup.style.paddingRight = '18px';
         popup.style.paddingBottom = '18px';
         popup.style.paddingLeft = '20px';
-        popup.style.backgroundColor =
-            backgroundColor || DEFAULT_REQUEST_PERMISSION_PROMPT_DESIGN_PARAMS.backgroundColor;
-        popup.style.border = `1px solid ${borderColor || DEFAULT_REQUEST_PERMISSION_PROMPT_DESIGN_PARAMS.borderColor}`;
+        popup.style.backgroundColor = backgroundColor || DEFAULT_DESIGN_PARAMS.backgroundColor;
+        popup.style.border = `1px solid ${borderColor || DEFAULT_DESIGN_PARAMS.borderColor}`;
         popup.style.borderRadius = '8px';
         popup.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
         return popup;
@@ -291,9 +309,7 @@ export class NotiflyWebPushManager {
         bellIcon.style.height = '21px';
         bellIcon.innerHTML = `
         <defs>
-          <style>.${bellIconClassName}{fill:${
-            color || DEFAULT_REQUEST_PERMISSION_PROMPT_DESIGN_PARAMS.bellIconColor
-        };}</style>
+          <style>.${bellIconClassName}{fill:${color || DEFAULT_DESIGN_PARAMS.bellIconColor};}</style>
         </defs>
         <path class="${bellIconClassName}" d="M24,44a6,6,0,0,0,5.67-4H18.33A6,6,0,0,0,24,44Z"/>
         <path class="${bellIconClassName}" d="M39.38,35.26,38,31.81V22A14,14,0,0,0,26.71,8.27a3,3,0,1,0-5.42,0A14,14,0,0,0,10,22v9.81L8.62,35.26A2,2,0,0,0,10.48,38h27a2,2,0,0,0,1.86-2.74Z"/>
@@ -324,9 +340,11 @@ export class NotiflyWebPushManager {
 
     private static _createButton({
         params,
+        languageToForce,
         defaultParams,
     }: {
         params?: ButtonDesignParams;
+        languageToForce?: Language;
         defaultParams: {
             backgroundColor: string;
             backgroundHoverColor: string;
@@ -354,22 +372,22 @@ export class NotiflyWebPushManager {
         });
         button.style.fontSize = '13.5px';
         button.style.letterSpacing = '-0.3px';
-
-        const language = navigator?.language || null;
-        if (!language || language.startsWith('ko')) {
-            button.textContent = params?.text?.ko || defaultParams.text.ko;
-        } else {
-            button.textContent = params?.text?.en || defaultParams.text.en;
-        }
+        button.textContent = this._optTextByPreferredLanguage({
+            textContent: params?.text,
+            languageToForce,
+            defaultTextContent: defaultParams.text,
+        });
         return button;
     }
 
     private static _createHeader({
         params,
+        languageToForce,
         defaultParams,
     }: {
         params?: TextDesignParams;
-        defaultParams: typeof DEFAULT_REQUEST_PERMISSION_PROMPT_DESIGN_PARAMS.messageDesign;
+        languageToForce?: Language;
+        defaultParams: typeof DEFAULT_DESIGN_PARAMS.messageDesign;
     }) {
         const header = document.createElement('h2');
         header.style.fontSize = '17px';
@@ -379,22 +397,22 @@ export class NotiflyWebPushManager {
         header.style.marginLeft = '6px';
         header.style.marginTop = '0px';
         header.style.marginBottom = '0px';
-
-        const language = navigator?.language || null;
-        if (!language || language.startsWith('ko')) {
-            header.textContent = params?.text?.ko || defaultParams.text.ko;
-        } else {
-            header.textContent = params?.text?.en || defaultParams.text.en;
-        }
+        header.textContent = this._optTextByPreferredLanguage({
+            textContent: params?.text,
+            languageToForce: languageToForce,
+            defaultTextContent: defaultParams.text,
+        });
         return header;
     }
 
     private static _createMessage({
         params,
+        languageToForce,
         defaultParams,
     }: {
         params?: TextDesignParams;
-        defaultParams: typeof DEFAULT_REQUEST_PERMISSION_PROMPT_DESIGN_PARAMS.messageDesign;
+        languageToForce?: Language;
+        defaultParams: typeof DEFAULT_DESIGN_PARAMS.messageDesign;
     }) {
         const message = document.createElement('p');
         message.style.padding = '0px';
@@ -407,17 +425,15 @@ export class NotiflyWebPushManager {
         message.style.color = params?.color || defaultParams.color;
         message.style.lineHeight = '1.3';
         message.style.letterSpacing = '-0.3px';
-
-        const language = navigator?.language || null;
-        if (!language || language.startsWith('ko')) {
-            message.textContent = params?.text?.ko || defaultParams.text.ko;
-        } else {
-            message.textContent = params?.text?.en || defaultParams.text.en;
-        }
+        message.textContent = this._optTextByPreferredLanguage({
+            textContent: params?.text,
+            languageToForce,
+            defaultTextContent: defaultParams.text,
+        });
         return message;
     }
 
-    private static _showRequestPermissionPrompt(): void {
+    private static _showRequestPermissionPrompt(languageToForce?: Language): void {
         if (!this._isInitialized || this._isRequestPermissionPromptBeingShown) {
             return;
         }
@@ -448,21 +464,25 @@ export class NotiflyWebPushManager {
 
         const header = this._createHeader({
             params: this._promptDesignParams?.headerDesign,
-            defaultParams: DEFAULT_REQUEST_PERMISSION_PROMPT_DESIGN_PARAMS.headerDesign,
+            languageToForce,
+            defaultParams: DEFAULT_DESIGN_PARAMS.headerDesign,
         });
         const message = this._createMessage({
             params: this._promptDesignParams?.messageDesign,
-            defaultParams: DEFAULT_REQUEST_PERMISSION_PROMPT_DESIGN_PARAMS.messageDesign,
+            languageToForce,
+            defaultParams: DEFAULT_DESIGN_PARAMS.messageDesign,
         });
 
         // Buttons
         const grantButton = this._createButton({
             params: this._promptDesignParams?.grantButtonDesign,
-            defaultParams: DEFAULT_REQUEST_PERMISSION_PROMPT_DESIGN_PARAMS.grantButtonDesign,
+            languageToForce,
+            defaultParams: DEFAULT_DESIGN_PARAMS.grantButtonDesign,
         });
         const denyButton = this._createButton({
             params: this._promptDesignParams?.denyButtonDesign,
-            defaultParams: DEFAULT_REQUEST_PERMISSION_PROMPT_DESIGN_PARAMS.denyButtonDesign,
+            languageToForce,
+            defaultParams: DEFAULT_DESIGN_PARAMS.denyButtonDesign,
         });
 
         // Buttons event listeners
@@ -516,5 +536,33 @@ export class NotiflyWebPushManager {
         popup.appendChild(closeButton);
         popup.appendChild(buttonContainer);
         document.body.appendChild(overlay);
+    }
+
+    private static _optTextByPreferredLanguage({
+        textContent,
+        languageToForce,
+        defaultTextContent,
+    }: {
+        textContent?: TextContent;
+        languageToForce?: Language;
+        defaultTextContent: TextContent;
+    }): string {
+        if (languageToForce) {
+            return textContent?.[languageToForce] || defaultTextContent[languageToForce]!;
+        }
+
+        const language = navigator?.language || null;
+        const defaultContent =
+            textContent?.[this._promptDefaultLanguage] || defaultTextContent[this._promptDefaultLanguage]!;
+        if (!language) {
+            return defaultContent;
+        }
+        for (const lang of Object.values(Language)) {
+            if (language.startsWith(lang)) {
+                return textContent?.[lang] || defaultTextContent[lang]!;
+            }
+        }
+
+        return defaultContent;
     }
 }

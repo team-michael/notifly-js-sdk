@@ -1,3 +1,16 @@
+# 2.8.0
+
+-   Support more languages for web push notification permission request popup
+    -   ko (Korean)
+    -   en (English)
+    -   ja (Japanese)
+    -   zh (Chinese)
+-   Support default language for web push notification permission request popup
+
+# 2.7.8
+
+-   Fix campaign message being displayed even when campaign is either expired or not in active state
+
 # 2.7.6
 
 -   Fix unexpected behavior when session has been expired
@@ -28,7 +41,3 @@
 
 -   Improve stability of user state management
 -   Implement triggering event filters for in web messages
-
-# 2.7.8
-
--   Fix campaign message being displayed even when campaign is either expired or not in active state

@@ -96,13 +96,21 @@ export class SessionManager {
             return;
         }
 
-        const { vapidPublicKey, askPermission, serviceWorkerPath, promptDelayMillis, promptDesignParams } =
-            this._sdkConfiguration.webPushOptions;
+        const {
+            vapidPublicKey,
+            askPermission,
+            serviceWorkerPath,
+            promptDelayMillis,
+            promptDefaultLanguage,
+            promptDesignParams,
+        } = this._sdkConfiguration.webPushOptions;
+
         await NotiflyWebPushManager.initialize(
             vapidPublicKey,
             askPermission,
             serviceWorkerPath,
             promptDelayMillis,
+            promptDefaultLanguage,
             promptDesignParams
         );
     }

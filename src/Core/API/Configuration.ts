@@ -1,4 +1,4 @@
-import { RequestPermissionPromptDesignParams } from '../Interfaces/RequestPermissionPromptDesignParams';
+import { Language, RequestPermissionPromptDesignParams } from '../Interfaces/RequestPermissionPromptDesignParams';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 const DEFAULTS = {
@@ -14,6 +14,7 @@ export interface SdkConfiguration {
         serviceWorkerPath: string;
         askPermission: boolean;
         promptDelayMillis?: number;
+        promptDefaultLanguage?: Language;
         promptDesignParams?: RequestPermissionPromptDesignParams;
     };
 }
@@ -45,8 +46,15 @@ export async function getSdkConfiguration(): Promise<SdkConfiguration> {
             throw new Error('Invalid configuration: web push options should be set when use_web_push is true');
         }
 
-        const { vapid_public_key, ask_permission, service_worker_path, prompt_delay_millis, prompt_design_params } =
-            data.web_push_options;
+        const {
+            vapid_public_key,
+            ask_permission,
+            service_worker_path,
+            prompt_delay_millis,
+            prompt_default_language,
+            prompt_design_params,
+        } = data.web_push_options;
+
         if (!vapid_public_key) {
             throw new Error('Invalid configuration: vapid_public_key is required');
         }
@@ -56,6 +64,7 @@ export async function getSdkConfiguration(): Promise<SdkConfiguration> {
             askPermission: !!ask_permission,
             serviceWorkerPath: service_worker_path || DEFAULTS.serviceWorkerPath,
             promptDelayMillis: prompt_delay_millis,
+            promptDefaultLanguage: prompt_default_language,
             promptDesignParams: prompt_design_params,
         };
 
