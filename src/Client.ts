@@ -16,7 +16,7 @@ import { NotiflyAPI } from './Core/API';
 import { SdkStateManager, SdkState, type SdkType } from './Core/SdkState';
 import { SessionManager } from './Core/Session';
 import { UserStateManager } from './Core/User/State';
-import { initializeNotiflyStorage } from './Core/Utils';
+import { initializeNotiflyStorage, isValidProjectId } from './Core/Utils';
 
 let initSemaphore = false;
 
@@ -55,8 +55,13 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
 
     const { projectId, username, password } = options;
 
-    if (!projectId || !username || !password) {
-        console.error('[Notifly] projectID, userName and password must not be empty');
+    if (!isValidProjectId(projectId)) {
+        console.error('[Notifly] Invalid project ID. Please provide a valid project ID.');
+        return onInitializationFailed();
+    }
+
+    if (!username || !password) {
+        console.error('[Notifly] username and password must not be empty');
         return onInitializationFailed();
     }
 

@@ -54,7 +54,7 @@ export function sanitizeRandomBucketNumber(randomBucketNumber: unknown): number 
     return 0;
 }
 
-export const reEligibleConditionUnitToSec: Record<string, number> = {
+export const reEligibleConditionUnitToSeconds: Record<string, number> = {
     h: 3600,
     d: 24 * 3600,
     w: 7 * 24 * 3600,

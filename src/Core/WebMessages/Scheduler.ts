@@ -41,17 +41,14 @@ export class WebMessageScheduler {
             );
             return;
         }
+        this._isWebMessageOpen = true;
 
         const campaignHiddenUntilData = campaign.re_eligible_condition
-            ? UserStateManager.calculateCampaignHiddenUntilDataAccordingToReEligibleCondition(
+            ? UserStateManager.updateAndGetCampaignHiddenUntilDataAccordingToReEligibleCondition(
                   campaign.id,
                   campaign.re_eligible_condition
               )
-            : undefined;
-        if (campaignHiddenUntilData) {
-            UserStateManager.updateCampaignHiddenUntilData(campaignHiddenUntilData);
-        }
-        this._isWebMessageOpen = true;
+            : null;
 
         const message = campaign.message;
         const modalProperties = message.modal_properties;
@@ -65,7 +62,7 @@ export class WebMessageScheduler {
                         type: 'message_event',
                         channel: 'in-web-message',
                         campaign_id: campaign.id,
-                        hide_until_data: campaignHiddenUntilData,
+                        ...(campaignHiddenUntilData ? { hide_until_data: campaignHiddenUntilData } : {}),
                     },
                     null,
                     true

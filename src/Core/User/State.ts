@@ -4,7 +4,7 @@ import type { EventIntermediateCounts, UserData } from '../Interfaces/User';
 
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { NotiflyAPI } from '../API';
-import { mergeEventCounts, mergeObjects, reEligibleConditionUnitToSec, sanitizeRandomBucketNumber } from './Utils';
+import { mergeEventCounts, mergeObjects, reEligibleConditionUnitToSeconds, sanitizeRandomBucketNumber } from './Utils';
 
 import {
     getKSTCalendarDateString,
@@ -48,7 +48,7 @@ export class UserStateManager {
     }
 
     static async saveState() {
-        await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_USER_STATE, JSON.stringify(this.state));
+        await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_STATE, JSON.stringify(this.state));
     }
 
     static async sync(options: SyncStateOptions): Promise<void> {
@@ -66,7 +66,7 @@ export class UserStateManager {
         }
     }
 
-    static calculateCampaignHiddenUntilDataAccordingToReEligibleCondition(
+    static updateAndGetCampaignHiddenUntilDataAccordingToReEligibleCondition(
         campaignId: string,
         reEligibleCondition: ReEligibleCondition
     ) {
@@ -79,11 +79,13 @@ export class UserStateManager {
         const campaignHiddenUntilData: Record<string, any> = {};
 
         if (newLogs.length >= (reEligibleCondition.max_count ?? 1)) {
-            const hiddenDuration = reEligibleConditionUnitToSec[reEligibleCondition.unit] * reEligibleCondition.value;
+            const hiddenDuration =
+                reEligibleConditionUnitToSeconds[reEligibleCondition.unit] * reEligibleCondition.value;
             campaignHiddenUntilData[`${campaignId}`] = now + hiddenDuration;
         }
         campaignHiddenUntilData[`${campaignId}_message_logs`] = [...(previousLogs ?? []), now];
 
+        this.updateCampaignHiddenUntilData(campaignHiddenUntilData);
         return campaignHiddenUntilData;
     }
 
@@ -116,9 +118,11 @@ export class UserStateManager {
                 event_params: eventParams || {},
             });
         }
+
+        this.saveState();
     }
 
-    static clearEventCounts() {
+    private static _clearEventCounts() {
         this.eventIntermediateCounts = [];
     }
 
@@ -126,34 +130,39 @@ export class UserStateManager {
         if (!this.userData.user_properties) {
             this.userData.user_properties = {};
         }
-
         Object.keys(params).forEach((key) => {
             this.userData.user_properties && (this.userData.user_properties[key] = params[key]);
         });
+
+        this.saveState();
     }
 
-    static clearUserProperties() {
+    private static _clearUserProperties() {
         this.userData.user_properties = {};
     }
 
     static updateCampaignHiddenUntilData(campaignHiddenUntilData: Record<string, any>) {
-        if (!UserStateManager.userData.campaign_hidden_until) {
-            UserStateManager.userData.campaign_hidden_until = {};
+        if (!this.userData.campaign_hidden_until) {
+            this.userData.campaign_hidden_until = {};
         }
-        UserStateManager.userData.campaign_hidden_until = {
-            ...UserStateManager.userData.campaign_hidden_until,
+        this.userData.campaign_hidden_until = {
+            ...this.userData.campaign_hidden_until,
             ...campaignHiddenUntilData,
         };
+
+        this.saveState();
     }
 
-    static clearCampaignHiddenUntilData() {
-        UserStateManager.userData.campaign_hidden_until = {};
+    private static _clearCampaignHiddenUntilData() {
+        this.userData.campaign_hidden_until = {};
     }
 
     static clearAll() {
-        this.clearEventCounts();
-        this.clearUserProperties();
-        this.clearCampaignHiddenUntilData();
+        this._clearEventCounts();
+        this._clearUserProperties();
+        this._clearCampaignHiddenUntilData();
+
+        this.saveState();
     }
 
     private static async _syncState(options: SyncStateOptions): Promise<void> {
@@ -162,11 +171,11 @@ export class UserStateManager {
 
         if (useStorageIfAvailable) {
             // Get state from storage, if available
-            const storedState = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_USER_STATE);
+            const storedState = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_STATE);
             try {
-                const parsedStateJSON = storedState ? JSON.parse(storedState) : null;
-                if (isValidUserState(parsedStateJSON)) {
-                    const parsedState = parsedStateJSON as {
+                const parsedStateJson = storedState ? JSON.parse(storedState) : null;
+                if (parsedStateJson && isValidUserState(parsedStateJson)) {
+                    const parsedState = parsedStateJson as {
                         eventIntermediateCounts: EventIntermediateCounts[];
                         inWebMessageCampaigns: Campaign[];
                         userData: UserData;
@@ -177,7 +186,6 @@ export class UserStateManager {
                     this.userData = parsedState.userData;
 
                     await this._updateExternalUserId();
-
                     return;
                 }
                 console.warn('[Notifly] State from storage might have been corrupted. Ignoring state from storage.');
@@ -203,12 +211,11 @@ export class UserStateManager {
             'GET'
         );
 
-        this._writeStatesBasedOnPolicy(data, policy);
-
-        await this._updateExternalUserId();
+        this._updateStatesBasedOnPolicy(data, policy);
+        await Promise.all([this.saveState(), this._updateExternalUserId()]);
     }
 
-    private static _writeStatesBasedOnPolicy(data: any, policy: SyncStatePolicy) {
+    private static _updateStatesBasedOnPolicy(data: any, policy: SyncStatePolicy) {
         const incomingCampaignData: Campaign[] = isValidCampaignData(data.campaignData)
             ? data.campaignData.filter((c: Campaign) => c.channel === 'in-web-message')
             : [];
@@ -217,9 +224,10 @@ export class UserStateManager {
         )
             ? data.eventIntermediateCountsData
             : [];
-        const incomingUserData: UserData = isValidUserData(data.userData) ? data.userData : {};
 
-        this.userData.random_bucket_number = sanitizeRandomBucketNumber(incomingUserData.random_bucket_number);
+        const incomingUserData: UserData = isValidUserData(data.userData) ? data.userData : {};
+        const sanitizedIncomingRandomBucketNumber = sanitizeRandomBucketNumber(incomingUserData.random_bucket_number);
+        incomingUserData.random_bucket_number = sanitizedIncomingRandomBucketNumber;
 
         switch (policy) {
             case SyncStatePolicy.OVERWRITE:
@@ -244,6 +252,7 @@ export class UserStateManager {
                         this.userData.campaign_hidden_until || {},
                         incomingUserData.campaign_hidden_until || {}
                     ),
+                    random_bucket_number: sanitizedIncomingRandomBucketNumber,
                 };
                 break;
             default:

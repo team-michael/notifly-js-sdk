@@ -16,7 +16,7 @@ jest.mock('../src/Core/Storage/LocalForage', () => ({
 
 describe('Notifly SDK', () => {
     describe('initialize', () => {
-        const projectID = 'project-id';
+        const projectID = 'b80c3f0e2fbd5eb986df4f1d32ea2871';
         const userName = 'user-name';
         const password = 'password';
 

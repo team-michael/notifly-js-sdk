@@ -13,7 +13,7 @@ export enum NotiflyStorageKeys {
     NOTIFLY_USER_ID = '__notiflyUserID',
     EXTERNAL_USER_ID = '__notiflyExternalUserID',
     NOTIFLY_DEVICE_ID = '__notiflyDeviceID',
-    NOTIFLY_USER_STATE = '__notiflyUserState',
+    NOTIFLY_STATE = '__notiflyState',
 
     // Misc
     LAST_SESSION_TIME = '__notiflyLastSessionTime',

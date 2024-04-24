@@ -31,6 +31,11 @@ export async function storeUserIdentity() {
     });
 }
 
+export function isValidProjectId(projectId: string) {
+    const regex = /^(?:[0-9a-fA-F]{32})$/;
+    return regex.test(projectId);
+}
+
 export function generateNotiflyUserId(projectId: string, externalUserId: string | null, deviceId: string) {
     return externalUserId
         ? v5(`${projectId}${externalUserId}`, NAMESPACE.REGISTERED_USERID).replace(/-/g, '')

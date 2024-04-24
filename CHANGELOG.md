@@ -1,3 +1,9 @@
+# 2.8.1
+
+-   Fix bug when application is running in multiple tabs
+-   Fix bug when user is switched from guest to registered user
+-   Add project ID validation to prevent invalid project ID
+
 # 2.8.0
 
 -   Support more languages for web push notification permission request popup

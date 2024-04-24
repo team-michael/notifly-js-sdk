@@ -5,16 +5,24 @@ import notifly from 'notifly-js-sdk';
 import logo from './logo.svg';
 import './App.css';
 import Playground from './Playground';
+import localforage from 'localforage';
 
 const USER_ID = 'javascript-sdk-react-test';
+
+const storage = localforage.createInstance({
+    driver: localforage.INDEXEDDB, // This should be forced to IndexedDB because service worker is using IndexedDB
+    name: 'notifly',
+    storeName: 'notiflyconfig',
+    version: 1.0,
+});
 
 function App() {
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            notifly.setUserId(USER_ID).then(() => {
-                console.log('User ID set');
-                console.log(Date.now());
-            });
+            // notifly.setUserId(USER_ID).then(() => {
+            //     console.log('User ID set');
+            //     console.log(Date.now());
+            // });
 
             // notifly
             //     .setUserProperties({
@@ -60,11 +68,45 @@ function HomePage() {
                 Notifly js SDK example react app
             </p>
             <UserIdSetter />
+            <IndexedDBDumper />
             <UserPropertySetter />
             <TrackEventSection />
             <RemoveUserIdButton />
             <Link to="/playground">Go to playground</Link>
             <Outlet />
+        </div>
+    );
+}
+
+function IndexedDBDumper() {
+    const [keyName, setKeyName] = useState('');
+    const [value, setValue] = useState('');
+
+    const handleDump = async () => {
+        const value = await storage.getItem(keyName);
+        let displayValue = value;
+        try {
+            displayValue = JSON.stringify(JSON.parse(value as string), null, 2);
+        } catch (e) {}
+        setValue(displayValue as string);
+    };
+
+    return (
+        <div>
+            <input type="text" placeholder="Key" value={keyName} onChange={(e) => setKeyName(e.target.value)} />
+            <button onClick={handleDump}>Dump</button>
+            <pre
+                style={{
+                    whiteSpace: 'pre-wrap',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    fontSize: '12px',
+                    maxWidth: '500px',
+                    textAlign: 'left',
+                }}
+            >
+                {value}
+            </pre>
         </div>
     );
 }
