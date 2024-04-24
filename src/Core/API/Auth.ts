@@ -40,7 +40,7 @@ export async function getCognitoIdToken(username: string, password: string): Pro
     }
 }
 
-export async function saveCognitoIdToken(userName: string, password: string): Promise<string | null> {
+export async function saveAndGetCognitoIdToken(userName: string, password: string): Promise<string | null> {
     const cognitoIdToken = await getCognitoIdToken(userName, password);
     if (!cognitoIdToken) {
         return null;

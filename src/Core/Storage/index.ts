@@ -22,8 +22,6 @@ export enum NotiflyStorageKeys {
 }
 
 export class NotiflyStorage {
-    private static _internalMemStorage: Map<NotiflyStorageKeys, string> = new Map();
-
     static async ensureInitialized() {
         await storage.ready();
     }
@@ -33,7 +31,7 @@ export class NotiflyStorage {
     }
 
     static async getItem(key: NotiflyStorageKeys): Promise<string | null> {
-        return this._internalMemStorage.get(key) ?? (await this._get(key)) ?? null;
+        return (await this._get(key)) ?? null;
     }
 
     static async setItems(data: Partial<Record<NotiflyStorageKeys, string>>): Promise<void> {
@@ -41,10 +39,7 @@ export class NotiflyStorage {
     }
 
     static async setItem(key: NotiflyStorageKeys, value: string): Promise<void> {
-        if (value !== this._internalMemStorage.get(key)) {
-            this._internalMemStorage.set(key, value);
-            await this._set(key, value);
-        }
+        await this._set(key, value);
     }
 
     static async removeItems(keys: NotiflyStorageKeys[]): Promise<void> {
@@ -52,7 +47,6 @@ export class NotiflyStorage {
     }
 
     static async removeItem(key: NotiflyStorageKeys): Promise<void> {
-        this._internalMemStorage.delete(key);
         await this._remove(key);
     }
 

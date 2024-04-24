@@ -55,7 +55,7 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
 
     const { projectId, username, password } = options;
 
-    if (!(projectId && username && password)) {
+    if (!projectId || !username || !password) {
         console.error('[Notifly] projectID, userName and password must not be empty');
         return onInitializationFailed();
     }

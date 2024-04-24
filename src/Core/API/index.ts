@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
-import { saveCognitoIdToken } from './Auth';
+import { saveAndGetCognitoIdToken } from './Auth';
 
 export class NotiflyAPI {
     private static readonly MAX_RETRY_COUNT_ON_TOKEN_EXPIRED = 3;
@@ -20,7 +20,7 @@ export class NotiflyAPI {
 
         this._cognitoIdToken = await NotiflyStorage.getItem(NotiflyStorageKeys.COGNITO_ID_TOKEN);
         if (!this._cognitoIdToken) {
-            this._cognitoIdToken = await saveCognitoIdToken(this._username, this._password);
+            this._cognitoIdToken = await saveAndGetCognitoIdToken(this._username, this._password);
             if (!this._cognitoIdToken) {
                 throw new Error('Failed to get authentication token.');
             }
@@ -69,7 +69,7 @@ export class NotiflyAPI {
                             'Username or password required when token has expired. Please retry initialization.'
                         );
                     }
-                    this._cognitoIdToken = await saveCognitoIdToken(this._username, this._password);
+                    this._cognitoIdToken = await saveAndGetCognitoIdToken(this._username, this._password);
                     if (!this._cognitoIdToken) {
                         throw new Error('Failed to get authentication token.');
                     }

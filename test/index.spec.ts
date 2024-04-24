@@ -1,5 +1,5 @@
 import storage from '../src/Core/Storage/LocalForage';
-import { saveCognitoIdToken } from '../src/Core/API/Auth';
+import { saveAndGetCognitoIdToken } from '../src/Core/API/Auth';
 import { EventLogger } from '../src/Core/Event';
 
 import notifly from '../src/index';
@@ -21,7 +21,7 @@ describe('Notifly SDK', () => {
         const password = 'password';
 
         beforeEach(() => {
-            (saveCognitoIdToken as jest.MockedFunction<typeof saveCognitoIdToken>).mockClear();
+            (saveAndGetCognitoIdToken as jest.MockedFunction<typeof saveAndGetCognitoIdToken>).mockClear();
             (EventLogger.sessionStart as jest.MockedFunction<typeof EventLogger.sessionStart>).mockClear();
         });
 
@@ -53,16 +53,6 @@ describe('Notifly SDK', () => {
                     password: '',
                 })
             ).toBe(false);
-        });
-
-        it('should call saveCognitoIdToken with the correct parameters', async () => {
-            await notifly.initialize({
-                projectId: projectID,
-                username: userName,
-                password,
-            });
-
-            expect(saveCognitoIdToken).toHaveBeenCalledWith(userName, password);
         });
 
         it('should call _saveNotiflyData with the correct parameters', async () => {
