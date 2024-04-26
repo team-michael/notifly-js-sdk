@@ -1,4 +1,6 @@
-import storage from './LocalForage';
+import NotiflyIndexedDBStore from './Core';
+
+const storage = new NotiflyIndexedDBStore('notifly', 'notiflyconfig');
 
 export enum NotiflyStorageKeys {
     // Project

@@ -8,6 +8,7 @@ import Playground from './Playground';
 import localforage from 'localforage';
 
 const USER_ID = 'javascript-sdk-react-test';
+const ANOTHER_USER_ID = 'javascript-sdk-react-test-2';
 
 const storage = localforage.createInstance({
     driver: localforage.INDEXEDDB, // This should be forced to IndexedDB because service worker is using IndexedDB
@@ -16,42 +17,70 @@ const storage = localforage.createInstance({
     version: 1.0,
 });
 
+async function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function App() {
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            // notifly.setUserId(USER_ID).then(() => {
-            //     console.log('User ID set');
-            //     console.log(Date.now());
-            // });
-
-            // notifly
-            //     .setUserProperties({
-            //         test_property: 'test_value',
-            //     })
-            //     .then(() => {
-            //         console.log('User property set');
-            //         console.log(Date.now());
-            //     });
-
-            notifly
-                .initialize({
-                    projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID!,
-                    username: process.env.REACT_APP_NOTIFLY_USERNAME!,
-                    password: process.env.REACT_APP_NOTIFLY_PASSWORD!,
-                })
-                .then(() => {
-                    console.log('Notifly SDK initialized');
-                });
-
-            notifly.trackEvent('sdk_initialized').then(() => {
-                console.log('SDK initialized event tracked');
-                console.log(Date.now());
+        const init = async () => {
+            setInitStatus('Initializing...');
+            await sleep(2000);
+            await notifly.initialize({
+                projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID!,
+                username: process.env.REACT_APP_NOTIFLY_USERNAME!,
+                password: process.env.REACT_APP_NOTIFLY_PASSWORD!,
             });
-        }
+            setInitStatus('Initialized');
+        };
+
+        const setUserId = async (userId: string | null) => {
+            await notifly.setUserId(userId);
+            setSetUserIdStatus(`User ID set to ${userId}`);
+        };
+
+        const job = async () => {
+            if (typeof window !== 'undefined') {
+                // notifly.setUserId(USER_ID).then(() => {
+                //     console.log('User ID set');
+                //     console.log(Date.now());
+                // });
+
+                // notifly
+                //     .setUserProperties({
+                //         test_property: 'test_value',
+                //     })
+                //     .then(() => {
+                //         console.log('User property set');
+                //         console.log(Date.now());
+                //     });
+
+                setTimeout(() => {
+                    init();
+                }, 2000);
+                for (let i = 0; i < 20; i++) {
+                    setUserId(`js_sdk_test_${i}`);
+                    await sleep(500);
+                    setUserId(null);
+                }
+
+                notifly.trackEvent('sdk_initialized').then(() => {
+                    console.log('SDK initialized event tracked');
+                    console.log(Date.now());
+                });
+            }
+        };
+
+        job();
     }, []);
+
+    const [initStatus, setInitStatus] = useState('');
+    const [setUserIdStatus, setSetUserIdStatus] = useState('');
 
     return (
         <div className="App">
+            {<p>- Init Status: {initStatus}</p>}
+            {<p>- Set User ID Status: {setUserIdStatus}</p>}
             <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="playground" element={<Playground />} />
