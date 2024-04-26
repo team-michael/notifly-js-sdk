@@ -1,3 +1,7 @@
+# 2.9.0
+
+-   Now advanced triggering condition is available for in-web messages
+
 # 2.8.1
 
 -   Fix bug when application is running in multiple tabs
