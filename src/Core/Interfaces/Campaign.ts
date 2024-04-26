@@ -3,8 +3,22 @@ export type SegmentConditionUnitType = 'user' | 'user_metadata' | 'device' | 'ev
 export type ValueType = 'INT' | 'TEXT' | 'BOOL';
 export type GroupOperator = 'OR' | null;
 export type ConditionOperator = 'AND' | null;
-export type Operator = '=' | '<>' | '>' | '>=' | '<' | '<=' | '@>' | 'IS_NULL' | 'IS_NOT_NULL';
 export type EventBasedConditionType = 'count X' | 'count X in Y days';
+
+export type TriggeringConditionType = 'event_name'; // Currently only event_name is supported
+export type TriggeringConditionOperator =
+    | '='
+    | '!='
+    | 'starts_with'
+    | 'does_not_start_with'
+    | 'ends_with'
+    | 'does_not_end_with'
+    | 'contains'
+    | 'does_not_contain'
+    | 'matches_regex'
+    | 'does_not_match_regex';
+
+export type Operator = '=' | '<>' | '>' | '>=' | '<' | '<=' | '@>' | 'IS_NULL' | 'IS_NOT_NULL';
 
 export interface Condition {
     unit: SegmentConditionUnitType;
@@ -18,6 +32,14 @@ export interface Condition {
     comparison_parameter?: string;
     useEventParamsAsConditionValue?: boolean;
 }
+
+export interface TriggeringConditionUnit {
+    type: TriggeringConditionType;
+    operator: TriggeringConditionOperator;
+    operand: string;
+}
+export type TriggeringConditionGroup = TriggeringConditionUnit[];
+export type TriggeringConditions = TriggeringConditionGroup[];
 
 export interface TriggeringEventFilterUnit {
     key: string;
@@ -47,7 +69,7 @@ export interface Campaign {
     status: CampaignStatus;
     starts?: number[];
     end?: number | null;
-    last_updated_timestamp: number;
+    updated_at: string;
     segment_type: string;
     testing?: boolean;
     whitelist?: string[];
@@ -78,7 +100,7 @@ export interface Campaign {
         }[];
         group_operator: GroupOperator;
     };
-    triggering_event: string;
+    triggering_conditions: TriggeringConditions;
     triggering_event_filters?: TriggeringEventFilter[];
     delay?: number;
 }

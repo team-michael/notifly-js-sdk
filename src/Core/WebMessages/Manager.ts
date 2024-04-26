@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
     CampaignStatus,
+    TriggeringConditionUnit,
+    TriggeringConditions,
     type Campaign,
     type Condition,
     type Operator,
@@ -77,7 +79,7 @@ export class WebMessageManager {
 
     /**
      * Compare function for sorting campaigns by delay in ascending order.
-     * If those are equal, sort by last_updated_timestamp in descending order.
+     * If those are equal, sort by updated_at in descending order.
      */
     private static _compareCampaigns(a: Campaign, b: Campaign) {
         const delayA = a.delay || 0;
@@ -88,14 +90,14 @@ export class WebMessageManager {
         } else if (delayA > delayB) {
             return 1;
         } else {
-            return a.last_updated_timestamp > b.last_updated_timestamp ? -1 : 1;
+            return a.updated_at > b.updated_at ? -1 : 1;
         }
     }
 
     /**
      * This function assumes that all campaigns should be scheduled and sorted with _compareCampaigns function.
      * This function removes campaigns that are scheduled to be shown at the same time.
-     * When there are multiple campaigns scheduled to be shown at the same time, the one with the latest last_updated_timestamp will be chosen.
+     * When there are multiple campaigns scheduled to be shown at the same time, the one with the latest updated_at will be chosen.
      */
     private static _compactCampaigns(campaigns: Campaign[]) {
         if (campaigns.length <= 1) {
@@ -139,8 +141,11 @@ export class WebMessageManager {
         eventName: string,
         eventParams: Record<string, any>
     ) {
-        if (campaign.triggering_event !== eventName) {
-            // This campaign is not triggered by the event
+        if (!campaign.triggering_conditions) {
+            console.error('[Notifly] Campaign does not have triggering conditions');
+            return false;
+        }
+        if (!this._matchTriggeringConditions(campaign.triggering_conditions, eventName)) {
             return false;
         }
 
@@ -152,6 +157,54 @@ export class WebMessageManager {
             }
         }
         return true;
+    }
+
+    private static _matchTriggeringConditions(triggeringConditions: TriggeringConditions, eventName: string) {
+        return triggeringConditions.some((group) =>
+            group.every((unit) => this._matchTriggeringConditionUnit(unit, eventName))
+        );
+    }
+
+    private static _matchTriggeringConditionUnit(conditionUnit: TriggeringConditionUnit, eventName: string) {
+        const { operator, operand } = conditionUnit;
+
+        switch (operator) {
+            case '=':
+                return eventName === operand;
+            case '!=':
+                return eventName !== operand;
+            case 'starts_with':
+                return eventName.startsWith(operand);
+            case 'does_not_start_with':
+                return !eventName.startsWith(operand);
+            case 'ends_with':
+                return eventName.endsWith(operand);
+            case 'does_not_end_with':
+                return !eventName.endsWith(operand);
+            case 'contains':
+                return eventName.includes(operand);
+            case 'does_not_contain':
+                return !eventName.includes(operand);
+            case 'matches_regex': {
+                try {
+                    return new RegExp(operand).test(eventName);
+                } catch (e) {
+                    return false;
+                }
+            }
+            case 'does_not_match_regex': {
+                try {
+                    return !new RegExp(operand).test(eventName);
+                } catch (e) {
+                    return false;
+                }
+            }
+            default:
+                console.error(
+                    `[Notifly] Encountered unexpected error while parsing triggering conditions: invalid operator ${operator}`
+                );
+                return false;
+        }
     }
 
     private static _matchTriggeringEventFilters(

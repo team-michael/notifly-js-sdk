@@ -9,6 +9,13 @@ jest.mock('localforage', () => ({
     }),
 }));
 
+jest.mock('../../src/Core/SdkState', () => ({
+    ...jest.requireActual('../../src/Core/SdkState'),
+    SdkStateManager: {
+        getSdkVersion: jest.fn(() => '1.0.0'),
+    },
+}));
+
 describe('getCognitoIdToken', () => {
     const mockToken = 'mock-token';
     const mockResponse = {
@@ -40,6 +47,9 @@ describe('getCognitoIdToken', () => {
                 userName: 'testUser',
                 password: 'testPassword',
             }),
+            headers: {
+                'X-Notifly-SDK-Version': 'notifly/js/1.0.0',
+            },
         });
         expect(mockResponse.json).toHaveBeenCalledTimes(1);
     });

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { SdkStateManager } from '../SdkState';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { saveAndGetCognitoIdToken } from './Auth';
 
@@ -47,6 +48,7 @@ export class NotiflyAPI {
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${this._cognitoIdToken}`,
+                'X-Notifly-SDK-Version': `notifly/js/${SdkStateManager.getSdkVersion()}`,
             },
             keepalive: true,
         };

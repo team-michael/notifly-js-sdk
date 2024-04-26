@@ -1,4 +1,5 @@
 import { Language, RequestPermissionPromptDesignParams } from '../Interfaces/RequestPermissionPromptDesignParams';
+import { SdkStateManager } from '../SdkState';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 const DEFAULTS = {
@@ -26,7 +27,12 @@ export async function getSdkConfiguration(): Promise<SdkConfiguration> {
     }
 
     const url = `https://api.notifly.tech/sdk-configurations?project_id=${projectId}&type=website`;
-    const response = await fetch(url);
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'X-Notifly-SDK-Version': `notifly/js/${SdkStateManager.getSdkVersion()}`,
+        },
+    });
     if (!response.ok) {
         throw new Error('Failed to get SDK configuration.');
     }

@@ -85,16 +85,22 @@ describe('updateEventIntermediateCounts', () => {
 });
 
 describe('getCampaignsToSchedule', () => {
-    // now: 1685491200000
-    console.log(Date.now());
     const campaigns: Campaign[] = [
         {
             id: 'test-campaign-1',
             status: 1,
-            triggering_event: 'event1',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'event1',
+                    },
+                ],
+            ],
             channel: 'in-web-message',
             delay: 0,
-            last_updated_timestamp: 1625800000000,
+            updated_at: '2021-07-09T03:06:40.000Z',
             starts: [1625800000],
             end: null,
             message: { html_url: '', modal_properties: { template_name: '' } },
@@ -103,10 +109,18 @@ describe('getCampaignsToSchedule', () => {
         {
             id: 'test-campaign-2',
             status: 1,
-            triggering_event: 'event2',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'event2',
+                    },
+                ],
+            ],
             channel: 'in-web-message',
             delay: 10,
-            last_updated_timestamp: 1625700000000,
+            updated_at: '2021-07-07T23:20:00.000Z',
             starts: [1685501200],
             end: null,
             message: { html_url: '', modal_properties: { template_name: '' } },
@@ -115,10 +129,18 @@ describe('getCampaignsToSchedule', () => {
         {
             id: 'test-campaign-3',
             status: 2,
-            triggering_event: 'event1',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'event1',
+                    },
+                ],
+            ],
             channel: 'in-web-message',
             delay: 20,
-            last_updated_timestamp: 1625900000000,
+            updated_at: '2021-07-10T06:53:20.000Z',
             starts: [1685511200],
             end: null,
             message: { html_url: '', modal_properties: { template_name: '' } },
@@ -127,10 +149,18 @@ describe('getCampaignsToSchedule', () => {
         {
             id: 'test-campaign-4',
             status: 1,
-            triggering_event: 'event2',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'event2',
+                    },
+                ],
+            ],
             channel: 'in-web-message',
             delay: 5,
-            last_updated_timestamp: 1625600000000,
+            updated_at: '2021-07-06T19:33:20.000Z',
             starts: [1685291200],
             end: 1685391200,
             message: { html_url: '', modal_properties: { template_name: '' } },
@@ -139,10 +169,18 @@ describe('getCampaignsToSchedule', () => {
         {
             id: 'test-campaign-5',
             status: 1,
-            triggering_event: 'event1',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'event1',
+                    },
+                ],
+            ],
             channel: 'in-web-message',
             delay: 20,
-            last_updated_timestamp: 1625700000000,
+            updated_at: '2021-07-07T23:20:00.000Z',
             starts: [1685891100],
             end: null,
             message: { html_url: '', modal_properties: { template_name: '' } },
@@ -172,9 +210,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             triggering_event_filters: [
                 [
                     {
@@ -212,9 +258,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             triggering_event_filters: [
                 [
                     {
@@ -262,14 +316,162 @@ describe('checkCondition', () => {
         expect(result4).toBe(false);
     });
 
+    test('should correctly apply specified triggering conditions', () => {
+        const campaign: Campaign = {
+            id: 'test-id',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: 'starts_with',
+                        operand: 'fresh',
+                    },
+                    {
+                        type: 'event_name',
+                        operator: 'ends_with',
+                        operand: 'juice',
+                    },
+                ],
+                [
+                    {
+                        type: 'event_name',
+                        operator: 'matches_regex',
+                        operand: '^(orange|apple|banana).*$',
+                    },
+                ],
+                [
+                    {
+                        type: 'event_name',
+                        operator: 'contains',
+                        operand: 'fruit',
+                    },
+                ],
+            ],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [],
+                group_operator: null,
+            },
+            delay: 0,
+        };
+
+        const result1 = WebMessageManager.isEventApplicableForCampaign(campaign, 'fresh_juice', {});
+        const result2 = WebMessageManager.isEventApplicableForCampaign(campaign, 'apple_juice', {});
+        const result3 = WebMessageManager.isEventApplicableForCampaign(campaign, 'banana_juice', {});
+        const result4 = WebMessageManager.isEventApplicableForCampaign(campaign, 'orange_juice', {});
+        const result5 = WebMessageManager.isEventApplicableForCampaign(campaign, 'fresh_fruit', {});
+        const result6 = WebMessageManager.isEventApplicableForCampaign(campaign, 'strange_food', {});
+        const result7 = WebMessageManager.isEventApplicableForCampaign(campaign, 'mustard', {});
+
+        expect(result1).toBe(true);
+        expect(result2).toBe(true);
+        expect(result3).toBe(true);
+        expect(result4).toBe(true);
+        expect(result5).toBe(true);
+        expect(result6).toBe(false);
+        expect(result7).toBe(false);
+    });
+
+    test('should correctly apply specified triggering conditions - 2', () => {
+        const campaign: Campaign = {
+            id: 'test-id',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '!=',
+                        operand: 'purchase',
+                    },
+                    {
+                        type: 'event_name',
+                        operator: 'does_not_match_regex',
+                        operand: '^(buy|sell)$',
+                    },
+                ],
+            ],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [],
+                group_operator: null,
+            },
+            delay: 0,
+        };
+
+        const result1 = WebMessageManager.isEventApplicableForCampaign(campaign, 'purchase', {});
+        const result2 = WebMessageManager.isEventApplicableForCampaign(campaign, 'buy', {});
+        const result3 = WebMessageManager.isEventApplicableForCampaign(campaign, 'sell', {});
+        const result4 = WebMessageManager.isEventApplicableForCampaign(campaign, 'rent', {});
+
+        expect(result1).toBe(false);
+        expect(result2).toBe(false);
+        expect(result3).toBe(false);
+        expect(result4).toBe(true);
+    });
+
+    test('should return false when invalid regex is given', () => {
+        const campaign: Campaign = {
+            id: 'test-id',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: 'matches_regex',
+                        // Invalid regex
+                        operand: '^(orange|apple|banana.*$',
+                    },
+                ],
+            ],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [],
+                group_operator: null,
+            },
+            delay: 0,
+        };
+
+        const result1 = WebMessageManager.isEventApplicableForCampaign(campaign, 'any', {});
+        const result2 = WebMessageManager.isEventApplicableForCampaign(campaign, 'of', {});
+        const result3 = WebMessageManager.isEventApplicableForCampaign(campaign, 'these', {});
+        const result4 = WebMessageManager.isEventApplicableForCampaign(campaign, 'should', {});
+        const result5 = WebMessageManager.isEventApplicableForCampaign(campaign, 'return', {});
+        const result6 = WebMessageManager.isEventApplicableForCampaign(campaign, 'false', {});
+
+        expect(result1).toBe(false);
+        expect(result2).toBe(false);
+        expect(result3).toBe(false);
+        expect(result4).toBe(false);
+        expect(result5).toBe(false);
+        expect(result6).toBe(false);
+    });
+
     test('should return false for non-condition segment type', () => {
         const campaign: Campaign = {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            last_updated_timestamp: 0,
-            triggering_event: 'test-event',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             segment_type: 'some_other_type',
         };
 
@@ -283,9 +485,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             segment_type: 'condition',
             segment_info: {
                 groups: [],
@@ -304,9 +514,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             segment_type: 'condition',
             segment_info: {
                 groups: [
@@ -340,9 +558,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             segment_type: 'condition',
             segment_info: {
                 groups: [
@@ -385,9 +611,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             segment_type: 'condition',
             segment_info: {
                 groups: [
@@ -430,9 +664,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             segment_type: 'condition',
             segment_info: {
                 groups: [
@@ -475,9 +717,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             segment_type: 'condition',
             segment_info: {
                 groups: [
@@ -517,9 +767,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             segment_type: 'condition',
             segment_info: {
                 groups: [
@@ -557,9 +815,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             segment_type: 'condition',
             segment_info: {
                 groups: [
@@ -598,9 +864,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             segment_type: 'condition',
             segment_info: {
                 groups: [
@@ -650,9 +924,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             segment_type: 'condition',
             segment_info: {
                 groups: [
@@ -714,9 +996,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             segment_type: 'condition',
             segment_info: {
                 groups: [
@@ -792,9 +1082,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             segment_type: 'condition',
             segment_info: {
                 groups: [
@@ -875,9 +1173,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             segment_type: 'condition',
             segment_info: {
                 groups: [
@@ -963,9 +1269,17 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            last_updated_timestamp: 0,
+            updated_at: '2023-04-30T00:00:00.000Z',
             message: { html_url: '', modal_properties: { template_name: 'test-template' } },
-            triggering_event: 'test-event',
+            triggering_conditions: [
+                [
+                    {
+                        type: 'event_name',
+                        operator: '=',
+                        operand: 'test-event',
+                    },
+                ],
+            ],
             segment_type: 'condition',
             segment_info: {
                 groups: [

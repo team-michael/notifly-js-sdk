@@ -1,3 +1,4 @@
+import { SdkStateManager } from '../SdkState';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 /**
@@ -25,6 +26,9 @@ export async function getCognitoIdToken(username: string, password: string): Pro
     const requestOptions: RequestInit = {
         method: 'POST',
         body,
+        headers: {
+            'X-Notifly-SDK-Version': `notifly/js/${SdkStateManager.getSdkVersion()}`,
+        },
     };
 
     try {
