@@ -26,7 +26,7 @@ describe('setUserProperties', () => {
         jest.restoreAllMocks(); // Restores all mocks back to their original value.
     });
 
-    test('sets external_user_id in localForage and logs the event', async () => {
+    test('sets external_user_id in storage and logs the event', async () => {
         const _mockStorage = <Record<string, string>>{
             __notiflyProjectID: 'test',
             __notiflyUserID: 'previous_notifly_user_id',
@@ -57,7 +57,7 @@ describe('setUserProperties', () => {
         expect(EventLogger.logEvent).toHaveBeenCalledWith('set_user_properties', expectedParams, null, true);
     });
 
-    test('does not set external_user_id in localForage and logs the event when params do not include external_user_id', async () => {
+    test('does not set external_user_id in storage and logs the event when params do not include external_user_id', async () => {
         const params = {
             user_name: 'john',
             email: 'john@example.com',
