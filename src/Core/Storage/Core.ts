@@ -16,6 +16,7 @@ export default class NotiflyIndexedDBStore {
         await this.ready();
 
         return new Promise<any>((resolve, reject) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const transaction = this._db!.transaction([this._storeName], 'readonly');
             const store = transaction.objectStore(this._storeName);
             const request = store.get(key);
@@ -29,6 +30,7 @@ export default class NotiflyIndexedDBStore {
         await this.ready();
 
         return new Promise<void>((resolve, reject) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const transaction = this._db!.transaction([this._storeName], 'readwrite');
             const store = transaction.objectStore(this._storeName);
             const request = store.put(value, key);
@@ -47,6 +49,7 @@ export default class NotiflyIndexedDBStore {
         await this.ready();
 
         return new Promise<void>((resolve, reject) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const transaction = this._db!.transaction([this._storeName], 'readwrite');
             const store = transaction.objectStore(this._storeName);
             const request = store.delete(key);

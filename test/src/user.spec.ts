@@ -1,14 +1,20 @@
-import storage from '../../src/Core/Storage/LocalForage';
+import { NotiflyStorage } from '../../src/Core/Storage';
 import { SdkState, SdkStateManager } from '../../src/Core/SdkState';
 import { EventLogger } from '../../src/Core/Event';
 import { UserIdentityManager } from '../../src/Core/User';
 
 jest.mock('../../src/Core/Event');
-jest.mock('../../src/Core/Storage/LocalForage', () => ({
-    config: jest.fn(),
-    getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
-    setItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
-    ready: jest.fn().mockImplementation(() => Promise.resolve(true)),
+jest.mock('../../src/Core/Storage', () => ({
+    ...jest.requireActual('../../src/Core/Storage'),
+    NotiflyStorage: {
+        ensureInitialized: jest.fn(),
+        getItems: jest.fn(),
+        getItem: jest.fn(),
+        setItems: jest.fn(),
+        setItem: jest.fn(),
+        removeItems: jest.fn(),
+        removeItem: jest.fn(),
+    },
 }));
 
 describe('setUserProperties', () => {
@@ -21,14 +27,12 @@ describe('setUserProperties', () => {
     });
 
     test('sets external_user_id in localForage and logs the event', async () => {
-        jest.spyOn(storage, 'getItem').mockImplementation((key: string) => {
-            if (key === '__notiflyProjectID') {
-                return Promise.resolve('test');
-            } else if (key === '__notiflyUserID') {
-                return Promise.resolve('previous_notifly_user_id');
-            } else {
-                return Promise.resolve(null);
-            }
+        const _mockStorage = <Record<string, string>>{
+            __notiflyProjectID: 'test',
+            __notiflyUserID: 'previous_notifly_user_id',
+        };
+        jest.spyOn(NotiflyStorage, 'getItems').mockImplementation((keys: string[]) => {
+            return Promise.resolve(keys.map((key) => _mockStorage[key] || null));
         });
 
         const params = {
@@ -44,10 +48,12 @@ describe('setUserProperties', () => {
         SdkStateManager.state = SdkState.READY;
         await UserIdentityManager.setUserProperties(params);
 
-        expect(storage.getItem).toHaveBeenCalledWith('__notiflyProjectID');
-        expect(storage.getItem).toHaveBeenCalledWith('__notiflyUserID');
-        expect(storage.getItem).toHaveBeenCalledWith('__notiflyExternalUserID');
-        expect(storage.setItem).toHaveBeenCalledWith('__notiflyExternalUserID', '1234567890');
+        expect(NotiflyStorage.getItems).toHaveBeenCalledWith([
+            '__notiflyProjectID',
+            '__notiflyUserID',
+            '__notiflyExternalUserID',
+        ]);
+        expect(NotiflyStorage.setItem).toHaveBeenCalledWith('__notiflyExternalUserID', '1234567890');
         expect(EventLogger.logEvent).toHaveBeenCalledWith('set_user_properties', expectedParams, null, true);
     });
 

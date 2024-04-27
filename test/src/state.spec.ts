@@ -3,15 +3,17 @@ import type { Campaign } from '../../src/Core/Interfaces/Campaign';
 import { UserStateManager } from '../../src/Core/User/State';
 import { WebMessageManager } from '../../src/Core/WebMessages/Manager';
 
-jest.mock('localforage', () => ({
-    createInstance: jest.fn(() => {
-        return {
-            config: jest.fn(),
-            getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
-            setItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
-            ready: jest.fn().mockImplementation(() => Promise.resolve(true)),
-        };
-    }),
+jest.mock('../../src/Core/Storage', () => ({
+    ...jest.requireActual('../../src/Core/Storage'),
+    NotiflyStorage: {
+        ensureInitialized: jest.fn(),
+        getItems: jest.fn(),
+        getItem: jest.fn(),
+        setItems: jest.fn(),
+        setItem: jest.fn(),
+        removeItems: jest.fn(),
+        removeItem: jest.fn(),
+    },
 }));
 
 jest.useFakeTimers().setSystemTime(new Date('2023-05-31'));
