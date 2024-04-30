@@ -4,7 +4,7 @@
 /// <reference lib="webworker" />
 
 const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.3.0';
-const NOTIFLY_SERVICE_WORKER_SEMVER = '1.3.0';
+const NOTIFLY_SERVICE_WORKER_SEMVER = NOTIFLY_SERVICE_WORKER_VERSION.replace('v', '');
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 const NOTIFLY_OBJECT_STORE_NAME = 'notiflyconfig';
 
