@@ -5,49 +5,18 @@ import notifly from 'notifly-js-sdk';
 import logo from './logo.svg';
 import './App.css';
 import Playground from './Playground';
-import localforage from 'localforage';
+import NotiflyIndexedDBStore from './lib/Storage';
+import MyPage from './MyPage';
 
-const USER_ID = 'javascript-sdk-react-test';
-
-const storage = localforage.createInstance({
-    driver: localforage.INDEXEDDB, // This should be forced to IndexedDB because service worker is using IndexedDB
-    name: 'notifly',
-    storeName: 'notiflyconfig',
-    version: 1.0,
-});
+const storage = new NotiflyIndexedDBStore('notifly', 'notiflyconfig', 2);
 
 function App() {
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            // notifly.setUserId(USER_ID).then(() => {
-            //     console.log('User ID set');
-            //     console.log(Date.now());
-            // });
-
-            // notifly
-            //     .setUserProperties({
-            //         test_property: 'test_value',
-            //     })
-            //     .then(() => {
-            //         console.log('User property set');
-            //         console.log(Date.now());
-            //     });
-
-            notifly
-                .initialize({
-                    projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID!,
-                    username: process.env.REACT_APP_NOTIFLY_USERNAME!,
-                    password: process.env.REACT_APP_NOTIFLY_PASSWORD!,
-                })
-                .then(() => {
-                    console.log('Notifly SDK initialized');
-                });
-
-            notifly.trackEvent('sdk_initialized').then(() => {
-                console.log('SDK initialized event tracked');
-                console.log(Date.now());
-            });
-        }
+        notifly.initialize({
+            projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID as string,
+            username: process.env.REACT_APP_NOTIFLY_USERNAME as string,
+            password: process.env.REACT_APP_NOTIFLY_PASSWORD as string,
+        });
     }, []);
 
     return (
@@ -55,6 +24,7 @@ function App() {
             <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="playground" element={<Playground />} />
+                <Route path="mypage" element={<MyPage />} />
             </Routes>
         </div>
     );
@@ -72,7 +42,17 @@ function HomePage() {
             <UserPropertySetter />
             <TrackEventSection />
             <RemoveUserIdButton />
-            <Link to="/playground">Go to playground</Link>
+            <Link
+                to="/playground"
+                style={{
+                    color: '#61dafb',
+                    textDecoration: 'none',
+                    fontSize: '12px',
+                    marginTop: '10px',
+                }}
+            >
+                Go to playground
+            </Link>
             <Outlet />
         </div>
     );
@@ -158,8 +138,8 @@ function UserIdSetter() {
     };
 
     const handleSetUserId = () => {
-        notifly.setUserId(userIdInput);
-        console.log(`Set user id to ${userIdInput}`);
+        notifly.setUserId(userIdInput).then(() => console.log(`Set user id to ${userIdInput}`));
+        window.location.href = '/mypage';
     };
 
     return (

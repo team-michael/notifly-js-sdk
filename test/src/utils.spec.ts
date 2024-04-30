@@ -1,18 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import uuid from 'uuid';
-import storage from '../../src/Core/Storage/LocalForage';
+import { NotiflyStorage } from '../../src/Core/Storage';
 import { NAMESPACE } from '../../src/Constants';
 import { getPlatform, storeUserIdentity } from '../../src/Core/Utils';
 
-jest.mock('localforage', () => ({
-    createInstance: jest.fn(() => {
-        return {
-            config: jest.fn(),
-            getItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
-            setItem: jest.fn().mockImplementation(() => Promise.resolve(null)),
-            ready: jest.fn().mockImplementation(() => Promise.resolve(true)),
-        };
-    }),
+jest.mock('../../src/Core/Storage', () => ({
+    ...jest.requireActual('../../src/Core/Storage'),
+    NotiflyStorage: {
+        ensureInitialized: jest.fn(),
+        getItems: jest.fn(),
+        getItem: jest.fn(),
+        setItems: jest.fn(),
+        setItem: jest.fn(),
+        removeItems: jest.fn(),
+        removeItem: jest.fn(),
+    },
 }));
 
 jest.mock('uuid', () => ({
@@ -41,20 +43,13 @@ describe('store user identity', () => {
             __notiflyExternalUserID: externalUserID,
         };
 
-        jest.spyOn(storage, 'getItem').mockImplementation((key: string) => {
-            switch (key) {
-                case '__notiflyProjectID':
-                    return mockStorage.__notiflyProjectID;
-                case '__notiflyUserID':
-                    return mockStorage.__notiflyUserID;
-                case '__notiflyExternalUserID':
-                    return mockStorage.__notiflyExternalUserID;
-                default:
-                    return Promise.resolve(null);
-            }
+        jest.spyOn(NotiflyStorage, 'getItems').mockImplementation((keys: string[]) => {
+            return Promise.resolve(keys.map((key) => mockStorage[key] || null));
         });
-        jest.spyOn(storage, 'setItem').mockImplementation((key: string, value: unknown) => {
-            mockStorage[key] = value;
+        jest.spyOn(NotiflyStorage, 'setItems').mockImplementation((data: Record<string, unknown>) => {
+            for (const [key, value] of Object.entries(data)) {
+                mockStorage[key] = value;
+            }
             return Promise.resolve();
         });
 
