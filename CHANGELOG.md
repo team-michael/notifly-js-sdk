@@ -1,6 +1,10 @@
-# 2.9.0
+# 2.10.0
 
 -   Now advanced triggering condition is available for in-web messages
+
+# 2.9.0
+
+-   Fix build crash when using Next.js framework
 
 # 2.8.4
 
