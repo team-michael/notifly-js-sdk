@@ -1,3 +1,7 @@
+# 2.9.0
+
+-   Fix build crash when using Next.js framework
+
 # 2.8.4
 
 -   Remove IndexedDB versioning to prevent bugs when browser has higher version of IndexedDB
