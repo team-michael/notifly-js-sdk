@@ -1,6 +1,7 @@
 # 2.9.0
 
 -   Now advanced triggering condition is available for in-web messages
+
 # 2.8.3
 
 -   Fix storage hanging indefinitely when browser shuts down unexpectedly for mobile Safari
