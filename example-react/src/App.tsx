@@ -8,7 +8,7 @@ import Playground from './Playground';
 import NotiflyIndexedDBStore from './lib/Storage';
 import MyPage from './MyPage';
 
-const storage = new NotiflyIndexedDBStore('notifly', 'notiflyconfig', 2);
+const storage = new NotiflyIndexedDBStore('notifly', 'notiflyconfig');
 
 function App() {
     useEffect(() => {

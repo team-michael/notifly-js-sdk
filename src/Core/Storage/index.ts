@@ -1,6 +1,6 @@
 import NotiflyIndexedDBStore from './Core';
 
-const storage = new NotiflyIndexedDBStore('notifly', 'notiflyconfig', 2);
+const storage = new NotiflyIndexedDBStore('notifly', 'notiflyconfig');
 
 export enum NotiflyStorageKeys {
     // Project

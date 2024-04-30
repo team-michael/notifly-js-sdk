@@ -135,7 +135,7 @@ async function getItemFromIndexedDB(dbName: string, key: IDBValidKey) {
 
 function openDB(name: string): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
-        const openReq = indexedDB.open(name, 2);
+        const openReq = indexedDB.open(name);
         openReq.onerror = () => reject(openReq.error);
         openReq.onsuccess = () => resolve(openReq.result);
         openReq.onupgradeneeded = (event) => {

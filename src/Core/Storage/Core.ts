@@ -1,7 +1,6 @@
 export default class NotiflyIndexedDBStore {
     private _dbName: string;
     private _storeName: string;
-    private _version: number | undefined;
 
     private _db: IDBDatabase | null = null;
     private _activeTransactions: IDBTransaction[] = [];
@@ -9,7 +8,6 @@ export default class NotiflyIndexedDBStore {
     constructor(dbName: string, storeName: string, version?: number) {
         this._dbName = dbName;
         this._storeName = storeName;
-        this._version = version;
 
         const onWindowUnload = this._onWindowUnload.bind(this);
         window.addEventListener('beforeunload', onWindowUnload);
@@ -164,7 +162,7 @@ export default class NotiflyIndexedDBStore {
         }
 
         return new Promise<IDBDatabase>((resolve, reject) => {
-            const openRequest = indexedDB.open(this._dbName, this._version);
+            const openRequest = indexedDB.open(this._dbName);
 
             openRequest.onerror = (event) => {
                 reject((event.target as IDBOpenDBRequest).error);
