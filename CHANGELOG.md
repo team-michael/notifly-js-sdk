@@ -1,3 +1,7 @@
+# 2.8.3
+
+-   Fix storage hanging indefinitely when browser shuts down unexpectedly for mobile Safari
+
 # 2.8.2
 
 -   Fix storage hanging indefinitely when browser shuts down unexpectedly

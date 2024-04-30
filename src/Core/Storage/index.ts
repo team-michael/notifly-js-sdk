@@ -24,43 +24,44 @@ export enum NotiflyStorageKeys {
 }
 
 export class NotiflyStorage {
+    private static readonly TRANSACTION_TIMEOUT = 1000;
+
     static async ensureInitialized() {
-        await storage.ready();
+        return this._withTimeout(storage.ready());
     }
 
     static async getItems(keys: NotiflyStorageKeys[]): Promise<Array<string | null>> {
-        return Promise.all(keys.map((key) => this.getItem(key)));
+        return this._withTimeout(Promise.all(keys.map((key) => this.getItem(key))));
     }
 
     static async getItem(key: NotiflyStorageKeys): Promise<string | null> {
-        return (await this._get(key)) ?? null;
+        const value = await this._withTimeout(storage.getItem(key));
+        return value ?? null;
     }
 
     static async setItems(data: Partial<Record<NotiflyStorageKeys, string>>): Promise<void> {
-        return storage.setItems(Object.entries(data));
+        return this._withTimeout(storage.setItems(Object.entries(data)));
     }
 
     static async setItem(key: NotiflyStorageKeys, value: string): Promise<void> {
-        await this._set(key, value);
+        return this._withTimeout(storage.setItem(key, value));
     }
 
     static async removeItems(keys: NotiflyStorageKeys[]): Promise<void> {
-        return storage.removeItems(keys);
+        return this._withTimeout(storage.removeItems(keys));
     }
 
     static async removeItem(key: NotiflyStorageKeys): Promise<void> {
-        await this._remove(key);
+        return this._withTimeout(storage.removeItem(key));
     }
 
-    private static async _get(key: string): Promise<string | null> {
-        return storage.getItem(key);
-    }
-
-    private static async _set(key: string, value: string): Promise<void> {
-        await storage.setItem(key, value);
-    }
-
-    private static async _remove(key: string): Promise<void> {
-        await storage.removeItem(key);
+    private static async _withTimeout<T = unknown>(
+        promise: Promise<T>,
+        timeout = this.TRANSACTION_TIMEOUT
+    ): Promise<T> {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => reject(new Error('Working with storage is not finished in a reasonable time')), timeout);
+            promise.then(resolve).catch(reject);
+        });
     }
 }
