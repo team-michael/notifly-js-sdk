@@ -4,7 +4,7 @@ export default class NotiflyIndexedDBStore {
 
     private _db: IDBDatabase | null = null;
 
-    constructor(dbName: string, storeName: string, version?: number) {
+    constructor(dbName: string, storeName: string) {
         this._dbName = dbName;
         this._storeName = storeName;
     }
