@@ -9,16 +9,6 @@ export default class NotiflyIndexedDBStore {
         this._dbName = dbName;
         this._storeName = storeName;
         this._version = version;
-
-        window.addEventListener('beforeunload', () => {
-            if (this._db) {
-                try {
-                    this._db.close();
-                } catch (e) {
-                    /* Do nothing */
-                }
-            }
-        });
     }
 
     async ready() {
@@ -46,12 +36,13 @@ export default class NotiflyIndexedDBStore {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const transaction = this._db!.transaction([this._storeName], 'readwrite');
             const store = transaction.objectStore(this._storeName);
-            store.put(value, key);
+            const request = store.put(value, key);
 
-            transaction.oncomplete = () => {
+            request.onsuccess = () => {
                 resolve();
             };
-            transaction.onerror = (event) => {
+
+            request.onerror = (event) => {
                 reject((event.target as IDBRequest).error);
             };
         });
@@ -89,6 +80,7 @@ export default class NotiflyIndexedDBStore {
             request.onsuccess = () => {
                 resolve();
             };
+
             request.onerror = (event) => {
                 reject((event.target as IDBRequest).error);
             };

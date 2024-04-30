@@ -1,6 +1,6 @@
 import NotiflyIndexedDBStore from './Core';
 
-const storage = new NotiflyIndexedDBStore('notifly', 'notiflyconfig');
+const storage = new NotiflyIndexedDBStore('notifly', 'notiflyconfig', 2);
 
 export enum NotiflyStorageKeys {
     // Project
@@ -37,7 +37,7 @@ export class NotiflyStorage {
     }
 
     static async setItems(data: Partial<Record<NotiflyStorageKeys, string>>): Promise<void> {
-        await Promise.all(Object.entries(data).map(([key, value]) => this.setItem(key as NotiflyStorageKeys, value)));
+        return storage.setItems(Object.entries(data));
     }
 
     static async setItem(key: NotiflyStorageKeys, value: string): Promise<void> {
@@ -45,7 +45,7 @@ export class NotiflyStorage {
     }
 
     static async removeItems(keys: NotiflyStorageKeys[]): Promise<void> {
-        await Promise.all(keys.map((key) => this.removeItem(key)));
+        return storage.removeItems(keys);
     }
 
     static async removeItem(key: NotiflyStorageKeys): Promise<void> {

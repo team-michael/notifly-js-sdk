@@ -48,7 +48,6 @@ export class UserStateManager {
     }
 
     static async saveState() {
-        console.log('[Notifly] Saving user state...', this.state);
         await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_STATE, JSON.stringify(this.state));
     }
 
