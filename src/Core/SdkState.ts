@@ -5,6 +5,7 @@ export enum SdkState {
     READY = 1, // SDK is initialized and ready to use
     REFRESHING = 2, // SDK is changing user ID
     FAILED = 3, // SDK failed
+    TERMINATED = 4, // SDK is terminated
 }
 
 export enum SdkType {
@@ -51,6 +52,10 @@ export class SdkStateManager {
             default:
                 break;
         }
+    }
+
+    static get halted(): boolean {
+        return this._state === SdkState.FAILED || this._state === SdkState.TERMINATED;
     }
 
     static setSdkType(type: SdkType): void {

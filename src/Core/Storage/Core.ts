@@ -27,8 +27,7 @@ export default class NotiflyIndexedDBStore {
         await this.ready();
 
         return new Promise<any>((resolve, reject) => {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const transaction = this._db!.transaction([this._storeName], 'readonly');
+            const transaction = this._getTransaction('readonly');
             this._activeTransactions.push(transaction);
 
             const store = transaction.objectStore(this._storeName);
@@ -59,9 +58,9 @@ export default class NotiflyIndexedDBStore {
 
         return new Promise<void>((resolve, reject) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const store = this._db!.transaction([this._storeName], 'readwrite').objectStore(this._storeName);
+            const transaction = this._getTransaction('readwrite');
+            const store = transaction.objectStore(this._storeName);
             store.put(value, key);
-            const transaction = store.transaction;
             this._activeTransactions.push(transaction);
 
             transaction.oncomplete = () => {
@@ -83,12 +82,11 @@ export default class NotiflyIndexedDBStore {
         await this.ready();
 
         return new Promise<void>((resolve, reject) => {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const store = this._db!.transaction([this._storeName], 'readwrite').objectStore(this._storeName);
+            const transaction = this._getTransaction('readwrite');
+            const store = transaction.objectStore(this._storeName);
             entries.forEach(([key, value]) => {
                 store.put(value, key);
             });
-            const transaction = store.transaction;
             this._activeTransactions.push(transaction);
 
             transaction.oncomplete = () => {
@@ -110,10 +108,9 @@ export default class NotiflyIndexedDBStore {
         await this.ready();
 
         return new Promise<void>((resolve, reject) => {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const store = this._db!.transaction([this._storeName], 'readwrite').objectStore(this._storeName);
+            const transaction = this._getTransaction('readwrite');
+            const store = transaction.objectStore(this._storeName);
             store.delete(key);
-            const transaction = store.transaction;
             this._activeTransactions.push(transaction);
 
             transaction.oncomplete = () => {
@@ -135,12 +132,11 @@ export default class NotiflyIndexedDBStore {
         await this.ready();
 
         return new Promise<void>((resolve, reject) => {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const store = this._db!.transaction([this._storeName], 'readwrite').objectStore(this._storeName);
+            const transaction = this._getTransaction('readwrite');
+            const store = transaction.objectStore(this._storeName);
             keys.forEach((key) => {
                 store.delete(key);
             });
-            const transaction = store.transaction;
             this._activeTransactions.push(transaction);
 
             transaction.oncomplete = () => {
@@ -194,6 +190,17 @@ export default class NotiflyIndexedDBStore {
                 /* Do nothing */
             }
         });
+    }
+
+    private _getTransaction(mode: IDBTransactionMode) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        try {
+            return this._db!.transaction([this._storeName], mode);
+        } catch (e) {
+            throw new Error(
+                '[Notifly] Transaction interrupted unexpectedly. This is mostly due to the database being closed by the sudden browser shutdown.'
+            );
+        }
     }
 
     private _removeTransaction(transaction: IDBTransaction) {

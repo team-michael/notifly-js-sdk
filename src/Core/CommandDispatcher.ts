@@ -54,6 +54,8 @@ export class CommandDispatcher implements SdkStateObserver {
         }
 
         switch (SdkStateManager.state) {
+            case SdkState.TERMINATED:
+                throw new Error('[Notifly] Notifly SDK is terminated. Ingnoring command.');
             case SdkState.FAILED:
                 throw new Error(`[Notifly] Notifly SDK has failed to operate. Cannot execute command ${command.type}`);
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment

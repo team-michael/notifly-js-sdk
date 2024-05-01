@@ -2,26 +2,30 @@ import {
     initialize,
     trackEvent,
     setUserId,
+    removeUserId,
     setUserProperties,
     getUserId,
     getUserProperties,
+    requestPermission,
     setSdkType,
     setSdkVersion,
     setSource,
-    requestPermission,
+    getSdkVersion,
 } from './Client';
 
 const notifly = {
     initialize,
     trackEvent,
-    setUserProperties,
     setUserId,
-    setSdkType,
-    setSdkVersion,
-    setSource,
+    removeUserId,
+    setUserProperties,
     getUserId,
     getUserProperties,
     requestPermission,
+    setSdkType,
+    setSdkVersion,
+    setSource,
+    getSdkVersion,
 };
 
 export default notifly;
