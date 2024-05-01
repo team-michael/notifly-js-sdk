@@ -53,6 +53,13 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
         return true;
     };
 
+    if (typeof window === 'undefined') {
+        console.error(
+            '[Notifly] The SDK requires a browser environment to function properly. Please ensure that you are using the SDK within a supported browser environment.'
+        );
+        return onInitializationFailed();
+    }
+
     const { projectId, username, password } = options;
 
     if (!isValidProjectId(projectId)) {
@@ -65,12 +72,14 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
         return onInitializationFailed();
     }
 
-    if (typeof window === 'undefined') {
-        console.error(
-            '[Notifly] The SDK requires a browser environment to function properly. Please ensure that you are using the SDK within a supported browser environment.'
-        );
-        return onInitializationFailed();
-    }
+    window.addEventListener('beforeunload', () => {
+        SdkStateManager.state = SdkState.TERMINATED;
+    });
+    window.addEventListener('pagehide', (event) => {
+        if (event.persisted) {
+            SdkStateManager.state = SdkState.TERMINATED;
+        }
+    });
 
     try {
         await initializeNotiflyStorage(projectId, username, password);
@@ -95,6 +104,10 @@ export async function trackEvent(
     eventParams: Record<string, any> = {},
     segmentationEventParamKeys: string[] | null = null
 ): Promise<void> {
+    if (SdkStateManager.halted) {
+        console.warn('[Notifly] SDK has been stopped due to the unrecoverable error or termination. Ignoring...');
+        return;
+    }
     try {
         await CommandDispatcher.getInstance().dispatch(
             new TrackEventCommand({
@@ -104,7 +117,8 @@ export async function trackEvent(
             })
         );
     } catch (error) {
-        console.error('[Notifly] Error tracking event: ', error);
+        const logger = SdkStateManager.halted ? console.warn : console.error;
+        logger('[Notifly] Error tracking event: ', error);
     }
 }
 
@@ -122,6 +136,10 @@ export async function trackEvent(
  * await setUserId() // Removes the user ID
  */
 export async function setUserId(userId?: string | null | undefined): Promise<void> {
+    if (SdkStateManager.halted) {
+        console.warn('[Notifly] SDK has been stopped due to the unrecoverable error or termination. Ignoring...');
+        return;
+    }
     try {
         await CommandDispatcher.getInstance().dispatch(
             new SetUserIdCommand({
@@ -129,7 +147,30 @@ export async function setUserId(userId?: string | null | undefined): Promise<voi
             })
         );
     } catch (error) {
-        console.error('[Notifly] Error setting user ID: ', error);
+        const logger = SdkStateManager.halted ? console.warn : console.error;
+        logger('[Notifly] Error setting user ID: ', error);
+    }
+}
+
+/**
+ * Removes the external user ID and Notifly user ID from localForage.
+ *
+ * @async
+ * @returns {Promise<void>}
+ *
+ * @example
+ * await removeUserId();
+ */
+export async function removeUserId(): Promise<void> {
+    if (SdkStateManager.halted) {
+        console.warn('[Notifly] SDK has been stopped due to the unrecoverable error or termination. Ignoring...');
+        return;
+    }
+    try {
+        await CommandDispatcher.getInstance().dispatch(new RemoveUserIdCommand());
+    } catch (error) {
+        const logger = SdkStateManager.halted ? console.warn : console.error;
+        logger('[Notifly] Error removing user ID: ', error);
     }
 }
 
@@ -144,6 +185,10 @@ export async function setUserId(userId?: string | null | undefined): Promise<voi
  * await setUserProperties({ external_user_id: 'myUserID' });
  */
 export async function setUserProperties(params: Record<string, any>): Promise<void> {
+    if (SdkStateManager.halted) {
+        console.warn('[Notifly] SDK has been stopped due to the unrecoverable error or termination. Ignoring...');
+        return;
+    }
     try {
         await CommandDispatcher.getInstance().dispatch(
             new SetUserPropertiesCommand({
@@ -151,7 +196,8 @@ export async function setUserProperties(params: Record<string, any>): Promise<vo
             })
         );
     } catch (error) {
-        console.error('[Notifly] Error setting user properties: ', error);
+        const logger = SdkStateManager.halted ? console.warn : console.error;
+        logger('[Notifly] Error setting user properties: ', error);
     }
 }
 
@@ -165,6 +211,9 @@ export async function setUserProperties(params: Record<string, any>): Promise<vo
  * const currentUserId = await getUserId();
  */
 export async function getUserId(): Promise<string | null> {
+    if (SdkStateManager.halted) {
+        throw new Error('[Notifly] SDK has been stopped due to the unrecoverable error or termination.');
+    }
     return await CommandDispatcher.getInstance().dispatch(new GetUserIdCommand());
 }
 
@@ -174,27 +223,17 @@ export async function getUserId(): Promise<string | null> {
  * @returns {Promise<Record<string, any> | null>}
  */
 export async function getUserProperties(): Promise<Record<string, any> | null> {
+    if (SdkStateManager.halted) {
+        throw new Error('[Notifly] SDK has been stopped due to the unrecoverable error or termination.');
+    }
     return await CommandDispatcher.getInstance().dispatch(new getUserPropertiesCommand());
 }
 
-/**
- * Removes the external user ID and Notifly user ID from localForage.
- *
- * @async
- * @returns {Promise<void>}
- *
- * @example
- * await removeUserId();
- */
-export async function removeUserId(): Promise<void> {
-    try {
-        await CommandDispatcher.getInstance().dispatch(new RemoveUserIdCommand());
-    } catch (error) {
-        console.error('[Notifly] Failed to remove userID');
-    }
-}
-
 export async function requestPermission(languageToForce?: Language): Promise<void> {
+    if (SdkStateManager.halted) {
+        console.warn('[Notifly] SDK has been stopped due to the unrecoverable error or termination. Ignoring...');
+        return;
+    }
     try {
         let sanitizedLanguageToForce: Language | undefined = languageToForce;
         if (typeof languageToForce !== 'undefined' && !Object.values(Language).includes(languageToForce)) {
@@ -206,7 +245,8 @@ export async function requestPermission(languageToForce?: Language): Promise<voi
 
         await CommandDispatcher.getInstance().dispatch(new RequestPermissionCommand(sanitizedLanguageToForce));
     } catch (error) {
-        console.error('[Notifly] Failed to request permission', error);
+        const logger = SdkStateManager.halted ? console.warn : console.error;
+        logger('[Notifly] Failed to request permission', error);
     }
 }
 
@@ -223,6 +263,6 @@ export function setSdkVersion(sdkVersion: string) {
     SdkStateManager.setSdkVersion(sdkVersion);
 }
 
-export function getVersion(): string {
+export function getSdkVersion(): string {
     return SdkStateManager.getSdkVersion();
 }
