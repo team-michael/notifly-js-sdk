@@ -8,14 +8,13 @@ import {
     GetUserIdCommand,
     getUserPropertiesCommand,
     RequestPermissionCommand,
-} from './Core/Interfaces/Command';
+} from './Core/Command/Commands';
 import { Language } from './Core/Interfaces/RequestPermissionPromptDesignParams';
 
-import { CommandDispatcher } from './Core/CommandDispatcher';
+import { CommandManager } from './Core/Command';
 import { NotiflyAPI } from './Core/API';
 import { SdkStateManager, SdkState, type SdkType } from './Core/SdkState';
 import { SessionManager } from './Core/Session';
-import { UserStateManager } from './Core/User/State';
 import { initializeNotiflyStorage, isValidProjectId } from './Core/Utils';
 
 let initSemaphore = false;
@@ -84,7 +83,6 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
     try {
         await initializeNotiflyStorage(projectId, username, password);
         await NotiflyAPI.initialize();
-        UserStateManager.initialize();
         await SessionManager.initialize();
         return onInitializationSuccess();
     } catch (error) {
@@ -109,7 +107,7 @@ export async function trackEvent(
         return;
     }
     try {
-        await CommandDispatcher.getInstance().dispatch(
+        await CommandManager.getInstance().dispatch(
             new TrackEventCommand({
                 eventName,
                 eventParams,
@@ -141,7 +139,7 @@ export async function setUserId(userId?: string | null | undefined): Promise<voi
         return;
     }
     try {
-        await CommandDispatcher.getInstance().dispatch(
+        await CommandManager.getInstance().dispatch(
             new SetUserIdCommand({
                 userId: userId,
             })
@@ -167,7 +165,7 @@ export async function removeUserId(): Promise<void> {
         return;
     }
     try {
-        await CommandDispatcher.getInstance().dispatch(new RemoveUserIdCommand());
+        await CommandManager.getInstance().dispatch(new RemoveUserIdCommand());
     } catch (error) {
         const logger = SdkStateManager.halted ? console.warn : console.error;
         logger('[Notifly] Error removing user ID: ', error);
@@ -190,7 +188,7 @@ export async function setUserProperties(params: Record<string, any>): Promise<vo
         return;
     }
     try {
-        await CommandDispatcher.getInstance().dispatch(
+        await CommandManager.getInstance().dispatch(
             new SetUserPropertiesCommand({
                 params,
             })
@@ -214,7 +212,7 @@ export async function getUserId(): Promise<string | null> {
     if (SdkStateManager.halted) {
         throw new Error('[Notifly] SDK has been stopped due to the unrecoverable error or termination.');
     }
-    return await CommandDispatcher.getInstance().dispatch(new GetUserIdCommand());
+    return await CommandManager.getInstance().dispatch(new GetUserIdCommand());
 }
 
 /**
@@ -226,7 +224,7 @@ export async function getUserProperties(): Promise<Record<string, any> | null> {
     if (SdkStateManager.halted) {
         throw new Error('[Notifly] SDK has been stopped due to the unrecoverable error or termination.');
     }
-    return await CommandDispatcher.getInstance().dispatch(new getUserPropertiesCommand());
+    return await CommandManager.getInstance().dispatch(new getUserPropertiesCommand());
 }
 
 export async function requestPermission(languageToForce?: Language): Promise<void> {
@@ -243,7 +241,7 @@ export async function requestPermission(languageToForce?: Language): Promise<voi
             sanitizedLanguageToForce = undefined;
         }
 
-        await CommandDispatcher.getInstance().dispatch(new RequestPermissionCommand(sanitizedLanguageToForce));
+        await CommandManager.getInstance().dispatch(new RequestPermissionCommand(sanitizedLanguageToForce));
     } catch (error) {
         const logger = SdkStateManager.halted ? console.warn : console.error;
         logger('[Notifly] Failed to request permission', error);

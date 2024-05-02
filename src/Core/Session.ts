@@ -34,9 +34,13 @@ export class SessionManager {
     }
 
     static async saveLastSessionTime() {
-        const now = Math.floor(Date.now() / 1000);
-        this._lastSessionTime = now;
-        await NotiflyStorage.setItem(NotiflyStorageKeys.LAST_SESSION_TIME, now.toString());
+        try {
+            const now = Math.floor(Date.now() / 1000);
+            this._lastSessionTime = now;
+            await NotiflyStorage.setItem(NotiflyStorageKeys.LAST_SESSION_TIME, now.toString());
+        } catch (e) {
+            /* Do nothing */
+        }
     }
 
     static onWindowFocus() {

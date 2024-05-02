@@ -5,4 +5,4 @@ export enum NAMESPACE {
     DEVICEID = '830848b3-2444-467d-9cd8-3430d2738c57',
 }
 
-export const LAST_SESSION_TIME_LOGGING_INTERVAL = 3000; // 3 seconds
+export const LAST_SESSION_TIME_LOGGING_INTERVAL = 5000; // 5 seconds

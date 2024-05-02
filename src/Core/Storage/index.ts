@@ -1,4 +1,4 @@
-import NotiflyIndexedDBStore from './Core';
+import NotiflyIndexedDBStore from './IDB';
 
 export enum NotiflyStorageKeys {
     // Project

@@ -1,4 +1,6 @@
-export default class NotiflyIndexedDBStore {
+import { SdkStateManager, SdkStateObserver } from '../SdkState';
+
+export default class NotiflyIndexedDBStore implements SdkStateObserver {
     private _dbName: string;
     private _storeName: string;
 
@@ -8,15 +10,11 @@ export default class NotiflyIndexedDBStore {
     constructor(dbName: string, storeName: string) {
         this._dbName = dbName;
         this._storeName = storeName;
+        SdkStateManager.registerObserver(this);
+    }
 
-        const onWindowUnload = this._onWindowUnload.bind(this);
-        window.addEventListener('beforeunload', onWindowUnload);
-        // For Safari, beforeunload event is not fired when the page is cached.
-        window.addEventListener('pagehide', (event) => {
-            if (event.persisted) {
-                onWindowUnload();
-            }
-        });
+    onTerminated() {
+        this._onWindowUnload.call(this);
     }
 
     async ready() {

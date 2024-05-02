@@ -37,18 +37,15 @@ export class UserStateManager {
         };
     }
 
-    static initialize() {
-        // Save user state before window is closed
-        const handler = () => {
-            if (document.visibilityState === 'hidden') {
-                this.saveState();
-            }
-        };
-        window.addEventListener('visibilitychange', handler.bind(this));
-    }
-
     static async saveState() {
-        await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_STATE, JSON.stringify(this.state));
+        try {
+            await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_STATE, JSON.stringify(this.state));
+        } catch (e) {
+            console.warn(
+                '[Notifly] Failed to save state to IndexedDB. This is mostly due to the sudden browser shutdown.',
+                e
+            );
+        }
     }
 
     static async sync(options: SyncStateOptions): Promise<void> {
@@ -56,14 +53,10 @@ export class UserStateManager {
     }
 
     static async refresh(policy: SyncStatePolicy = SyncStatePolicy.OVERWRITE) {
-        try {
-            await this._syncState({
-                policy,
-                useStorageIfAvailable: false,
-            });
-        } catch (error) {
-            console.error('[Notifly] Failed to refresh state: ', error);
-        }
+        return this._syncState({
+            policy,
+            useStorageIfAvailable: false,
+        });
     }
 
     static updateAndGetCampaignHiddenUntilDataAccordingToReEligibleCondition(
