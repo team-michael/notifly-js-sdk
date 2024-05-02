@@ -10,22 +10,100 @@ import MyPage from './MyPage';
 
 const storage = new NotiflyIndexedDBStore('notifly', 'notiflyconfig');
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 function App() {
+    const [initStatus, setInitStatus] = useState('Initializing...');
+    const [setUserIdStatus, setSetUserIdStatus] = useState('');
+    const [setUserPropertiesStatus, setSetUserPropertiesStatus] = useState('');
+    const [trackEventStatus, setTrackEventStatus] = useState('');
+
+    const initialize = async () => {
+        try {
+            await notifly.initialize({
+                projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID as string,
+                username: process.env.REACT_APP_NOTIFLY_USERNAME as string,
+                password: process.env.REACT_APP_NOTIFLY_PASSWORD as string,
+            });
+            setInitStatus('Initialized');
+        } catch (e) {
+            setInitStatus(`Failed to initialize: ${e}`);
+        }
+    };
+
+    const setUserId = async (userId: string) => {
+        try {
+            await notifly.setUserId(userId);
+            setSetUserIdStatus(`User Id Set to ${userId}`);
+        } catch (e) {
+            setSetUserIdStatus(`Failed to set user id: ${e}`);
+        }
+    };
+
+    const setUserProperties = async (properties: { [key: string]: string | number | boolean | string[] }) => {
+        try {
+            await notifly.setUserProperties(properties);
+            setSetUserPropertiesStatus(`User Properties Set to ${JSON.stringify(properties)}`);
+        } catch (e) {
+            setSetUserPropertiesStatus(`Failed to set user properties: ${e}`);
+        }
+    };
+
+    const trackEvent = async (
+        eventName: string,
+        eventParams?: { [key: string]: string | number | boolean | string[] }
+    ) => {
+        try {
+            await notifly.trackEvent(eventName, eventParams);
+            setTrackEventStatus(`Event ${eventName} tracked with params ${JSON.stringify(eventParams)}`);
+        } catch (e) {
+            setTrackEventStatus(`Failed to track event: ${e}`);
+        }
+    };
+
+    const test = async () => {
+        initialize();
+        for (let i = 0; i < 5; i++) {
+            for (let j = 0; j < 5; j++) {
+                trackEvent(`test_event_${i}_${j}`);
+            }
+            setUserId(`test_user_${i}`);
+        }
+    };
+
     useEffect(() => {
-        notifly.initialize({
-            projectId: process.env.REACT_APP_NOTIFLY_PROJECT_ID as string,
-            username: process.env.REACT_APP_NOTIFLY_USERNAME as string,
-            password: process.env.REACT_APP_NOTIFLY_PASSWORD as string,
-        });
+        test();
     }, []);
 
     return (
         <div className="App">
+            <StatusPanel {...{ initStatus, setUserIdStatus, setUserPropertiesStatus, trackEventStatus }} />
             <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="playground" element={<Playground />} />
                 <Route path="mypage" element={<MyPage />} />
             </Routes>
+        </div>
+    );
+}
+
+function StatusPanel({
+    initStatus,
+    setUserIdStatus,
+    setUserPropertiesStatus,
+    trackEventStatus,
+}: {
+    initStatus: string;
+    setUserIdStatus: string;
+    setUserPropertiesStatus: string;
+    trackEventStatus: string;
+}) {
+    return (
+        <div>
+            <p>Init Status: {initStatus}</p>
+            <p>SetUserId Status: {setUserIdStatus}</p>
+            <p>SetUserProperties Status: {setUserPropertiesStatus}</p>
+            <p>TrackEvent Status: {trackEventStatus}</p>
         </div>
     );
 }
@@ -38,6 +116,7 @@ function HomePage() {
                 Notifly js SDK example react app
             </p>
             <UserIdSetter />
+            <UserIdGetter />
             <IndexedDBDumper />
             <UserPropertySetter />
             <TrackEventSection />
@@ -53,6 +132,19 @@ function HomePage() {
             >
                 Go to playground
             </Link>
+            <button
+                onClick={() => {
+                    window.location.href = '/playground';
+                }}
+                style={{
+                    color: '#61dafb',
+                    textDecoration: 'none',
+                    fontSize: '12px',
+                    marginTop: '10px',
+                }}
+            >
+                Go to playground (hard)
+            </button>
             <Outlet />
         </div>
     );
@@ -86,6 +178,32 @@ function IndexedDBDumper() {
                 }}
             >
                 {value}
+            </pre>
+        </div>
+    );
+}
+
+function UserIdGetter() {
+    const [id, setId] = useState('');
+    const handleGetUserId = async () => {
+        const value = await notifly.getUserId();
+        setId(value || '[Not Exists]');
+    };
+
+    return (
+        <div>
+            <button onClick={handleGetUserId}>Check User Id</button>
+            <pre
+                style={{
+                    whiteSpace: 'pre-wrap',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    fontSize: '12px',
+                    maxWidth: '500px',
+                    textAlign: 'left',
+                }}
+            >
+                {id}
             </pre>
         </div>
     );
@@ -139,7 +257,6 @@ function UserIdSetter() {
 
     const handleSetUserId = () => {
         notifly.setUserId(userIdInput).then(() => console.log(`Set user id to ${userIdInput}`));
-        window.location.href = '/mypage';
     };
 
     return (
