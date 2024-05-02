@@ -33,6 +33,10 @@ export default class PriorityQueue<T extends IComparable<T>> {
         return this.isEmpty() ? undefined : this.heap[0];
     }
 
+    clear(): void {
+        this.heap = [];
+    }
+
     private bubbleUp(index: number): void {
         const parentIndex = Math.floor((index - 1) / 2);
         if (parentIndex >= 0 && this.compare(index, parentIndex) < 0) {

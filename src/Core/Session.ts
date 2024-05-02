@@ -34,9 +34,13 @@ export class SessionManager {
     }
 
     static async saveLastSessionTime() {
-        const now = Math.floor(Date.now() / 1000);
-        this._lastSessionTime = now;
-        await NotiflyStorage.setItem(NotiflyStorageKeys.LAST_SESSION_TIME, now.toString());
+        try {
+            const now = Math.floor(Date.now() / 1000);
+            this._lastSessionTime = now;
+            await NotiflyStorage.setItem(NotiflyStorageKeys.LAST_SESSION_TIME, now.toString());
+        } catch (e) {
+            /* Do nothing */
+        }
     }
 
     static onWindowFocus() {
@@ -56,7 +60,7 @@ export class SessionManager {
         });
     }
 
-    static onWindowBlur() {
+    static onWindowUnfocus() {
         if (this._storageSaverIntervalId) {
             clearInterval(this._storageSaverIntervalId);
             this._storageSaverIntervalId = null;
@@ -127,6 +131,12 @@ export class SessionManager {
 
         // Register listeners
         window.addEventListener('focus', this.onWindowFocus.bind(this));
-        window.addEventListener('blur', this.onWindowBlur.bind(this));
+        window.addEventListener('blur', this.onWindowUnfocus.bind(this));
+        window.addEventListener('beforeunload', this.onWindowUnfocus.bind(this));
+        window.addEventListener('pagehide', (event) => {
+            if (event.persisted) {
+                this.onWindowUnfocus.call(this);
+            }
+        });
     }
 }

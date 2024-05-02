@@ -16,6 +16,18 @@ jest.mock('../../src/Core/Storage', () => ({
         removeItem: jest.fn(),
     },
 }));
+jest.mock('../../src/Core/API', () => ({
+    NotiflyAPI: {
+        initialize: jest.fn().mockReturnValue(Promise.resolve()),
+        call: jest.fn().mockImplementation(() =>
+            Promise.resolve({
+                campaignData: [],
+                eventIntermediateCountsData: [],
+                userData: {},
+            })
+        ),
+    },
+}));
 
 describe('setUserProperties', () => {
     beforeEach(() => {
@@ -30,6 +42,7 @@ describe('setUserProperties', () => {
         const _mockStorage = <Record<string, string>>{
             __notiflyProjectID: 'test',
             __notiflyUserID: 'previous_notifly_user_id',
+            __notiflyDeviceID: 'test',
         };
         jest.spyOn(NotiflyStorage, 'getItems').mockImplementation((keys: string[]) => {
             return Promise.resolve(keys.map((key) => _mockStorage[key] || null));
