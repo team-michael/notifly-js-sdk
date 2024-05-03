@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Link, Outlet } from 'react-router-dom';
 
-import notifly from 'notifly-js-sdk';
+import notifly from './lib/notifly';
 import logo from './logo.svg';
 import './App.css';
 import Playground from './Playground';
-import NotiflyIndexedDBStore from './lib/Storage';
 import MyPage from './MyPage';
+import NotiflyIndexedDBStore from './lib/notifly/Core/Storage/IDB';
 
 const storage = new NotiflyIndexedDBStore('notifly', 'notiflyconfig');
 

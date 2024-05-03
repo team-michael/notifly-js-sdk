@@ -1,6 +1,5 @@
 # Examples and tests
-example-react/
-example-vanillajs/
+examples/
 test/
 jest.config.ts
 

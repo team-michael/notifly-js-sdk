@@ -1,0 +1,31 @@
+import {
+    initialize,
+    trackEvent,
+    setUserId,
+    removeUserId,
+    setUserProperties,
+    getUserId,
+    getUserProperties,
+    requestPermission,
+    setSdkType,
+    setSdkVersion,
+    setSource,
+    getSdkVersion,
+} from './Client';
+
+const notifly = {
+    initialize,
+    trackEvent,
+    setUserId,
+    removeUserId,
+    setUserProperties,
+    getUserId,
+    getUserProperties,
+    requestPermission,
+    setSdkType,
+    setSdkVersion,
+    setSource,
+    getSdkVersion,
+};
+
+export default notifly;

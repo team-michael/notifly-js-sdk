@@ -23,7 +23,7 @@
     "deploy:sw": "aws s3 cp --content-type \"application/javascript\" dist/NotiflyServiceWorker.js s3://notifly-content/notifly-js-sdk/dist/NotiflyServiceWorker.js && aws cloudfront create-invalidation --distribution-id E2M7VD2WC9S1MI --paths \"/notifly-js-sdk/dist/NotiflyServiceWorker.js\"",
     "write-version": "node ./scripts/write_version.js",
     "type-check": "tsc -p ./tsconfig.json",
-    "apply-changes-react": "node ./scripts/apply_changes_react.js"
+    "example-react": "npm run write-version && source ./scripts/copy_sdk.sh && npm run --prefix examples/react start"
   },
   "author": "Grey Box Inc.",
   "license": "ISC",
