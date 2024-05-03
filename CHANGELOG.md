@@ -1,6 +1,18 @@
-# 2.9.0
+# 2.10.0
 
--   Fix build crash when using Next.js framework
+-   Now advanced triggering condition is available for in-web messages
+    -   `triggering_event` field has been deprecated, use `triggering_conditions` instead
+    -   `last_updated_timestamp` field has been deprecated, use `updated_at` instead
+-   API request header now contains `X-Notifly-SDK-Version` to identify SDK version
+    -   Format: `Notifly/${SDK_TYPE}/${SDK_VERSION}` (e.g. `Notifly/js/2.10.0`)
+
+# 2.9.4
+
+-   Fix unhandled exception when browser terminates unexpectedly
+
+# 2.9.0 - 2.9.3
+
+-   DO NOT USE THESE VERSIONS
 
 # 2.8.4
 

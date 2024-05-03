@@ -5,5 +5,5 @@ module.exports = {
         color: 'blue',
     },
     collectCoverage: false,
-    testPathIgnorePatterns: ['node_modules/', 'dist/', 'lib/', 'example-react/', 'example-vanillajs/'],
+    testPathIgnorePatterns: ['node_modules/', 'dist/', 'lib/', 'examples/'],
 };

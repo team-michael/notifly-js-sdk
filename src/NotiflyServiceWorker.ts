@@ -4,6 +4,7 @@
 /// <reference lib="webworker" />
 
 const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.3.0';
+const NOTIFLY_SERVICE_WORKER_SEMVER = NOTIFLY_SERVICE_WORKER_VERSION.replace('v', '');
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 const NOTIFLY_OBJECT_STORE_NAME = 'notiflyconfig';
 
@@ -192,6 +193,9 @@ async function getCognitoIdTokenInSw(): Promise<string | null> {
                 userName,
                 password,
             }),
+            headers: {
+                'X-Notifly-SDK-Version': `notifly/js-sw/${NOTIFLY_SERVICE_WORKER_SEMVER}`,
+            },
         });
         const result = await response.json();
         return result.AuthenticationResult?.IdToken || null;
@@ -303,13 +307,14 @@ function _getBodyForLogEvent(
 }
 
 function _getRequestOptionsForLogEvent(token: string, body: string) {
-    const myHeaders = new Headers();
-    myHeaders.append('Authorization', token);
-    myHeaders.append('Content-Type', 'application/json');
+    const headers = new Headers();
+    headers.append('Authorization', token);
+    headers.append('Content-Type', 'application/json');
+    headers.append('X-Notifly-SDK-Version', `notifly/js-sw/${NOTIFLY_SERVICE_WORKER_SEMVER}`);
 
     const requestOptions: RequestInit = {
         method: 'POST',
-        headers: myHeaders,
+        headers: headers,
         body: body,
         redirect: 'follow',
         keepalive: true,
