@@ -5,7 +5,6 @@
     -   `last_updated_timestamp` field has been deprecated, use `updated_at` instead
 -   API request header now contains `X-Notifly-SDK-Version` to identify SDK version
     -   Format: `Notifly/${SDK_TYPE}/${SDK_VERSION}` (e.g. `Notifly/js/2.10.0`)
--   Add `setUserAttribute` method to set user attributes
 
 # 2.9.4
 
