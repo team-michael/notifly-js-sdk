@@ -7,9 +7,13 @@
     -   Format: `Notifly/${SDK_TYPE}/${SDK_VERSION}` (e.g. `Notifly/js/2.10.0`)
 -   Add `setUserAttribute` method to set user attributes
 
-# 2.9.0
+# 2.9.4
 
--   Fix build crash when using Next.js framework
+-   Fix unhandled exception when browser terminates unexpectedly
+
+# 2.9.0 - 2.9.3
+
+-   DO NOT USE THESE VERSIONS
 
 # 2.8.4
 
