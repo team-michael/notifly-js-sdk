@@ -62,18 +62,22 @@ function App() {
     };
 
     const test = async () => {
-        initialize();
-        for (let i = 0; i < 5; i++) {
-            for (let j = 0; j < 5; j++) {
-                trackEvent(`test_event_${i}_${j}`);
-            }
-            setUserId(`test_user_${i}`);
-        }
+        // initialize();
+        // for (let i = 0; i < 5; i++) {
+        //     for (let j = 0; j < 5; j++) {
+        //         trackEvent(`test_event_${i}_${j}`);
+        //     }
+        //     setUserId(`test_user_${i}`);
+        // }
     };
 
     useEffect(() => {
-        test();
+        initialize();
     }, []);
+
+    useEffect(() => {
+        test();
+    });
 
     return (
         <div className="App">
