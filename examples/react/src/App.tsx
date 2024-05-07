@@ -26,8 +26,10 @@ function App() {
                 password: process.env.REACT_APP_NOTIFLY_PASSWORD as string,
             });
             setInitStatus('Initialized');
+            console.log('SDK Initialized');
         } catch (e) {
             setInitStatus(`Failed to initialize: ${e}`);
+            console.error('Failed to initialize SDK', e);
         }
     };
 
@@ -35,8 +37,10 @@ function App() {
         try {
             await notifly.setUserId(userId);
             setSetUserIdStatus(`User Id Set to ${userId}`);
+            console.log(`User Id Set to ${userId}`);
         } catch (e) {
             setSetUserIdStatus(`Failed to set user id: ${e}`);
+            console.error('Failed to set user id', e);
         }
     };
 
@@ -44,8 +48,10 @@ function App() {
         try {
             await notifly.setUserProperties(properties);
             setSetUserPropertiesStatus(`User Properties Set to ${JSON.stringify(properties)}`);
+            console.log(`User Properties Set to ${JSON.stringify(properties)}`);
         } catch (e) {
             setSetUserPropertiesStatus(`Failed to set user properties: ${e}`);
+            console.error('Failed to set user properties', e);
         }
     };
 
@@ -56,19 +62,21 @@ function App() {
         try {
             await notifly.trackEvent(eventName, eventParams);
             setTrackEventStatus(`Event ${eventName} tracked with params ${JSON.stringify(eventParams)}`);
+            console.log(`Event ${eventName} tracked with params ${JSON.stringify(eventParams)}`);
         } catch (e) {
             setTrackEventStatus(`Failed to track event: ${e}`);
+            console.error('Failed to track event', e);
         }
     };
 
     const test = async () => {
-        // initialize();
-        // for (let i = 0; i < 5; i++) {
-        //     for (let j = 0; j < 5; j++) {
-        //         trackEvent(`test_event_${i}_${j}`);
-        //     }
-        //     setUserId(`test_user_${i}`);
-        // }
+        initialize();
+        for (let i = 0; i < 5; i++) {
+            for (let j = 0; j < 5; j++) {
+                trackEvent(`test_event_${i}_${j}`);
+            }
+            setUserId(`test_user_${i}`);
+        }
     };
 
     useEffect(() => {
@@ -77,7 +85,7 @@ function App() {
 
     useEffect(() => {
         test();
-    });
+    }, []);
 
     return (
         <div className="App">

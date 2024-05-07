@@ -1,3 +1,4 @@
+import { generateNotiflyUserId } from '../Utils';
 import NotiflyIndexedDBStore from './IDB';
 
 export enum NotiflyStorageKeys {
@@ -10,7 +11,6 @@ export enum NotiflyStorageKeys {
     COGNITO_ID_TOKEN = '__notiflyCognitoIDToken',
 
     // User
-    NOTIFLY_USER_ID = '__notiflyUserID',
     EXTERNAL_USER_ID = '__notiflyExternalUserID',
     NOTIFLY_DEVICE_ID = '__notiflyDeviceID',
     NOTIFLY_STATE = '__notiflyState',
@@ -30,6 +30,20 @@ export class NotiflyStorage {
             this.storage = new NotiflyIndexedDBStore('notifly', 'notiflyconfig');
         }
         return this._withTimeout(this.storage.ready());
+    }
+
+    static async getNotiflyUserId(): Promise<string> {
+        const [projectId, externalUserId, deviceId] = await this.getItems([
+            NotiflyStorageKeys.PROJECT_ID,
+            NotiflyStorageKeys.EXTERNAL_USER_ID,
+            NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
+        ]);
+
+        if (!projectId || !deviceId) {
+            throw new Error('Notifly storage is not initialized');
+        }
+
+        return generateNotiflyUserId(projectId, externalUserId, deviceId);
     }
 
     static async getItems(keys: NotiflyStorageKeys[]): Promise<Array<string | null>> {

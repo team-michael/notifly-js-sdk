@@ -187,11 +187,11 @@ export class UserStateManager {
             }
         }
 
-        const [projectId, notiflyDeviceId, notiflyUserId] = await NotiflyStorage.getItems([
+        const [projectId, notiflyDeviceId] = await NotiflyStorage.getItems([
             NotiflyStorageKeys.PROJECT_ID,
             NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
-            NotiflyStorageKeys.NOTIFLY_USER_ID,
         ]);
+        const notiflyUserId = await NotiflyStorage.getNotiflyUserId();
 
         if (!projectId || !notiflyDeviceId || !notiflyUserId) {
             throw new Error('Project ID, device ID, Notifly User ID should be set before logging an event.');

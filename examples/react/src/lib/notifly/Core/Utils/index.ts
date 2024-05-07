@@ -4,31 +4,16 @@ import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 export async function initializeNotiflyStorage(projectId: string, username: string, password: string) {
     await NotiflyStorage.ensureInitialized();
-    await NotiflyStorage.setItems({
+    const itemsToSet: Partial<Record<NotiflyStorageKeys, string>> = {
         [NotiflyStorageKeys.PROJECT_ID]: projectId,
         [NotiflyStorageKeys.USERNAME]: username,
         [NotiflyStorageKeys.PASSWORD]: password,
-    });
-    await storeUserIdentity();
-}
-
-export async function storeUserIdentity() {
-    const [projectId, externalUserId, _deviceId] = await NotiflyStorage.getItems([
-        NotiflyStorageKeys.PROJECT_ID,
-        NotiflyStorageKeys.EXTERNAL_USER_ID,
-        NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
-    ]);
-
-    if (!projectId) {
-        throw new Error('Project ID should be set when re-initializing user identity.');
+    };
+    const existingDeviceId = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_DEVICE_ID);
+    if (!existingDeviceId) {
+        itemsToSet[NotiflyStorageKeys.NOTIFLY_DEVICE_ID] = v4();
     }
-    const deviceId = _deviceId || v4();
-    const notiflyUserId = generateNotiflyUserId(projectId, externalUserId, deviceId);
-
-    await NotiflyStorage.setItems({
-        [NotiflyStorageKeys.NOTIFLY_USER_ID]: notiflyUserId,
-        [NotiflyStorageKeys.NOTIFLY_DEVICE_ID]: deviceId,
-    });
+    await NotiflyStorage.setItems(itemsToSet);
 }
 
 export function isValidProjectId(projectId: string) {
