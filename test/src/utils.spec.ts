@@ -1,7 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import uuid from 'uuid';
-import { NotiflyStorage } from '../../src/Core/Storage';
-import { NAMESPACE } from '../../src/Constants';
 import { getPlatform } from '../../src/Core/Utils';
 
 jest.mock('../../src/Core/Storage', () => ({
