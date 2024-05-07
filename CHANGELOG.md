@@ -1,3 +1,7 @@
+# 2.10.1
+
+-   Make user profile management more robust
+
 # 2.10.0
 
 -   Now advanced triggering condition is available for in-web messages

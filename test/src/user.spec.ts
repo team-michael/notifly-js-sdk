@@ -10,6 +10,7 @@ jest.mock('../../src/Core/Storage', () => ({
         ensureInitialized: jest.fn(),
         getItems: jest.fn(),
         getItem: jest.fn(),
+        getNotiflyUserId: jest.fn().mockResolvedValue('previous_notifly_user_id'),
         setItems: jest.fn(),
         setItem: jest.fn(),
         removeItems: jest.fn(),
@@ -41,9 +42,11 @@ describe('setUserProperties', () => {
     test('sets external_user_id in storage and logs the event', async () => {
         const _mockStorage = <Record<string, string>>{
             __notiflyProjectID: 'test',
-            __notiflyUserID: 'previous_notifly_user_id',
             __notiflyDeviceID: 'test',
         };
+        jest.spyOn(NotiflyStorage, 'getItem').mockImplementation((key: string) => {
+            return Promise.resolve(_mockStorage[key] || null);
+        });
         jest.spyOn(NotiflyStorage, 'getItems').mockImplementation((keys: string[]) => {
             return Promise.resolve(keys.map((key) => _mockStorage[key] || null));
         });
@@ -61,11 +64,6 @@ describe('setUserProperties', () => {
         SdkStateManager.state = SdkState.READY;
         await UserIdentityManager.setUserProperties(params);
 
-        expect(NotiflyStorage.getItems).toHaveBeenCalledWith([
-            '__notiflyProjectID',
-            '__notiflyUserID',
-            '__notiflyExternalUserID',
-        ]);
         expect(NotiflyStorage.setItem).toHaveBeenCalledWith('__notiflyExternalUserID', '1234567890');
         expect(EventLogger.logEvent).toHaveBeenCalledWith('set_user_properties', expectedParams, null, true);
     });

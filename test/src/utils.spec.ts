@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import uuid from 'uuid';
-import { NotiflyStorage } from '../../src/Core/Storage';
-import { NAMESPACE } from '../../src/Constants';
-import { getPlatform, storeUserIdentity } from '../../src/Core/Utils';
+import { getPlatform } from '../../src/Core/Utils';
 
 jest.mock('../../src/Core/Storage', () => ({
     ...jest.requireActual('../../src/Core/Storage'),
     NotiflyStorage: {
         ensureInitialized: jest.fn(),
+        getNotiflyUserId: jest.fn().mockResolvedValue('test'),
         getItems: jest.fn(),
         getItem: jest.fn(),
         setItems: jest.fn(),
@@ -21,54 +19,6 @@ jest.mock('uuid', () => ({
     v4: jest.fn().mockImplementation(() => Promise.resolve(null)),
     v5: jest.fn().mockImplementation(() => Promise.resolve(null)),
 }));
-
-describe('store user identity', () => {
-    beforeEach(() => {
-        jest.clearAllMocks(); // Clears the mock.calls and mock.instances properties of all mocks.
-    });
-
-    afterEach(() => {
-        jest.restoreAllMocks(); // Restores all mocks back to their original value.
-    });
-
-    test('Correctly store user identity', async () => {
-        const projectID = 'test';
-        const externalUserID = 'externalUserID';
-
-        const expectedNotiflyUserId = `${projectID}${externalUserID}-${NAMESPACE.REGISTERED_USERID}`.replace(/-/g, '');
-        const expectedDeviceId = 'uuid-v4-mocked-string';
-
-        const mockStorage = <any>{
-            __notiflyProjectID: projectID,
-            __notiflyExternalUserID: externalUserID,
-        };
-
-        jest.spyOn(NotiflyStorage, 'getItems').mockImplementation((keys: string[]) => {
-            return Promise.resolve(keys.map((key) => mockStorage[key] || null));
-        });
-        jest.spyOn(NotiflyStorage, 'setItems').mockImplementation((data: Record<string, unknown>) => {
-            for (const [key, value] of Object.entries(data)) {
-                mockStorage[key] = value;
-            }
-            return Promise.resolve();
-        });
-
-        jest.spyOn(uuid, 'v4').mockImplementation(() => 'uuid-v4-mocked-string');
-        jest.spyOn(uuid, 'v5').mockImplementation(
-            (name: string | ArrayLike<number>, namespace: string | ArrayLike<number>) => {
-                if (typeof name === 'string' && typeof namespace === 'string') {
-                    return `${name}-${namespace}`;
-                }
-                return '';
-            }
-        );
-
-        await storeUserIdentity();
-
-        expect(mockStorage.__notiflyUserID).toEqual(expectedNotiflyUserId);
-        expect(mockStorage.__notiflyDeviceID).toEqual(expectedDeviceId);
-    });
-});
 
 describe('getPlatform', () => {
     it('returns the correct platform for iOS user agent', () => {

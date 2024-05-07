@@ -3,21 +3,11 @@ import type { Campaign } from '../Interfaces/Campaign';
 import NotiflyWebMessageRenderer from 'notifly-web-message-renderer';
 
 import { UserIdentityManager } from '../User';
-import { EventLogger } from '../Event';
+import { EventLogger, NotiflyInternalEvent } from '../Event';
 import { SdkStateManager, SdkStateObserver } from '../SdkState';
 import { UserStateManager } from '../User/State';
 
 class SdkStateObserverForWebMessageScheduler implements SdkStateObserver {
-    onInitialized() {
-        // No-op
-        return;
-    }
-
-    onRefreshCompleted() {
-        // No-op
-        return;
-    }
-
     onRefreshStarted() {
         WebMessageScheduler.descheduleInWebMessage(); // fixme: ultimately, we should re-evaluate campaign visibilities
     }
@@ -57,7 +47,7 @@ export class WebMessageScheduler {
         NotiflyWebMessageRenderer.render(campaign.message.modal_properties, message.html_url, {
             onRenderCompleted: () => {
                 EventLogger.logEvent(
-                    'in_web_message_show',
+                    NotiflyInternalEvent.IN_WEB_MESSAGE_SHOW,
                     {
                         type: 'message_event',
                         channel: 'in-web-message',
@@ -89,13 +79,14 @@ export class WebMessageScheduler {
                                         if (data) {
                                             if (data.hideUntil) {
                                                 await UserIdentityManager.setUserProperties({
-                                                    [`hide_in_web_message_${templateName}`]: data.hideUntil,
+                                                    [`${NotiflyInternalEvent.HIDE_IN_WEB_MESSAGE}_${templateName}`]:
+                                                        data.hideUntil,
                                                 });
                                             }
                                         }
                                     }
                                     await EventLogger.logEvent(
-                                        'close_button_click',
+                                        NotiflyInternalEvent.CLOSE_BUTTON_CLICK,
                                         {
                                             type: 'message_event',
                                             channel: 'in-web-message',
@@ -115,7 +106,7 @@ export class WebMessageScheduler {
                                         window.removeEventListener('message', messageEventListener);
                                     }
                                     await EventLogger.logEvent(
-                                        'main_button_click',
+                                        NotiflyInternalEvent.MAIN_BUTTON_CLICK,
                                         {
                                             type: 'message_event',
                                             channel: 'in-web-message',

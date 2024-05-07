@@ -3,10 +3,8 @@ import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 
 import { SyncStatePolicy, UserStateManager } from './State';
-import { EventLogger } from '../Event';
+import { EventLogger, NotiflyInternalEvent } from '../Event';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
-
-import { storeUserIdentity } from '../Utils';
 
 /**
  * Sets or removes user ID for the current user.
@@ -23,7 +21,7 @@ import { storeUserIdentity } from '../Utils';
  */
 export class UserIdentityManager {
     static async setUserId(userId?: string | null | undefined) {
-        if (!userId) {
+        if (!userId?.trim()) {
             await this.removeUserId();
         } else {
             await this.setUserProperties({
@@ -44,15 +42,15 @@ export class UserIdentityManager {
         const externalUserId = params.external_user_id?.toString();
 
         if (externalUserId) {
-            const [projectId, previousNotiflyUserId, previousExternalUserId] = await NotiflyStorage.getItems([
-                NotiflyStorageKeys.PROJECT_ID,
-                NotiflyStorageKeys.NOTIFLY_USER_ID,
-                NotiflyStorageKeys.EXTERNAL_USER_ID,
-            ]);
-
+            const projectId = await NotiflyStorage.getItem(NotiflyStorageKeys.PROJECT_ID);
             if (!projectId) {
                 throw new Error('[Notifly] Project ID should be set before setting user properties.');
             }
+
+            const [previousExternalUserId, previousNotiflyUserId] = await Promise.all([
+                NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID),
+                NotiflyStorage.getNotiflyUserId(),
+            ]);
 
             params.previous_notifly_user_id = previousNotiflyUserId;
             params.previous_external_user_id = previousExternalUserId;
@@ -60,8 +58,7 @@ export class UserIdentityManager {
             if (!this._areUserIdsIdentical(externalUserId, previousExternalUserId)) {
                 // Caution: order matters here!
                 await NotiflyStorage.setItem(NotiflyStorageKeys.EXTERNAL_USER_ID, externalUserId);
-                await storeUserIdentity();
-                await EventLogger.logEvent('set_user_properties', params, null, true);
+                await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, params, null, true);
 
                 const policy = previousExternalUserId
                     ? SyncStatePolicy.OVERWRITE // A -> B
@@ -70,7 +67,7 @@ export class UserIdentityManager {
             } else {
                 // Even if the user ID is the same, we opted to log the event to ensure for logging purposes that the user ID is set.
                 // See https://www.notion.so/greyboxhq/User-Set-User-Id-e3ab764388724a878fc56d8e54c95bc8
-                await EventLogger.logEvent('set_user_properties', params, null, true);
+                await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, params, null, true);
             }
         } else {
             // Update local state
@@ -85,7 +82,7 @@ export class UserIdentityManager {
 
             if (!isEmpty(diff)) {
                 UserStateManager.updateUserProperties(diff);
-                await EventLogger.logEvent('set_user_properties', diff, null, true);
+                await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, diff, null, true);
             }
         }
     }
@@ -95,10 +92,9 @@ export class UserIdentityManager {
         if (previousExternalUserId) {
             // A -> null
             await this._cleanUserIdInLocalStorage();
-            await storeUserIdentity();
             await UserStateManager.refresh(); // Should refresh data due to the random bucket number
         }
-        await EventLogger.logEvent('remove_external_user_id', {}, null, true);
+        await EventLogger.logEvent(NotiflyInternalEvent.REMOVE_EXTERNAL_USER_ID, {}, null, true);
         UserStateManager.clearAll();
     }
 

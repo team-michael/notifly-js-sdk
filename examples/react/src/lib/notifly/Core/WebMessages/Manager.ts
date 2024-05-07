@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { NotiflyInternalEvent } from '../Event';
 import {
     CampaignStatus,
     TriggeringConditionUnit,
@@ -295,7 +296,10 @@ export class WebMessageManager {
         const templateName = modalProperties.template_name;
         if (UserStateManager.userData && UserStateManager.userData.user_properties) {
             const currentTimestamp = Math.floor(Date.now() / 1000);
-            const hideUntilTimestamp = UserStateManager.userData.user_properties[`hide_in_web_message_${templateName}`];
+            const hideUntilTimestamp =
+                UserStateManager.userData.user_properties[
+                    `${NotiflyInternalEvent.HIDE_IN_WEB_MESSAGE}_${templateName}`
+                ];
             if (currentTimestamp <= hideUntilTimestamp) {
                 // Hidden
                 return false;

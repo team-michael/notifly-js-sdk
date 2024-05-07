@@ -32,3 +32,6 @@ next-env.d.ts
 # ignore tgz files
 *.tgz
 .idea
+
+# ignore SDK copies in example-react
+/examples/react/src/lib/notifly
