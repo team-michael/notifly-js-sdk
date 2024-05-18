@@ -9,3 +9,11 @@ export type NotiflyInitializeOptions = {
     username: string;
     password: string;
 };
+
+/**
+ * @typedef {Object} SetUserIdOptions
+ * @property {boolean} [onlyIfChanged] - If true, the user ID will only be set if it is different from the current user ID. Default is false.
+ */
+export type SetUserIdOptions = {
+    onlyIfChanged?: boolean;
+};

@@ -2,7 +2,12 @@ import { EventLogger } from '../Event';
 import { Language } from '../Interfaces/RequestPermissionPromptDesignParams';
 import { NotiflyWebPushManager } from '../Push';
 import { UserIdentityManager } from '../User';
-import { SetUserIdCommandParams, SetUserPropertiesCommandParams, TrackEventCommandParams } from './Params';
+import {
+    RemoveUserIdCommandParams,
+    SetUserIdCommandParams,
+    SetUserPropertiesCommandParams,
+    TrackEventCommandParams,
+} from './Params';
 
 export enum CommandType {
     SET_USER_ID,
@@ -29,17 +34,23 @@ export class SetUserIdCommand implements CommandBase<void> {
     }
 
     execute(): Promise<void> {
-        const { userId } = this._params;
-        return UserIdentityManager.setUserId.call(UserIdentityManager, userId);
+        const { userId, options } = this._params;
+        return UserIdentityManager.setUserId.call(UserIdentityManager, userId, options);
     }
 }
 
 export class RemoveUserIdCommand implements CommandBase<void> {
     public type = CommandType.SET_USER_ID;
     public unrecoverable = true;
+    private _params: RemoveUserIdCommandParams;
+
+    constructor(params: RemoveUserIdCommandParams) {
+        this._params = params;
+    }
 
     execute(): Promise<void> {
-        return UserIdentityManager.setUserId.call(UserIdentityManager, null);
+        const { options } = this._params;
+        return UserIdentityManager.setUserId.call(UserIdentityManager, null, options);
     }
 }
 

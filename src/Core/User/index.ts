@@ -5,6 +5,7 @@ import isEqual from 'lodash/isEqual';
 import { SyncStatePolicy, UserStateManager } from './State';
 import { EventLogger, NotiflyInternalEvent } from '../Event';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
+import { SetUserIdOptions } from '../Interfaces/Options';
 
 /**
  * Sets or removes user ID for the current user.
@@ -20,7 +21,18 @@ import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
  * await setUserId() // Removes the user ID
  */
 export class UserIdentityManager {
-    static async setUserId(userId?: string | null | undefined) {
+    private static readonly DEFAULT_SET_USER_ID_OPTIONS = {
+        onlyIfChanged: false,
+    };
+
+    static async setUserId(userId?: string | null | undefined, options?: SetUserIdOptions): Promise<void> {
+        const onlyIfChanged = options?.onlyIfChanged ?? this.DEFAULT_SET_USER_ID_OPTIONS.onlyIfChanged;
+        if (onlyIfChanged) {
+            const previousUserId = await this.getUserId();
+            if (this._areUserIdsIdentical(userId, previousUserId)) {
+                return;
+            }
+        }
         if (!userId?.trim()) {
             await this.removeUserId();
         } else {
