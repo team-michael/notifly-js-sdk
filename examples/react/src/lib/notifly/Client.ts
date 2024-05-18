@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { NotiflyInitializeOptions } from './Core/Interfaces/Options';
+import type { NotiflyInitializeOptions, SetUserIdOptions } from './Core/Interfaces/Options';
 import {
     SetUserIdCommand,
     SetUserPropertiesCommand,
@@ -133,7 +133,7 @@ export async function trackEvent(
  * await setUserId(null) // Removes the user ID
  * await setUserId() // Removes the user ID
  */
-export async function setUserId(userId?: string | null | undefined): Promise<void> {
+export async function setUserId(userId?: string | null | undefined, options?: SetUserIdOptions): Promise<void> {
     if (SdkStateManager.halted) {
         console.warn('[Notifly] SDK has been stopped due to the unrecoverable error or termination. Ignoring...');
         return;
@@ -142,6 +142,7 @@ export async function setUserId(userId?: string | null | undefined): Promise<voi
         await CommandManager.getInstance().dispatch(
             new SetUserIdCommand({
                 userId: userId,
+                options: options,
             })
         );
     } catch (error) {
@@ -159,13 +160,17 @@ export async function setUserId(userId?: string | null | undefined): Promise<voi
  * @example
  * await removeUserId();
  */
-export async function removeUserId(): Promise<void> {
+export async function removeUserId(options?: SetUserIdOptions): Promise<void> {
     if (SdkStateManager.halted) {
         console.warn('[Notifly] SDK has been stopped due to the unrecoverable error or termination. Ignoring...');
         return;
     }
     try {
-        await CommandManager.getInstance().dispatch(new RemoveUserIdCommand());
+        await CommandManager.getInstance().dispatch(
+            new RemoveUserIdCommand({
+                options: options,
+            })
+        );
     } catch (error) {
         const logger = SdkStateManager.halted ? console.warn : console.error;
         logger('[Notifly] Error removing user ID: ', error);

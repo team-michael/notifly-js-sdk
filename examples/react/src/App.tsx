@@ -71,12 +71,12 @@ function App() {
 
     const test = async () => {
         initialize();
-        for (let i = 0; i < 5; i++) {
-            for (let j = 0; j < 5; j++) {
-                trackEvent(`test_event_${i}_${j}`);
-            }
-            setUserId(`test_user_${i}`);
-        }
+        // for (let i = 0; i < 5; i++) {
+        //     for (let j = 0; j < 5; j++) {
+        //         trackEvent(`test_event_${i}_${j}`);
+        //     }
+        //     setUserId(`test_user_${i}`);
+        // }
     };
 
     useEffect(() => {
@@ -262,25 +262,63 @@ function TrackEventSection() {
 
 function UserIdSetter() {
     const [userIdInput, setUserIdInput] = useState('');
+    const [onlyIfChanged, setOnlyIfChanged] = useState(false);
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setUserIdInput(event.target.value);
     };
 
     const handleSetUserId = () => {
-        notifly.setUserId(userIdInput).then(() => console.log(`Set user id to ${userIdInput}`));
+        if (!userIdInput) {
+            return;
+        }
+        notifly
+            .setUserId(userIdInput, { onlyIfChanged })
+            .then(() => console.log(`Set user id to ${userIdInput}, onlyIfChanged: ${onlyIfChanged}`));
+    };
+    const handleRemoveUserId = () => {
+        notifly.removeUserId({ onlyIfChanged }).then(() => console.log('Removed user id'));
     };
 
     return (
         <div style={{ margin: '10px' }}>
-            <input
-                type="text"
-                name="setUserId"
-                value={userIdInput}
-                onChange={handleInputChange}
-                placeholder="user id"
-            />
-            <button onClick={handleSetUserId}>Set User Id</button>
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'end',
+                }}
+            >
+                <label
+                    htmlFor="checkbox-only-if-changed"
+                    style={{
+                        fontSize: '12px',
+                        color: '#999',
+                    }}
+                >
+                    Only if changed
+                </label>
+                <input
+                    id="checkbox-only-if-changed"
+                    type="checkbox"
+                    onChange={(e) => setOnlyIfChanged(e.target.checked)}
+                    checked={onlyIfChanged}
+                />
+            </div>
+            <div>
+                <input
+                    type="text"
+                    name="setUserId"
+                    value={userIdInput}
+                    onChange={handleInputChange}
+                    placeholder="user id"
+                />
+                <button onClick={handleSetUserId}>Set User Id</button>
+            </div>
+            <div>
+                <button onClick={handleRemoveUserId}>Remove User Id</button>
+            </div>
         </div>
     );
 }
