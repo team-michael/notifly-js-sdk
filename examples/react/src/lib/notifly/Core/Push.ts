@@ -236,14 +236,14 @@ export class NotiflyWebPushManager {
 
         const delay = this._promptDelayMillis;
         setTimeout(() => {
-            if (document.readyState === 'complete') {
-                this._showRequestPermissionPrompt();
-            } else {
+            if (document.readyState === 'loading') {
                 const task = () => {
                     this._showRequestPermissionPrompt();
                     window.removeEventListener('DOMContentLoaded', task);
                 };
                 window.addEventListener('DOMContentLoaded', task);
+            } else {
+                this._showRequestPermissionPrompt();
             }
         }, delay);
     }
