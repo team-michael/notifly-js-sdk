@@ -49,14 +49,14 @@ export class WebMessageManager {
                 externalUserID
             ).forEach(WebMessageScheduler.scheduleInWebMessage.bind(WebMessageScheduler));
 
-        if (document.readyState === 'complete') {
-            schedule();
-        } else {
+        if (document.readyState === 'loading') {
             const task = () => {
                 schedule();
                 window.removeEventListener('DOMContentLoaded', task);
             };
             window.addEventListener('DOMContentLoaded', task);
+        } else {
+            schedule();
         }
     }
 
