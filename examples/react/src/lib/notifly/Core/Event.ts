@@ -6,7 +6,7 @@ import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 import { SdkStateManager } from './SdkState';
 import { NotiflyAPI } from './API';
 import { WebMessageManager } from './WebMessages/Manager';
-import { generateNotiflyUserId, getPlatform, mapNotificationPermissionToEnum } from './Utils';
+import { generateNotiflyUserId, getPlatform, getTimestampMicroseconds, mapNotificationPermissionToEnum } from './Utils';
 
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 
@@ -71,7 +71,7 @@ export class EventLogger {
                 segmentation_event_param_keys: segmentationEventParamKeys,
                 sdk_version: SdkStateManager.version,
                 sdk_type: SdkStateManager.type,
-                time: Date.now(),
+                time: getTimestampMicroseconds(),
                 platform: getPlatform(),
             };
             if (notiflyUserId) {
