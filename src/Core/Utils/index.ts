@@ -84,3 +84,10 @@ export const getGlobalScope = (): typeof globalThis | undefined => {
     }
     return undefined;
 };
+
+export const getTimestampMicroseconds = (): number => {
+    if (window.performance && 'now' in window.performance && 'timeOrigin' in window.performance) {
+        return Math.floor((window.performance.now() + window.performance.timeOrigin) * 1000);
+    }
+    return Date.now() * 1000;
+};

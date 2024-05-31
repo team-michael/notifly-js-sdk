@@ -272,6 +272,13 @@ async function retryLogEvent(token: string, body: string) {
     }
 }
 
+const _getTimestampMicroseconds = (): number => {
+    if (window.performance && 'now' in window.performance && 'timeOrigin' in window.performance) {
+        return Math.floor((window.performance.now() + window.performance.timeOrigin) * 1000);
+    }
+    return Date.now() * 1000;
+};
+
 function _getBodyForLogEvent(
     eventName: string,
     eventParams: Record<string, any> | null,
@@ -292,7 +299,7 @@ function _getBodyForLogEvent(
         external_user_id: externalUserID,
         notifly_device_id: notiflyDeviceID,
         is_internal_event: isInternalEvent,
-        time: Math.floor(new Date().valueOf() / 1000),
+        time: _getTimestampMicroseconds(),
     });
 
     const body = JSON.stringify({
