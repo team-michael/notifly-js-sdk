@@ -1,3 +1,7 @@
+# 2.10.4
+
+-   Increase timestamp precision to microseconds
+
 # 2.10.3
 
 -   Listens to `DOMContentLoaded` event only when `document.readyState`is `loading`

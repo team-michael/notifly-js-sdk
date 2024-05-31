@@ -273,7 +273,7 @@ async function retryLogEvent(token: string, body: string) {
 }
 
 const _getTimestampMicroseconds = (): number => {
-    if (window.performance && 'now' in window.performance && 'timeOrigin' in window.performance) {
+    if (sw.performance && 'now' in sw.performance && 'timeOrigin' in sw.performance) {
         return Math.floor((window.performance.now() + window.performance.timeOrigin) * 1000);
     }
     return Date.now() * 1000;
