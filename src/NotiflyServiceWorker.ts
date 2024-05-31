@@ -3,7 +3,7 @@
 /// <reference lib="es2015" />
 /// <reference lib="webworker" />
 
-const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.3.0';
+const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.4.0';
 const NOTIFLY_SERVICE_WORKER_SEMVER = NOTIFLY_SERVICE_WORKER_VERSION.replace('v', '');
 const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
 const NOTIFLY_OBJECT_STORE_NAME = 'notiflyconfig';
@@ -273,8 +273,8 @@ async function retryLogEvent(token: string, body: string) {
 }
 
 const _getTimestampMicroseconds = (): number => {
-    if (window.performance && 'now' in window.performance && 'timeOrigin' in window.performance) {
-        return Math.floor((window.performance.now() + window.performance.timeOrigin) * 1000);
+    if (sw.performance && 'now' in sw.performance && 'timeOrigin' in sw.performance) {
+        return Math.floor((sw.performance.now() + sw.performance.timeOrigin) * 1000);
     }
     return Date.now() * 1000;
 };
