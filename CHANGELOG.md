@@ -1,3 +1,11 @@
+# 2.10.3
+
+-   Listens to `DOMContentLoaded` event only when `document.readyState`is `loading`
+
+# 2.10.2
+
+-   Add `onlyIfChanged` option to `setUserId` and `removeUserId` methods
+
 # 2.10.1
 
 -   Make user profile management more robust
