@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getPlatform } from '../../src/Core/Utils';
+import { getPlatform, removeKeys } from '../../src/Core/Utils';
 
 jest.mock('../../src/Core/Storage', () => ({
     ...jest.requireActual('../../src/Core/Storage'),
@@ -46,5 +46,20 @@ describe('getPlatform', () => {
         const userAgent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
         Object.defineProperty(window.navigator, 'userAgent', { value: userAgent, configurable: true });
         expect(getPlatform()).toEqual('web');
+    });
+});
+
+describe('removeKeys', () => {
+    it('should remove specified keys from object', async () => {
+        const obj = {
+            key1: 'value1',
+            key2: 'value2',
+            key3: 'value3',
+        };
+        const keys = ['key1', 'key2'];
+        const result = removeKeys(obj, keys);
+
+        expect(result).toEqual({ key3: 'value3' });
+        expect(obj).toEqual({ key1: 'value1', key2: 'value2', key3: 'value3' }); // Original object should not be modified
     });
 });

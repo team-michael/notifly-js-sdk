@@ -1,6 +1,8 @@
 import { v4, v5 } from 'uuid';
-import { NAMESPACE } from '../../Constants';
+import { HashNamespace } from '../../Constants';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
+
+export * from './Timezone';
 
 export async function initializeNotiflyStorage(projectId: string, username: string, password: string) {
     await NotiflyStorage.ensureInitialized();
@@ -23,8 +25,8 @@ export function isValidProjectId(projectId: string) {
 
 export function generateNotiflyUserId(projectId: string, externalUserId: string | null, deviceId: string) {
     return externalUserId
-        ? v5(`${projectId}${externalUserId}`, NAMESPACE.REGISTERED_USERID).replace(/-/g, '')
-        : v5(`${projectId}${deviceId}`, NAMESPACE.UNREGISTERED_USERID).replace(/-/g, '');
+        ? v5(`${projectId}${externalUserId}`, HashNamespace.REGISTERED_USERID).replace(/-/g, '')
+        : v5(`${projectId}${deviceId}`, HashNamespace.UNREGISTERED_USERID).replace(/-/g, '');
 }
 
 export function getPlatform(): string {
@@ -91,3 +93,12 @@ export const getTimestampMicroseconds = (): number => {
     }
     return Date.now() * 1000;
 };
+
+export function removeKeys(object: Record<string, unknown>, keys: string[]): Record<string, unknown> {
+    return Object.keys(object).reduce((acc, key) => {
+        if (!keys.includes(key)) {
+            acc[key] = object[key];
+        }
+        return acc;
+    }, {} as Record<string, unknown>);
+}
