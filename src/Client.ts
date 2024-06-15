@@ -15,14 +15,15 @@ import { CommandManager } from './Core/Command';
 import { NotiflyAPI } from './Core/API';
 import { SdkStateManager, SdkState, type SdkType } from './Core/SdkState';
 import { SessionManager } from './Core/Session';
-import { initializeNotiflyStorage, isValidProjectId } from './Core/Utils';
+import { initializeNotiflyStorage, isValidProjectId, isValidTimezoneId, removeKeys } from './Core/Utils';
+import { BuiltInUserPropertyKey } from './Constants';
 
 let initSemaphore = false;
 
 /**
- * Initializes the Notifly SDK. This should be called as early as possible in your application to function properly.
- * @param {NotiflyInitializeOptions} options - An object containing the project ID, username, password, device token, and push subscription options.
- * @returns {Promise<boolean>} A promise that resolves with a boolean value indicating whether the SDK was initialized successfully.
+ * @summary Initializes the Notifly SDK. All the other SDK commands will be executed only after the SDK is initialized.
+ *
+ * @async
  */
 export async function initialize(options: NotiflyInitializeOptions): Promise<boolean> {
     if (initSemaphore) {
@@ -92,10 +93,12 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
 }
 
 /**
- * @param {string} eventName - The name of the event to track.
- * @param {Record<string, any> | undefined} eventParams - An object containing the event parameters corresponding to the provided event.
- * @param {string[] | null | undefined} segmentationEventParamKeys - An array of event parameter keys to track as segmentation parameters.
- * @returns {Promise<void>}
+ * @summary Tracks an event with the given name and parameters.
+ *
+ * @async
+ *
+ * @example
+ * trackEvent('my_event', { key1: 'value1', key2: 'value2' });
  */
 export async function trackEvent(
     eventName: string,
@@ -123,15 +126,14 @@ export async function trackEvent(
 /**
  * Sets or removes user ID for the current user.
  *
- * @async
- * @param {string | null | undefined} userId - A nullable, optional string containing the user ID to set.
- * @returns {Promise<void>}
  * @summary If the user ID is null or undefined, the user ID will be removed. Otherwise, the user ID will be set to the provided value.
  *
+ * @async
+ *
  * @example
- * await setUserId('myUserID') // Sets the user ID to 'myUserID'
- * await setUserId(null) // Removes the user ID
- * await setUserId() // Removes the user ID
+ * setUserId('myUserID') // Sets the user ID to 'myUserID'
+ * setUserId(null) // Removes the user ID
+ * setUserId() // Removes the user ID
  */
 export async function setUserId(userId?: string | null | undefined, options?: SetUserIdOptions): Promise<void> {
     if (SdkStateManager.halted) {
@@ -152,13 +154,12 @@ export async function setUserId(userId?: string | null | undefined, options?: Se
 }
 
 /**
- * Removes the external user ID and Notifly user ID from localForage.
+ * @summary Removes the external user ID and Notifly user ID from localForage.
  *
  * @async
- * @returns {Promise<void>}
  *
  * @example
- * await removeUserId();
+ * removeUserId();
  */
 export async function removeUserId(options?: SetUserIdOptions): Promise<void> {
     if (SdkStateManager.halted) {
@@ -181,17 +182,27 @@ export async function removeUserId(options?: SetUserIdOptions): Promise<void> {
  * Sets user properties for the current user.
  *
  * @async
- * @param {Record<string, any>} params - An object containing the user properties to set.
- * @returns {Promise<void>}
  *
  * @example
- * await setUserProperties({ external_user_id: 'myUserID' });
+ * setUserProperties({ name: 'John Doe', age: 42 });
  */
 export async function setUserProperties(params: Record<string, any>): Promise<void> {
     if (SdkStateManager.halted) {
         console.warn('[Notifly] SDK has been stopped due to the unrecoverable error or termination. Ignoring...');
         return;
     }
+
+    if (Object.keys(params).length === 0) {
+        console.warn('[Notifly] No user properties provided. Ignoring...');
+        return;
+    }
+
+    const timezone = params[BuiltInUserPropertyKey.TIMEZONE];
+    if (timezone && !isValidTimezoneId(timezone)) {
+        console.warn('[Notifly] Invalid timezone identifier. Ignoring timezone property.');
+        return setUserProperties(removeKeys(params, [BuiltInUserPropertyKey.TIMEZONE]));
+    }
+
     try {
         await CommandManager.getInstance().dispatch(
             new SetUserPropertiesCommand({
@@ -205,10 +216,76 @@ export async function setUserProperties(params: Record<string, any>): Promise<vo
 }
 
 /**
+ * Sets phone number for the current user.
+ *
+ * @async
+ *
+ * @example
+ * setEmail('team@greyboxhq.com');
+ */
+export async function setEmail(email: string): Promise<void> {
+    if (!email?.trim() || typeof email !== 'string') {
+        console.error('[Notifly] Email must be a non-empty string');
+        return;
+    }
+    setUserProperties({
+        [BuiltInUserPropertyKey.EMAIL]: email.trim(),
+    });
+}
+
+/**
+ * Sets phone number for the current user.
+ *
+ * @async
+ *
+ * @example
+ * setPhoneNumber('01012345678');
+ */
+export async function setPhoneNumber(phoneNumber: string): Promise<void> {
+    if (!phoneNumber?.trim() || typeof phoneNumber !== 'string') {
+        console.error('[Notifly] Phone number must be a non-empty string');
+        return;
+    }
+    setUserProperties({
+        [BuiltInUserPropertyKey.PHONE_NUMBER]: phoneNumber.trim(),
+    });
+}
+
+/**
+ * Sets timezone for the current user.
+ * Timezone identifier must be a valid non-empty string.
+ *
+ * @see
+ * https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+ *
+ * @param tz - Timezone identifier. e.g. 'Asia/Seoul', 'America/New_York'
+ *
+ * @async
+ *
+ * @example
+ * setTimezone('Asia/Seoul');
+ * setTimezone('America/New_York');
+ */
+export async function setTimezone(tz: string): Promise<void> {
+    if (!tz?.trim() || typeof tz !== 'string') {
+        console.error('[Notifly] Timezone identifier must be a non-empty string');
+        return;
+    }
+
+    const trimmed = tz.trim();
+    if (!isValidTimezoneId(trimmed)) {
+        console.error('[Notifly] Invalid timezone identifier. Please provide a valid timezone identifier.');
+        return;
+    }
+    setUserProperties({
+        [BuiltInUserPropertyKey.TIMEZONE]: trimmed,
+    });
+}
+
+/**
  * Gets the current user ID.
  *
  * @async
- * @returns {Promise<string | null>}
  *
  * @example
  * const currentUserId = await getUserId();
@@ -222,8 +299,11 @@ export async function getUserId(): Promise<string | null> {
 
 /**
  * Gets the user properties for the current user.
+ *
  * @async
- * @returns {Promise<Record<string, any> | null>}
+ *
+ * @example
+ * const userProperties = await getUserProperties();
  */
 export async function getUserProperties(): Promise<Record<string, any> | null> {
     if (SdkStateManager.halted) {
@@ -232,6 +312,13 @@ export async function getUserProperties(): Promise<Record<string, any> | null> {
     return await CommandManager.getInstance().dispatch(new getUserPropertiesCommand());
 }
 
+/**
+ * @summary Requests permission from the user to send web push notifications.
+ *
+ * @async
+ *
+ * @param languageToForce - The language to force for the permission prompt. If not provided, the browser preferred language will be used. The language should be one of the 'ko', 'en', 'ja', 'zh'
+ */
 export async function requestPermission(languageToForce?: Language): Promise<void> {
     if (SdkStateManager.halted) {
         console.warn('[Notifly] SDK has been stopped due to the unrecoverable error or termination. Ignoring...');
@@ -257,15 +344,15 @@ export function setSdkType(sdkType: SdkType) {
     SdkStateManager.setSdkType(sdkType);
 }
 
-// Function below is only for cafe24 scripts
-export function setSource(source: 'cafe24' | null) {
-    SdkStateManager.setSource(source);
+export function getSdkVersion(): string {
+    return SdkStateManager.getSdkVersion();
 }
 
 export function setSdkVersion(sdkVersion: string) {
     SdkStateManager.setSdkVersion(sdkVersion);
 }
 
-export function getSdkVersion(): string {
-    return SdkStateManager.getSdkVersion();
+// Function below is only for cafe24 scripts
+export function setSource(source: 'cafe24' | null) {
+    SdkStateManager.setSource(source);
 }

@@ -1,8 +1,14 @@
-export enum NAMESPACE {
+export enum HashNamespace {
     EVENTID = '830b5f7b-e392-43db-a17b-d835f0bcab2b',
     REGISTERED_USERID = 'ce7c62f9-e8ae-4009-8fd6-468e9581fa21',
     UNREGISTERED_USERID = 'a6446dcf-c057-4de7-a360-56af8659d52f',
     DEVICEID = '830848b3-2444-467d-9cd8-3430d2738c57',
+}
+
+export enum BuiltInUserPropertyKey {
+    PHONE_NUMBER = '$phone_number',
+    EMAIL = '$email',
+    TIMEZONE = '$timezone',
 }
 
 export const LAST_SESSION_TIME_LOGGING_INTERVAL = 5000; // 5 seconds
