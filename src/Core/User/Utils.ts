@@ -1,7 +1,10 @@
 import cloneDeep from 'lodash/cloneDeep';
 import isEqual from 'lodash/isEqual';
 
-import { EventIntermediateCounts } from '../Interfaces/User';
+import type { EventIntermediateCounts, UserData } from '../Interfaces/User';
+
+import { getPlatform } from '../Utils';
+import { SdkStateManager } from '../SdkState';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function getKSTCalendarDateString(daysOffset = 0) {
@@ -78,6 +81,14 @@ export function mergeObjects(first: Record<string, any>, second: Record<string, 
     return {
         ...first,
         ...second,
+    };
+}
+
+export function getCurrentDefaultUserData(): UserData {
+    return {
+        platform: getPlatform(),
+        sdk_version: SdkStateManager.getSdkVersion(),
+        sdk_type: SdkStateManager.type,
     };
 }
 
