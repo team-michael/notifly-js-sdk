@@ -763,6 +763,9 @@ describe('checkCondition', () => {
                 age: 30,
                 gender: 'male',
             },
+            sdk_type: 'js',
+            sdk_version: '2.11.2',
+            platform: 'web',
         };
 
         const campaign: Campaign = {
@@ -811,6 +814,9 @@ describe('checkCondition', () => {
                 age: 30,
                 gender: 'male',
             },
+            sdk_type: 'js',
+            sdk_version: '2.11.2',
+            platform: 'web',
         };
 
         const campaign: Campaign = {
@@ -860,6 +866,9 @@ describe('checkCondition', () => {
                 gender: 'male',
                 country: 'USA',
             },
+            sdk_type: 'js',
+            sdk_version: '2.11.2',
+            platform: 'web',
         };
 
         const campaign: Campaign = {
@@ -920,6 +929,9 @@ describe('checkCondition', () => {
                 gender: 'male',
                 country: 'USA',
             },
+            sdk_type: 'js',
+            sdk_version: '2.11.2',
+            platform: 'web',
         };
 
         const campaign: Campaign = {
@@ -992,6 +1004,9 @@ describe('checkCondition', () => {
                 gender: 'male',
                 country: 'USA',
             },
+            sdk_type: 'js',
+            sdk_version: '2.11.2',
+            platform: 'web',
         };
 
         const campaign: Campaign = {
@@ -1078,6 +1093,9 @@ describe('checkCondition', () => {
                 gender: 'male',
                 country: 'USA',
             },
+            sdk_type: 'js',
+            sdk_version: '2.11.2',
+            platform: 'web',
         };
 
         const campaign: Campaign = {
@@ -1164,6 +1182,9 @@ describe('checkCondition', () => {
                 gender: 'male',
                 country: 'USA',
             },
+            sdk_type: 'js',
+            sdk_version: '2.11.2',
+            platform: 'web',
         };
         const eventIntermediateCounts = [
             { dt: '2023-05-26', name: 'Event A', count: 3, event_params: {} },
@@ -1260,6 +1281,9 @@ describe('checkCondition', () => {
                 gender: 'male',
                 country: 'USA',
             },
+            sdk_type: 'js',
+            sdk_version: '2.11.2',
+            platform: 'web',
         };
         const eventIntermediateCounts = [
             { dt: formattedDate, name: 'Event A', count: 3, event_params: {} },

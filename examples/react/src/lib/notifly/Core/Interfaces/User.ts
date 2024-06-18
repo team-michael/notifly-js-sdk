@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export interface DeviceProperties {
-    platform?: string;
+    platform: string;
     os_version?: string;
     app_version?: string;
-    sdk_version?: string;
-    sdk_type?: string;
+    sdk_version: string;
+    sdk_type: string;
     updated_at?: string; // Not used
 }
 

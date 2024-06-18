@@ -26,6 +26,8 @@ export class UserIdentityManager {
     };
 
     static async setUserId(userId?: string | null | undefined, options?: SetUserIdOptions): Promise<void> {
+        UserStateManager.userData.external_user_id = userId?.trim();
+
         const onlyIfChanged = options?.onlyIfChanged ?? this.DEFAULT_SET_USER_ID_OPTIONS.onlyIfChanged;
         if (onlyIfChanged) {
             const previousUserId = await this.getUserId();

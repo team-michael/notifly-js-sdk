@@ -4,13 +4,18 @@ import type { EventIntermediateCounts, UserData } from '../Interfaces/User';
 
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { NotiflyAPI } from '../API';
-import { mergeEventCounts, mergeObjects, reEligibleConditionUnitToSeconds, sanitizeRandomBucketNumber } from './Utils';
+import {
+    getCurrentDefaultUserData,
+    mergeEventCounts,
+    mergeObjects,
+    reEligibleConditionUnitToSeconds,
+    sanitizeRandomBucketNumber,
+} from './Utils';
 
 import {
     getKSTCalendarDateString,
     isValidCampaignData,
     isValidEventIntermediateCounts,
-    isValidUserData,
     isValidUserState,
 } from './Utils';
 
@@ -27,7 +32,7 @@ type SyncStateOptions = {
 export class UserStateManager {
     static eventIntermediateCounts: EventIntermediateCounts[] = [];
     static inWebMessageCampaigns: Campaign[] = [];
-    static userData: UserData = {};
+    static userData: UserData = getCurrentDefaultUserData();
 
     static get state() {
         return {
@@ -176,9 +181,9 @@ export class UserStateManager {
 
                     this.eventIntermediateCounts = parsedState.eventIntermediateCounts;
                     this.inWebMessageCampaigns = parsedState.inWebMessageCampaigns;
-                    this.userData = parsedState.userData;
+                    this._overwriteUserData(parsedState.userData);
 
-                    await this._updateExternalUserId();
+                    await this.saveState();
                     return;
                 }
                 console.warn('[Notifly] State from storage might have been corrupted. Ignoring state from storage.');
@@ -205,7 +210,7 @@ export class UserStateManager {
         );
 
         this._updateStatesBasedOnPolicy(data, policy);
-        await Promise.all([this.saveState(), this._updateExternalUserId()]);
+        await this.saveState();
     }
 
     private static _updateStatesBasedOnPolicy(data: any, policy: SyncStatePolicy) {
@@ -218,15 +223,11 @@ export class UserStateManager {
             ? data.eventIntermediateCountsData
             : [];
 
-        const incomingUserData: UserData = isValidUserData(data.userData) ? data.userData : {};
-        const sanitizedIncomingRandomBucketNumber = sanitizeRandomBucketNumber(incomingUserData.random_bucket_number);
-        incomingUserData.random_bucket_number = sanitizedIncomingRandomBucketNumber;
-
         switch (policy) {
             case SyncStatePolicy.OVERWRITE:
                 this.inWebMessageCampaigns = incomingCampaignData;
                 this.eventIntermediateCounts = incomingEventIntermediateCountsData;
-                this.userData = incomingUserData;
+                this._overwriteUserData(data.userData || {});
                 break;
             case SyncStatePolicy.MERGE:
                 // Should merge data
@@ -235,26 +236,36 @@ export class UserStateManager {
                     this.eventIntermediateCounts,
                     incomingEventIntermediateCountsData
                 );
-                this.userData = {
-                    ...this.userData,
-                    user_properties: mergeObjects(
-                        this.userData.user_properties || {},
-                        incomingUserData.user_properties || {}
-                    ),
-                    campaign_hidden_until: mergeObjects(
-                        this.userData.campaign_hidden_until || {},
-                        incomingUserData.campaign_hidden_until || {}
-                    ),
-                    random_bucket_number: sanitizedIncomingRandomBucketNumber,
-                };
+                this._mergeUserData(data.userData || {});
                 break;
             default:
                 throw new Error(`Invalid policy: ${policy}`);
         }
     }
 
-    private static async _updateExternalUserId() {
-        this.userData.external_user_id = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
+    // User data fields to be manipulated :
+    // - user_properties
+    // - campaign_hidden_until
+    // - random_bucket_number
+    // - updated_at
+    private static _overwriteUserData(incoming: UserData) {
+        this.userData.user_properties = incoming.user_properties || {};
+        this.userData.campaign_hidden_until = incoming.campaign_hidden_until;
+        this.userData.random_bucket_number = sanitizeRandomBucketNumber(incoming.random_bucket_number);
+        this.userData.updated_at = incoming.updated_at || new Date().toISOString();
+    }
+
+    private static _mergeUserData(incoming: UserData) {
+        this.userData.user_properties = mergeObjects(
+            this.userData.user_properties || {},
+            incoming.user_properties || {}
+        );
+        this.userData.campaign_hidden_until = mergeObjects(
+            this.userData.campaign_hidden_until || {},
+            incoming.campaign_hidden_until || {}
+        );
+        this.userData.random_bucket_number = sanitizeRandomBucketNumber(incoming.random_bucket_number);
+        this.userData.updated_at = incoming.updated_at || new Date().toISOString();
     }
 
     static getMessageLogs(campaignId: string) {
