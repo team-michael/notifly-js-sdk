@@ -1,3 +1,8 @@
+# 2.12.1
+
+-   Fix external user ID based segmentation issue
+    -   **2.11.x versions have a critical bug that causes external user ID based segmentation to not work properly, please update to 2.12.1 to fix this issue**
+
 # 2.12.0
 
 -   Now SDK supports in-web-message template v3
