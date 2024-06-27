@@ -64,6 +64,10 @@ export class UserStateManager {
         });
     }
 
+    static async updateExternalUserId() {
+        this.userData.external_user_id = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
+    }
+
     static updateAndGetCampaignHiddenUntilDataAccordingToReEligibleCondition(
         campaignId: string,
         reEligibleCondition: ReEligibleCondition
@@ -164,6 +168,8 @@ export class UserStateManager {
     }
 
     private static async _syncState(options: SyncStateOptions): Promise<void> {
+        await this.updateExternalUserId();
+
         const useStorageIfAvailable = options.useStorageIfAvailable ?? true;
         const policy = options.policy ?? SyncStatePolicy.OVERWRITE;
 
