@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+import type { InWebMessageTemplateProps } from 'notifly-web-message-renderer';
+
 export type SegmentConditionUnitType = 'user' | 'user_metadata' | 'device' | 'event';
 export type ValueType = 'INT' | 'TEXT' | 'BOOL';
 export type GroupOperator = 'OR' | null;
@@ -76,22 +79,7 @@ export interface Campaign {
     re_eligible_condition?: ReEligibleCondition;
     message: {
         html_url: string;
-        modal_properties: {
-            template_name: string;
-            width?: string | number;
-            height?: string | number;
-            zIndex?: string | number;
-            position?: string;
-            bottom?: string | number;
-            right?: string | number;
-            left?: string | number;
-            top?: string | number;
-            center?: boolean;
-            padding?: string | number;
-            background?: boolean;
-            backgroundOpacity?: number;
-            small_screen_width_full?: boolean;
-        };
+        modal_properties: InWebMessageTemplateProps;
     };
     segment_info?: {
         groups?: {

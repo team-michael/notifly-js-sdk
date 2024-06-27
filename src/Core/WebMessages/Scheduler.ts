@@ -1,6 +1,6 @@
 import type { Campaign } from '../Interfaces/Campaign';
 
-import NotiflyWebMessageRenderer from 'notifly-web-message-renderer';
+import { render, close, getIframe } from 'notifly-web-message-renderer';
 
 import { UserIdentityManager } from '../User';
 import { EventLogger, NotiflyInternalEvent } from '../Event';
@@ -44,7 +44,7 @@ export class WebMessageScheduler {
         const modalProperties = message.modal_properties;
         const templateName = modalProperties.template_name;
 
-        NotiflyWebMessageRenderer.render(campaign.message.modal_properties, message.html_url, {
+        render(campaign.message.modal_properties, message.html_url, {
             onRenderCompleted: () => {
                 EventLogger.logEvent(
                     NotiflyInternalEvent.IN_WEB_MESSAGE_SHOW,
@@ -62,12 +62,12 @@ export class WebMessageScheduler {
                 const messageEventListener = (() => {
                     const func = async (event: MessageEvent) => {
                         try {
-                            if (event.source === NotiflyWebMessageRenderer.getIframe().contentWindow) {
+                            if (event.source === getIframe().contentWindow) {
                                 const message = event.data;
                                 if (message.type === 'close') {
                                     this._isWebMessageOpen = false;
                                     try {
-                                        NotiflyWebMessageRenderer.dispose();
+                                        close();
                                     } catch (error) {
                                         /* empty */
                                     } finally {
@@ -99,7 +99,7 @@ export class WebMessageScheduler {
                                 } else if (message.type === 'main_button') {
                                     this._isWebMessageOpen = false;
                                     try {
-                                        NotiflyWebMessageRenderer.dispose();
+                                        close();
                                     } catch (error) {
                                         /* empty */
                                     } finally {
@@ -144,6 +144,9 @@ export class WebMessageScheduler {
                 console.error(
                     '[Notifly] Error creating in web message. Web message content is either invalid or not found'
                 );
+            },
+            onAutoDismissed: () => {
+                this._isWebMessageOpen = false;
             },
         });
     }

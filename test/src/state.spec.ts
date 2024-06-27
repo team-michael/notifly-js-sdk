@@ -1,3 +1,4 @@
+import { InWebMessageTemplateProps } from 'notifly-web-message-renderer';
 import type { Campaign } from '../../src/Core/Interfaces/Campaign';
 
 import { UserStateManager } from '../../src/Core/User/State';
@@ -105,7 +106,7 @@ describe('getCampaignsToSchedule', () => {
             updated_at: '2021-07-09T03:06:40.000Z',
             starts: [1625800000],
             end: null,
-            message: { html_url: '', modal_properties: { template_name: '' } },
+            message: { html_url: '', modal_properties: { template_name: '' } as InWebMessageTemplateProps },
             segment_type: 'condition',
         },
         {
@@ -125,7 +126,7 @@ describe('getCampaignsToSchedule', () => {
             updated_at: '2021-07-07T23:20:00.000Z',
             starts: [1685501200],
             end: null,
-            message: { html_url: '', modal_properties: { template_name: '' } },
+            message: { html_url: '', modal_properties: { template_name: '' } as InWebMessageTemplateProps },
             segment_type: 'condition',
         },
         {
@@ -145,7 +146,7 @@ describe('getCampaignsToSchedule', () => {
             updated_at: '2021-07-10T06:53:20.000Z',
             starts: [1685511200],
             end: null,
-            message: { html_url: '', modal_properties: { template_name: '' } },
+            message: { html_url: '', modal_properties: { template_name: '' } as InWebMessageTemplateProps },
             segment_type: 'condition',
         },
         {
@@ -165,7 +166,7 @@ describe('getCampaignsToSchedule', () => {
             updated_at: '2021-07-06T19:33:20.000Z',
             starts: [1685291200],
             end: 1685391200,
-            message: { html_url: '', modal_properties: { template_name: '' } },
+            message: { html_url: '', modal_properties: { template_name: '' } as InWebMessageTemplateProps },
             segment_type: 'condition',
         },
         {
@@ -185,7 +186,7 @@ describe('getCampaignsToSchedule', () => {
             updated_at: '2021-07-07T23:20:00.000Z',
             starts: [1685891100],
             end: null,
-            message: { html_url: '', modal_properties: { template_name: '' } },
+            message: { html_url: '', modal_properties: { template_name: '' } as InWebMessageTemplateProps },
             segment_type: 'condition',
         },
     ];
@@ -213,7 +214,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -261,7 +265,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -324,7 +331,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -384,7 +394,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -424,7 +437,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -463,7 +479,10 @@ describe('checkCondition', () => {
             id: 'test-id',
             status: 1,
             channel: 'in-web-message',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             updated_at: '2023-04-30T00:00:00.000Z',
             triggering_conditions: [
                 [
@@ -488,7 +507,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -517,7 +539,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -561,7 +586,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -614,7 +642,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -667,7 +698,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -720,7 +754,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -773,7 +810,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -824,7 +864,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -876,7 +919,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -939,7 +985,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -1014,7 +1063,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -1103,7 +1155,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -1197,7 +1252,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {
@@ -1296,7 +1354,10 @@ describe('checkCondition', () => {
             status: 1,
             channel: 'in-web-message',
             updated_at: '2023-04-30T00:00:00.000Z',
-            message: { html_url: '', modal_properties: { template_name: 'test-template' } },
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
             triggering_conditions: [
                 [
                     {

@@ -1,3 +1,9 @@
+# 2.12.0
+
+-   Now SDK supports in-web-message template v3
+    -   Animation effect is available
+    -   Auto dismiss feature is available
+
 # 2.10.4
 
 -   Increase timestamp precision to microseconds
