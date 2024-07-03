@@ -14,7 +14,7 @@ import {
     mapNotificationPermissionToEnum,
 } from './Utils';
 
-const NOTIFLY_LOG_EVENT_URL = 'https://12lnng07q2.execute-api.ap-northeast-2.amazonaws.com/prod/records';
+const NOTIFLY_LOG_EVENT_URL = 'https://e.notifly.tech/records';
 
 export enum NotiflyInternalEvent {
     SESSION_START = 'session_start',

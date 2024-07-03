@@ -78,10 +78,6 @@ export class UserIdentityManager {
                     ? SyncStatePolicy.OVERWRITE // A -> B
                     : SyncStatePolicy.MERGE; // null -> A
                 await UserStateManager.refresh(policy);
-            } else {
-                // Even if the user ID is the same, we opted to log the event to ensure for logging purposes that the user ID is set.
-                // See https://www.notion.so/greyboxhq/User-Set-User-Id-e3ab764388724a878fc56d8e54c95bc8
-                await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, params, null, true);
             }
         } else {
             // Update local state
