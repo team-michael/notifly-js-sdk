@@ -1,3 +1,8 @@
+# 2.13.0
+
+-   Change API hostname for tracking events
+-   Remove redundant set user ID API calls
+
 # 2.12.1
 
 -   Fix external user ID based segmentation issue
