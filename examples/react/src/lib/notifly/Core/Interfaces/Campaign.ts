@@ -21,7 +21,24 @@ export type TriggeringConditionOperator =
     | 'matches_regex'
     | 'does_not_match_regex';
 
-export type Operator = '=' | '<>' | '>' | '>=' | '<' | '<=' | '@>' | 'IS_NULL' | 'IS_NOT_NULL';
+export type Operator =
+    | '='
+    | '<>'
+    | '>'
+    | '>='
+    | '<'
+    | '<='
+    | '@>'
+    | 'IS_NULL'
+    | 'IS_NOT_NULL'
+    | 'starts_with'
+    | 'does_not_start_with'
+    | 'ends_with'
+    | 'does_not_end_with'
+    | 'contains'
+    | 'does_not_contain'
+    | 'matches_regex'
+    | 'does_not_match_regex';
 
 export interface Condition {
     unit: SegmentConditionUnitType;

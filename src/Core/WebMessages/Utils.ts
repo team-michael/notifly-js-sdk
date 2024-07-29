@@ -4,7 +4,7 @@ import { ValueType } from '../Interfaces/Campaign';
 export type PopupVersion = 1 | 2;
 
 export class ValueComparator {
-    private static _safeCast(value: any, type: ValueType | 'ARRAY') {
+    private static _castOrThrow(value: any, type: ValueType | 'ARRAY') {
         switch (type) {
             case 'TEXT':
                 if (typeof value !== 'string') {
@@ -51,9 +51,18 @@ export class ValueComparator {
         }
     }
 
+    private static _castOrNull(value: any, type: ValueType | 'ARRAY') {
+        try {
+            return this._castOrThrow(value, type);
+        } catch (error) {
+            console.warn(`[Notifly] ${(error as Error).message}`);
+            return null;
+        }
+    }
+
     static IsEqual(a: any, b: any, type: ValueType): boolean {
         try {
-            return this._safeCast(a, type) === this._safeCast(b, type);
+            return this._castOrThrow(a, type) === this._castOrThrow(b, type);
         } catch (error) {
             console.warn(`[Notifly] ${(error as Error).message}`);
             return false;
@@ -62,7 +71,7 @@ export class ValueComparator {
 
     static IsNotEqual(a: any, b: any, type: ValueType): boolean {
         try {
-            return this._safeCast(a, type) !== this._safeCast(b, type);
+            return this._castOrThrow(a, type) !== this._castOrThrow(b, type);
         } catch (error) {
             console.warn(`[Notifly] ${(error as Error).message}`);
             return false;
@@ -71,7 +80,7 @@ export class ValueComparator {
 
     static IsGreaterThan(a: any, b: any, type: ValueType): boolean {
         try {
-            return this._safeCast(a, type) > this._safeCast(b, type);
+            return this._castOrThrow(a, type) > this._castOrThrow(b, type);
         } catch (error) {
             console.warn(`[Notifly] ${(error as Error).message}`);
             return false;
@@ -80,7 +89,7 @@ export class ValueComparator {
 
     static IsGreaterThanOrEqual(a: any, b: any, type: ValueType): boolean {
         try {
-            return this._safeCast(a, type) >= this._safeCast(b, type);
+            return this._castOrThrow(a, type) >= this._castOrThrow(b, type);
         } catch (error) {
             console.warn(`[Notifly] ${(error as Error).message}`);
             return false;
@@ -89,7 +98,7 @@ export class ValueComparator {
 
     static IsLessThan(a: any, b: any, type: ValueType): boolean {
         try {
-            return this._safeCast(a, type) < this._safeCast(b, type);
+            return this._castOrThrow(a, type) < this._castOrThrow(b, type);
         } catch (error) {
             console.warn(`[Notifly] ${(error as Error).message}`);
             return false;
@@ -98,17 +107,17 @@ export class ValueComparator {
 
     static IsLessThanOrEqual(a: any, b: any, type: ValueType): boolean {
         try {
-            return this._safeCast(a, type) <= this._safeCast(b, type);
+            return this._castOrThrow(a, type) <= this._castOrThrow(b, type);
         } catch (error) {
             console.warn(`[Notifly] ${(error as Error).message}`);
             return false;
         }
     }
 
-    static Contains(a: any, b: any, type: ValueType): boolean {
+    static HasElement(a: any, b: any, type: ValueType): boolean {
         try {
-            const array = this._safeCast(a, 'ARRAY') as any[];
-            const value = this._safeCast(b, type);
+            const array = this._castOrThrow(a, 'ARRAY') as any[];
+            const value = this._castOrThrow(b, type);
 
             return array.some(
                 ((element: any) => {
@@ -122,6 +131,71 @@ export class ValueComparator {
             console.warn(`[Notifly] ${(error as Error).message}`);
             return false;
         }
+    }
+
+    static StartsWith(a: any, b: any): boolean {
+        const castedA = this._castOrNull(a, 'TEXT') as string | null;
+        const castedB = this._castOrNull(b, 'TEXT') as string | null;
+
+        return castedB !== null && !!castedA?.startsWith(castedB);
+    }
+
+    static DoesNotStartWith(a: any, b: any): boolean {
+        const castedA = this._castOrNull(a, 'TEXT') as string | null;
+        const castedB = this._castOrNull(b, 'TEXT') as string | null;
+
+        return castedB !== null && !castedA?.startsWith(castedB);
+    }
+
+    static EndsWith(a: any, b: any): boolean {
+        const castedA = this._castOrNull(a, 'TEXT') as string | null;
+        const castedB = this._castOrNull(b, 'TEXT') as string | null;
+
+        return castedB !== null && !!castedA?.endsWith(castedB);
+    }
+
+    static DoesNotEndWith(a: any, b: any): boolean {
+        const castedA = this._castOrNull(a, 'TEXT') as string | null;
+        const castedB = this._castOrNull(b, 'TEXT') as string | null;
+
+        return castedB !== null && !castedA?.endsWith(castedB);
+    }
+
+    static Contains(a: any, b: any): boolean {
+        const castedA = this._castOrNull(a, 'TEXT') as string | null;
+        const castedB = this._castOrNull(b, 'TEXT') as string | null;
+
+        return castedB !== null && !!castedA?.includes(castedB);
+    }
+
+    static DoesNotContain(a: any, b: any): boolean {
+        const castedA = this._castOrNull(a, 'TEXT') as string | null;
+        const castedB = this._castOrNull(b, 'TEXT') as string | null;
+
+        return castedB !== null && !castedA?.includes(castedB);
+    }
+
+    static MatchesRegex(a: any, b: any): boolean {
+        const castedA = this._castOrNull(a, 'TEXT') as string | null;
+        const castedB = this._castOrNull(b, 'TEXT') as string | null;
+
+        return castedB !== null && !!matchRegex(castedA ?? '', castedB);
+    }
+
+    static DoesNotMatchRegex(a: any, b: any): boolean {
+        const castedA = this._castOrNull(a, 'TEXT') as string | null;
+        const castedB = this._castOrNull(b, 'TEXT') as string | null;
+
+        return castedB !== null && !matchRegex(castedA ?? '', castedB);
+    }
+}
+
+export function matchRegex(str: string, regex: string): boolean {
+    try {
+        return new RegExp(regex).test(str);
+    } catch (error) {
+        console.warn(`[Notifly] ${(error as Error).message}`);
+        return false;
     }
 }
 

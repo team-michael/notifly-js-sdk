@@ -16,7 +16,7 @@ import type { UserData, DeviceProperties, UserMetadataProperties } from '../Inte
 import { UserStateManager } from '../User/State';
 import { WebMessageScheduler } from './Scheduler';
 
-import { ValueComparator, getKSTCalendarDateString, isValueNotPresent } from './Utils';
+import { ValueComparator, getKSTCalendarDateString, isValueNotPresent, matchRegex } from './Utils';
 
 export class WebMessageManager {
     static async initialize(hard = false) {
@@ -187,18 +187,10 @@ export class WebMessageManager {
             case 'does_not_contain':
                 return !eventName.includes(operand);
             case 'matches_regex': {
-                try {
-                    return new RegExp(operand).test(eventName);
-                } catch (e) {
-                    return false;
-                }
+                return matchRegex(eventName, operand);
             }
             case 'does_not_match_regex': {
-                try {
-                    return !new RegExp(operand).test(eventName);
-                } catch (e) {
-                    return false;
-                }
+                return !matchRegex(eventName, operand);
             }
             default:
                 console.error(
@@ -257,9 +249,26 @@ export class WebMessageManager {
             case '<=':
                 return ValueComparator.IsLessThanOrEqual(paramValue, value, valueType);
             case '@>':
-                return ValueComparator.Contains(paramValue, value, valueType);
+                return ValueComparator.HasElement(paramValue, value, valueType);
+            case 'starts_with':
+                return ValueComparator.StartsWith(paramValue, value);
+            case 'does_not_start_with':
+                return ValueComparator.DoesNotStartWith(paramValue, value);
+            case 'ends_with':
+                return ValueComparator.EndsWith(paramValue, value);
+            case 'does_not_end_with':
+                return ValueComparator.DoesNotEndWith(paramValue, value);
+            case 'contains':
+                return ValueComparator.Contains(paramValue, value);
+            case 'does_not_contain':
+                return ValueComparator.DoesNotContain(paramValue, value);
+            case 'matches_regex':
+                return ValueComparator.MatchesRegex(paramValue, value);
+            case 'does_not_match_regex':
+                return ValueComparator.DoesNotMatchRegex(paramValue, value);
             // IS_NULL and IS_NOT_NULL are handled above
             default:
+                console.warn(`[Notifly] Invalid operator - ${operator}`);
                 return false;
         }
     }
@@ -430,9 +439,10 @@ export class WebMessageManager {
             case '<=':
                 return ValueComparator.IsLessThanOrEqual(userAttributeValue, value, valueType);
             case '@>':
-                return ValueComparator.Contains(userAttributeValue, value, valueType);
+                return ValueComparator.HasElement(userAttributeValue, value, valueType);
             // IS_NULL is handled above
             default:
+                console.warn(`[Notifly] Invalid operator - ${operator}`);
                 return false;
         }
     }
