@@ -1,7 +1,7 @@
 # Examples and tests
 examples/
 test/
-jest.config.ts
+jest.config.js
 
 # Scripts
 scripts/
@@ -9,6 +9,7 @@ scripts/
 # Build configurations
 babel.config.js
 rollup.config.js
+rollup.global.config.js
 tsconfig.*
 
 # Formatters and linters
@@ -24,3 +25,7 @@ tsconfig.*
 package-lock.json
 node_modules/
 notifly-service-worker.js
+
+# Source file
+src/
+
