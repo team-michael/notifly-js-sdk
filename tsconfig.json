@@ -8,11 +8,11 @@
     "declarationMap": true,
     "downlevelIteration": true,
     "inlineSources": true,
-    "importHelpers": true,
+    "importHelpers": false,
+    "noEmitHelpers": false,
     "lib": ["DOM"],
     "module": "commonjs",
     "moduleResolution": "node",
-    "noEmitHelpers": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
@@ -30,8 +30,5 @@
     "rootDir": ".",
     "baseUrl": ".",
     "allowSyntheticDefaultImports": true,
-    "paths": {
-      "tslib": ["node_modules/tslib/tslib.d.ts"]
-    }
   }
 }
