@@ -26,6 +26,3 @@ package-lock.json
 node_modules/
 notifly-service-worker.js
 
-# Source file
-src/
-
