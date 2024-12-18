@@ -1,5 +1,5 @@
 {
-  "name": "notifly-js-sdk-dev",
+  "name": "notifly-js-sdk",
   "version": "2.15.0",
   "description": "Notifly JS SDK for browser.",
   "main": "lib/cjs/index.js",
