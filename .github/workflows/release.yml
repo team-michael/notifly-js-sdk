@@ -55,9 +55,10 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          if [ "${{ github.event.inputs.tag_type }}" = "canary" ]; then
+          if [ ${{ github.event.inputs.tag_type }} = "canary" ] then
             echo "Publishing as canary..."
             npm publish --tag canary
           else
             echo "Publishing as latest..."
             npm publish
+          fi
