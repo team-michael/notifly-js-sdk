@@ -8,12 +8,12 @@ on:
         required: true
       tag_type:
         type: choice
-        description: 'Tag type for npm (latest or canary)'
+        description: 'Tag type for npm (latest or dev)'
         required: true
         default: latest
         options:
           - latest
-          - canary
+          - dev
 
 jobs:
   release:
@@ -37,6 +37,16 @@ jobs:
           echo "Bumping version to ${{ github.event.inputs.version }}"
           npm version ${{ github.event.inputs.version }} --no-git-tag-version
 
+      - name: Update package name (dev or prod)
+        run: |
+          if [ "${{ inputs.tag_type }}" = "dev" ]; then
+          echo "Updating package name to notifly-js-sdk-dev..."
+          node scripts/update-package-name.js notifly-js-sdk-dev
+          else
+          echo "Updating package name to notifly-js-sdk..."
+          node scripts/update-package-name.js notifly-js-sdk
+          fi
+
       - name: Read Changelog
         id: read_changelog
         if: ${{ !endsWith(github.event.inputs.version, 'SNAPSHOT') }}
@@ -59,11 +69,11 @@ jobs:
 
       - name: Publish to npm
         run: |
-          if [ "${{ inputs.tag_type }}" = "canary" ]; then
-            echo "Publishing as canary..."
-            npm publish --tag canary
+          if [ "${{ inputs.tag_type }}" = "dev" ]; then
+            echo "Publishing to notifly-js-sdk-dev..."
+            npm publish --tag dev
           else
-            echo "Publishing as latest..."
+            echo "Publishing to notifly-js-sdk..."
             npm publish
           fi
         env:
