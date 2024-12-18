@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to be released'
+        required: true
+      tag_type:
+        type: choice
+        description: 'Tag type for npm (latest or canary)'
+        required: true
+        default: latest
+        options:
+          - latest
+          - canary
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: version update
+        run: |
+          echo "Bumping version to ${{ github.event.inputs.version }}"
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+
+      - name: Read Changelog
+        id: read_changelog
+        if: ${{ !endsWith(github.event.inputs.version, 'SNAPSHOT') }}
+        uses: mindsers/changelog-reader-action@v2
+        with:
+          version: ${{ github.event.inputs.version }}
+
+      - name: Create GitHub Release
+        if: steps.read_changelog.outputs.changes
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.event.inputs.version }}
+          name: Release ${{ github.event.inputs.version }}
+          body: ${{ steps.read_changelog.outputs.changes }}
+          allowUpdates: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build package
+        run: npm run build
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ "${{ github.event.inputs.tag_type }}" = "canary" ]; then
+            echo "Publishing as canary..."
+            npm publish --tag canary
+          else
+            echo "Publishing as latest..."
+            npm publish
