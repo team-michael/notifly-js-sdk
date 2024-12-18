@@ -74,7 +74,7 @@ jobs:
             npm publish
           else
             echo "Publishing to notifly-js-sdk..."
-            npm publish --tag canary
+            npm publish
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
