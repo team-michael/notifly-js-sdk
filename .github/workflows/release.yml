@@ -6,13 +6,13 @@ on:
       version:
         description: 'Version to be released'
         required: true
-      tag_type:
+      release_type:
         type: choice
-        description: 'Tag type for npm (latest or dev)'
+        description: 'sdk to publish (prod or dev)'
         required: true
-        default: latest
+        default: prod
         options:
-          - latest
+          - prod
           - dev
 
 jobs:
@@ -37,9 +37,9 @@ jobs:
           echo "Bumping version to ${{ github.event.inputs.version }}"
           npm version ${{ github.event.inputs.version }} --no-git-tag-version
 
-      - name: Update package name (dev or prod)
+      - name: Update package name (prod or dev)
         run: |
-          if [ "${{ inputs.tag_type }}" = "dev" ]; then
+          if [ "${{ inputs.release_type }}" = "dev" ]; then
           echo "Updating package name to notifly-js-sdk-dev..."
           node scripts/update-package-name.js notifly-js-sdk-dev
           else
@@ -69,7 +69,7 @@ jobs:
 
       - name: Publish to npm
         run: |
-          if [ "${{ inputs.tag_type }}" = "dev" ]; then
+          if [ "${{ inputs.release_type }}" = "dev" ]; then
             echo "Publishing to notifly-js-sdk-dev..."
             npm publish --tag dev
           else
