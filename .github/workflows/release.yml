@@ -41,10 +41,10 @@ jobs:
         run: |
           if [ "${{ inputs.release_type }}" = "dev" ]; then
           echo "Updating package name to notifly-js-sdk-dev..."
-          node scripts/update-package-name.js notifly-js-sdk-dev
+          node scripts/update_package_name.js notifly-js-sdk-dev
           else
           echo "Updating package name to notifly-js-sdk..."
-          node scripts/update-package-name.js notifly-js-sdk
+          node scripts/update_package_name.js notifly-js-sdk
           fi
 
       - name: Read Changelog
@@ -71,10 +71,10 @@ jobs:
         run: |
           if [ "${{ inputs.release_type }}" = "dev" ]; then
             echo "Publishing to notifly-js-sdk-dev..."
-            npm publish --tag dev
+            npm publish
           else
             echo "Publishing to notifly-js-sdk..."
-            npm publish
+            npm publish --tag canary
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
