@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.15.0-canary-test]
+## [2.15.0-dev-test]
 ### Added
 - Test version for canary deployment
 
