@@ -1,9 +1,5 @@
 # Changelog
 
-## [2.15.0-dev-test]
-### Added
-- Test version for canary deployment
-
 ## [2.13.0]
 ### Changed
 - Change API hostname for tracking events
