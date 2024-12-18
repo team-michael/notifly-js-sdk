@@ -107,3 +107,7 @@
 
 -   Improve stability of user state management
 -   Implement triggering event filters for in web messages
+
+# 2.15.0-canary-test
+
+- test
