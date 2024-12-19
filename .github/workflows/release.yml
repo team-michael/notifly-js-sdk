@@ -6,14 +6,14 @@ on:
       version:
         description: 'Version to be released'
         required: true
-      tag_type:
+      release_type:
         type: choice
-        description: 'Tag type for npm (latest or canary)'
+        description: 'sdk to publish (prod or dev)'
         required: true
-        default: latest
+        default: prod
         options:
-          - latest
-          - canary
+          - prod
+          - dev
 
 jobs:
   release:
@@ -21,15 +21,31 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          registry-url: 'https://registry.npmjs.org/'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: version update
+      - name: Version update
         run: |
           echo "Bumping version to ${{ github.event.inputs.version }}"
           npm version ${{ github.event.inputs.version }} --no-git-tag-version
+
+      - name: Update package name (prod or dev)
+        run: |
+          if [ "${{ inputs.release_type }}" = "dev" ]; then
+          echo "Updating package name to notifly-js-sdk-dev..."
+          node scripts/update_package_name.js notifly-js-sdk-dev
+          else
+          echo "Updating package name to notifly-js-sdk..."
+          node scripts/update_package_name.js notifly-js-sdk
+          fi
 
       - name: Read Changelog
         id: read_changelog
@@ -52,13 +68,16 @@ jobs:
         run: npm run build
 
       - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          if [ "${{ inputs.tag_type }}" = "canary" ]; then
-            echo "Publishing as canary..."
-            npm publish --tag canary
+          if [ "${{ inputs.release_type }}" = "dev" ]; then
+            echo "Publishing to notifly-js-sdk-dev..."
+            npm publish
           else
-            echo "Publishing as latest..."
+            echo "Publishing to notifly-js-sdk..."
             npm publish
           fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
