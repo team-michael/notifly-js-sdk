@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { InWebMessageTemplateProps } from 'notifly-web-message-renderer';
+import type { InWebMessageTemplateProps } from '../../notifly-web-message-renderer';
 
 export type SegmentConditionUnitType = 'user' | 'user_metadata' | 'device' | 'event';
 export type ValueType = 'INT' | 'TEXT' | 'BOOL';

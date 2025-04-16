@@ -1,6 +1,6 @@
 import type { Campaign } from '../Interfaces/Campaign';
 
-import { render, close, getIframe } from 'notifly-web-message-renderer';
+import { render, close, getIframe } from '../../notifly-web-message-renderer';
 
 import { UserIdentityManager } from '../User';
 import { EventLogger, NotiflyInternalEvent } from '../Event';

@@ -1,4 +1,4 @@
-import { InWebMessageTemplateProps } from 'notifly-web-message-renderer';
+import { InWebMessageTemplateProps } from '../../src/notifly-web-message-renderer';
 import type { Campaign } from '../../src/Core/Interfaces/Campaign';
 
 import { UserStateManager } from '../../src/Core/User/State';
