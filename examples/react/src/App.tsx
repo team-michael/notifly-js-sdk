@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Link, Outlet } from 'react-router-dom';
 
-import notifly from './lib/notifly';
+import notifly from 'notifly-js-sdk';
 import logo from './logo.svg';
 import './App.css';
 import Playground from './Playground';
