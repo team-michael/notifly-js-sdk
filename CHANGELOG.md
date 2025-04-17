@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.15.1]
+### Changed
+- Update notifly-web-message-renderer version (v2.3.0)
+  - fix darkmode web popup issue
+
 ## [2.13.0]
 ### Changed
 - Change API hostname for tracking events
