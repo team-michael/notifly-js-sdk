@@ -421,7 +421,8 @@ export class WebMessageManager {
         } else {
             value = condition.value;
         }
-        if (!value) {
+
+        if (!value || isValueNotPresent(userAttributeValue)) { // if the value or the attribute value is null, result should be always false;
             return false;
         }
 
