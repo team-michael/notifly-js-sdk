@@ -32,11 +32,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # - name: Version update
-      #   run: |
-      #     echo "Bumping version to ${{ github.event.inputs.version }}"
-      #     npm version ${{ github.event.inputs.version }} --no-git-tag-version
-
       - name: Update package name (prod or dev)
         run: |
           if [ "${{ inputs.release_type }}" = "dev" ]; then
