@@ -18,3 +18,9 @@ or
 ```
 yarn add notifly-js-sdk@latest
 ```
+
+## Deployment
+
+1. Update version in `package.json` file.
+2. Write a changelog in `CHANGELOG.md` file.
+3. Run github workflow `Release` to create a new release.
