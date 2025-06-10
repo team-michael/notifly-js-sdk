@@ -60,7 +60,7 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
         return onInitializationFailed();
     }
 
-    const { projectId, username, password } = options;
+    const { projectId, username, password, allowUserSuppliedLogEvent } = options;
 
     if (!isValidProjectId(projectId)) {
         console.error('[Notifly] Invalid project ID. Please provide a valid project ID.');
@@ -71,6 +71,8 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
         console.error('[Notifly] username and password must not be empty');
         return onInitializationFailed();
     }
+
+    SdkStateManager.setAllowUserSuppliedLogEvent(allowUserSuppliedLogEvent);
 
     window.addEventListener('beforeunload', () => {
         SdkStateManager.state = SdkState.TERMINATED;

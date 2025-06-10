@@ -8,6 +8,7 @@ export type NotiflyInitializeOptions = {
     projectId: string;
     username: string;
     password: string;
+    allowUserSuppliedLogEvent?: boolean;
 };
 
 /**
