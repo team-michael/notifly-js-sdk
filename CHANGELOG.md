@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.17.0]
+
+### Added
+
+-   Add `allowUserSuppliedLogEvent` option to allow user to supply log event
+
 ## [2.16.0]
 
 ### Changed
