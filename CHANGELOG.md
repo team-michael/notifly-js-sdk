@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.17.2]
+
+### Added
+
+-   Add `isInternalEvent` flag to `logEvent` method
+
 ## [2.17.1]
 
 ### Fixed
