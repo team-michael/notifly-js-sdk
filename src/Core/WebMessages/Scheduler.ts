@@ -118,6 +118,10 @@ export class WebMessageScheduler {
                                     );
                                 } else {
                                     // No-op
+                                    if (SdkStateManager.allowUserSuppliedLogEvent && message.event) {
+                                        const { type, ...otherEventParams } = message.event;
+                                        EventLogger.logEvent(type, otherEventParams);
+                                    }
                                 }
                                 if (message.link) {
                                     // Navigate to link if necessary

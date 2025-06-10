@@ -27,6 +27,7 @@ export class SdkStateManager {
     static type: SdkType = SdkType.JS;
     static version: string = SDK_VERSION;
     static source: 'cafe24' | null = null;
+    private static _allowUserSuppliedLogEvent = false;
 
     static registerObserver(observer: SdkStateObserver): void {
         this._observers.push(observer);
@@ -82,5 +83,13 @@ export class SdkStateManager {
 
     static setSource(source: 'cafe24' | null): void {
         this.source = source;
+    }
+
+    static get allowUserSuppliedLogEvent(): boolean {
+        return this._allowUserSuppliedLogEvent;
+    }
+
+    static setAllowUserSuppliedLogEvent(value: boolean | undefined): void {
+        this._allowUserSuppliedLogEvent = value ?? false;
     }
 }
