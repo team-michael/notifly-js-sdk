@@ -120,7 +120,8 @@ export class WebMessageScheduler {
                                     // No-op
                                     if (SdkStateManager.allowUserSuppliedLogEvent && message.type) {
                                         const { type, ...otherEventParams } = message;
-                                        EventLogger.logEvent(type, otherEventParams);
+                                        const isInternalEvent = Object.values(NotiflyInternalEvent).includes(type);
+                                        EventLogger.logEvent(type, otherEventParams, null, isInternalEvent);
                                     }
                                 }
                                 if (message.link) {
