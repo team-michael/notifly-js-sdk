@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.17.1]
+
+### Fixed
+
+-   Fix bug when `allowUserSuppliedLogEvent` is set to `true`
+
 ## [2.17.0]
 
 ### Added
