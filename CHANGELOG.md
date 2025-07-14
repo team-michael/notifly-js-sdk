@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.17.3]
+
+### Changed
+
+-   Only send diffs when the sdk type is Cafe24 JS
+
 ## [2.17.2]
 
 ### Added
