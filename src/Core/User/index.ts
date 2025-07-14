@@ -6,6 +6,7 @@ import { SyncStatePolicy, UserStateManager } from './State';
 import { EventLogger, NotiflyInternalEvent } from '../Event';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { SetUserIdOptions } from '../Interfaces/Options';
+import { SdkStateManager, SdkType } from '../SdkState';
 
 /**
  * Sets or removes user ID for the current user.
@@ -80,19 +81,25 @@ export class UserIdentityManager {
                 await UserStateManager.refresh(policy);
             }
         } else {
-            // Update local state
-            const diff: Record<string, any> = {};
-            const previousUserProperties = (await this.getUserProperties()) || {};
+            if (SdkStateManager.type === SdkType.JS_CAFE24) {
+                // If SDK State is JS_CAFE24, Only send diffs
+                // Update local state
+                const diff: Record<string, any> = {};
+                const previousUserProperties = (await this.getUserProperties()) || {};
 
-            Object.keys(params).forEach((key) => {
-                if (!isEqual(previousUserProperties[key], params[key])) {
-                    diff[key] = params[key];
+                Object.keys(params).forEach((key) => {
+                    if (!isEqual(previousUserProperties[key], params[key])) {
+                        diff[key] = params[key];
+                    }
+                });
+
+                if (!isEmpty(diff)) {
+                    UserStateManager.updateUserProperties(diff);
+                    await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, diff, null, true);
                 }
-            });
-
-            if (!isEmpty(diff)) {
-                UserStateManager.updateUserProperties(diff);
-                await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, diff, null, true);
+            } else {
+                UserStateManager.updateUserProperties(params);
+                await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, params, null, true);
             }
         }
     }
