@@ -52,6 +52,7 @@ export class WebMessageScheduler {
                         type: 'message_event',
                         channel: 'in-web-message',
                         campaign_id: campaign.id,
+                        template_name: templateName,
                         ...(campaignHiddenUntilData ? { hide_until_data: campaignHiddenUntilData } : {}),
                     },
                     null,
