@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.17.4]
+
+### Added
+
+-   Add `templateName` event param to `in_web_message_show` event
+
 ## [2.17.3]
 
 ### Changed
