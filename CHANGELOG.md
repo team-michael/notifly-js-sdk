@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.17.5]
+
+### Added
+
+-   Handle external user ID mismatch between database and SDK
+
 ## [2.17.4]
 
 ### Added

@@ -22,6 +22,7 @@ export class WebMessageManager {
     static async initialize(hard = false) {
         await UserStateManager.sync({
             useStorageIfAvailable: !hard,
+            handleExternalUserIdMismatch: true,
         });
         WebMessageScheduler.initialize();
     }
@@ -422,7 +423,8 @@ export class WebMessageManager {
             value = condition.value;
         }
 
-        if (!value || isValueNotPresent(userAttributeValue)) { // if the value or the attribute value is null, result should be always false;
+        if (!value || isValueNotPresent(userAttributeValue)) {
+            // if the value or the attribute value is null, result should be always false;
             return false;
         }
 
