@@ -223,14 +223,7 @@ export class UserStateManager {
             const deviceExternalUserId = userData['device_external_user_id'];
             const sdkExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
 
-            // 두 값이 모두 존재하고 서로 다른 경우에만 처리
-            // DB가 null인 경우는 다양한 원인(쿼리 에러, 디바이스 미저장 등)으로 인해 실제 값이 null이 아닐 가능성이 있어 핸들링하지 않음
-            // SDK가 null인 경우는 앱 재설치 등으로 허용되는 상황이므로 핸들링하지 않음
-            if (
-                deviceExternalUserId != null &&
-                sdkExternalUserId != null &&
-                deviceExternalUserId !== sdkExternalUserId
-            ) {
+            if (this.shouldHandleExternalUserIdMismatch(sdkExternalUserId, deviceExternalUserId)) {
                 // SDK의 external_user_id를 DB 값으로 변경
                 await NotiflyStorage.setItem(NotiflyStorageKeys.EXTERNAL_USER_ID, deviceExternalUserId);
                 await this._syncState({
@@ -244,6 +237,25 @@ export class UserStateManager {
 
         this._updateStatesBasedOnPolicy(data, policy);
         await this.saveState();
+    }
+
+    private static shouldHandleExternalUserIdMismatch(
+        sdkExternalUserId?: string | null,
+        deviceExternalUserId?: string | null
+    ): boolean {
+        // SDK가 null인 경우는 앱 재설치 등으로 허용되는 상황이므로 핸들링하지 않음
+        if (sdkExternalUserId == null) {
+            return false;
+        }
+        // DB가 null인 경우는 다양한 원인(쿼리 에러, 디바이스 미저장 등)으로 인해 실제 값이 null이 아닐 가능성이 있어 핸들링하지 않음
+        if (deviceExternalUserId == null) {
+            return false;
+        }
+        // 두 값이 같은 경우는 정상적인 상황
+        if (sdkExternalUserId === deviceExternalUserId) {
+            return false;
+        }
+        return true;
     }
 
     private static _updateStatesBasedOnPolicy(data: any, policy: SyncStatePolicy) {
