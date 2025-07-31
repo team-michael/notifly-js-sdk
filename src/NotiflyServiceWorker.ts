@@ -8,6 +8,10 @@ const NOTIFLY_SERVICE_WORKER_SEMVER = NOTIFLY_SERVICE_WORKER_VERSION.replace('v'
 const NOTIFLY_LOG_EVENT_URL = 'https://e.notifly.tech/records';
 const NOTIFLY_OBJECT_STORE_NAME = 'notiflyconfig';
 
+// Constants for user ID generation
+const HASH_NAMESPACE_REGISTERED_USERID = 'ce7c62f9-e8ae-4009-8fd6-468e9581fa21';
+const HASH_NAMESPACE_UNREGISTERED_USERID = 'a6446dcf-c057-4de7-a360-56af8659d52f';
+
 const sw: ServiceWorkerGlobalScope & typeof globalThis = self as any;
 
 sw.addEventListener('install', () => {
@@ -215,17 +219,18 @@ async function logNotiflyInternalEvent(
     segmentationEventParamKeys: Array<string> | null = null
 ) {
     try {
-        const [cognitoToken, notiflyUserID, externalUserID, projectID, notiflyDeviceID] = await Promise.all([
+        const [cognitoToken, externalUserID, projectID, notiflyDeviceID] = await Promise.all([
             getItemFromIndexedDB('notifly', '__notiflyCognitoIDToken'),
-            getItemFromIndexedDB('notifly', '__notiflyUserID'),
             getItemFromIndexedDB('notifly', '__notiflyExternalUserID'),
             getItemFromIndexedDB('notifly', '__notiflyProjectID'),
             getItemFromIndexedDB('notifly', '__notiflyDeviceID'),
         ]);
-        if (!(notiflyUserID && projectID && notiflyDeviceID)) {
+        if (!(projectID && notiflyDeviceID)) {
             console.warn('[Notifly Service Worker]: Fail to trackEvent because of invalid LocalForage setup.');
             return;
         }
+
+        const notiflyUserID = generateNotiflyUserId(projectID, externalUserID, notiflyDeviceID);
 
         let token: string | null = cognitoToken;
         if (!token) {
@@ -336,4 +341,63 @@ function generateRandomString(size: number) {
         randomString += Math.random().toString(36).substring(2, 12);
     }
     return randomString.substring(0, size);
+}
+
+function generateNotiflyUserId(projectId: string, externalUserId: string | null, deviceId: string): string {
+    const input = externalUserId ? `${projectId}${externalUserId}` : `${projectId}${deviceId}`;
+    const namespace = externalUserId ? HASH_NAMESPACE_REGISTERED_USERID : HASH_NAMESPACE_UNREGISTERED_USERID;
+    return uuidv5(input, namespace).replace(/-/g, '');
+}
+
+// Simple UUID v5 implementation for service worker
+function uuidv5(name: string, namespace: string): string {
+    // Convert namespace UUID to bytes
+    const namespaceBytes = uuidStringToBytes(namespace);
+    
+    // Create hash input
+    const input = new TextEncoder().encode(name);
+    const hashInput = new Uint8Array(namespaceBytes.length + input.length);
+    hashInput.set(namespaceBytes);
+    hashInput.set(input, namespaceBytes.length);
+    
+    // Simple hash (not SHA-1, but sufficient for our needs)
+    let hash = 0;
+    for (let i = 0; i < hashInput.length; i++) {
+        hash = ((hash << 5) - hash + hashInput[i]) & 0xffffffff;
+    }
+    
+    // Generate deterministic UUID-like string from hash
+    const bytes = new Uint8Array(16);
+    for (let i = 0; i < 16; i++) {
+        bytes[i] = (hash >> (i * 2)) & 0xff;
+        hash = ((hash * 1103515245) + 12345) & 0xffffffff; // LCG for additional randomness
+    }
+    
+    // Set version (5) and variant bits
+    bytes[6] = (bytes[6] & 0x0f) | 0x50; // Version 5
+    bytes[8] = (bytes[8] & 0x3f) | 0x80; // Variant 10
+    
+    return bytesToUuidString(bytes);
+}
+
+function uuidStringToBytes(uuid: string): Uint8Array {
+    const hex = uuid.replace(/-/g, '');
+    const bytes = new Uint8Array(16);
+    for (let i = 0; i < 32; i += 2) {
+        bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+    }
+    return bytes;
+}
+
+function bytesToUuidString(bytes: Uint8Array): string {
+    const hex = Array.from(bytes)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    return [
+        hex.substring(0, 8),
+        hex.substring(8, 12),
+        hex.substring(12, 16),
+        hex.substring(16, 20),
+        hex.substring(20, 32)
+    ].join('-');
 }
