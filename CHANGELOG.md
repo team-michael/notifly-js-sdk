@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.17.6]
+
+### Fixed
+
+-   Replace indexedDB with local session
+
+# Changelog
+
 ## [2.17.5]
 
 ### Added
