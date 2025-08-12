@@ -230,7 +230,7 @@ async function logNotiflyInternalEvent(
             return;
         }
 
-        const notiflyUserID = generateNotiflyUserId(projectID, externalUserID, notiflyDeviceID);
+        const notiflyUserID = await generateNotiflyUserId(projectID, externalUserID, notiflyDeviceID);
 
         let token: string | null = cognitoToken;
         if (!token) {
@@ -343,14 +343,14 @@ function generateRandomString(size: number) {
     return randomString.substring(0, size);
 }
 
-function generateNotiflyUserId(projectId: string, externalUserId: string | null, deviceId: string): string {
+async function generateNotiflyUserId(projectId: string, externalUserId: string | null, deviceId: string): Promise<string> {
     const input = externalUserId ? `${projectId}${externalUserId}` : `${projectId}${deviceId}`;
     const namespace = externalUserId ? HASH_NAMESPACE_REGISTERED_USERID : HASH_NAMESPACE_UNREGISTERED_USERID;
-    return uuidv5(input, namespace).replace(/-/g, '');
+    return (await uuidv5(input, namespace)).replace(/-/g, '');
 }
 
-// Simple UUID v5 implementation for service worker
-function uuidv5(name: string, namespace: string): string {
+// Standard UUID v5 implementation for service worker (SHA-1 based)
+async function uuidv5(name: string, namespace: string): Promise<string> {
     // Convert namespace UUID to bytes
     const namespaceBytes = uuidStringToBytes(namespace);
     
@@ -360,18 +360,12 @@ function uuidv5(name: string, namespace: string): string {
     hashInput.set(namespaceBytes);
     hashInput.set(input, namespaceBytes.length);
     
-    // Simple hash (not SHA-1, but sufficient for our needs)
-    let hash = 0;
-    for (let i = 0; i < hashInput.length; i++) {
-        hash = ((hash << 5) - hash + hashInput[i]) & 0xffffffff;
-    }
+    // Use SHA-1 hash (standard for UUID v5)
+    const hashBuffer = await crypto.subtle.digest('SHA-1', hashInput);
+    const hashBytes = new Uint8Array(hashBuffer);
     
-    // Generate deterministic UUID-like string from hash
-    const bytes = new Uint8Array(16);
-    for (let i = 0; i < 16; i++) {
-        bytes[i] = (hash >> (i * 2)) & 0xff;
-        hash = ((hash * 1103515245) + 12345) & 0xffffffff; // LCG for additional randomness
-    }
+    // Take first 16 bytes for UUID
+    const bytes = hashBytes.slice(0, 16);
     
     // Set version (5) and variant bits
     bytes[6] = (bytes[6] & 0x0f) | 0x50; // Version 5
