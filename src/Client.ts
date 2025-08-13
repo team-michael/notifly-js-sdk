@@ -320,11 +320,13 @@ export async function getUserProperties(): Promise<Record<string, any> | null> {
  * @async
  *
  * @param languageToForce - The language to force for the permission prompt. If not provided, the browser preferred language will be used. The language should be one of the 'ko', 'en', 'ja', 'zh'
+ * 
+ * @returns Promise<NotificationPermission> - The permission result ('granted', 'denied', or 'default')
  */
-export async function requestPermission(languageToForce?: Language): Promise<void> {
+export async function requestPermission(languageToForce?: Language): Promise<NotificationPermission> {
     if (SdkStateManager.halted) {
         console.warn('[Notifly] SDK has been stopped due to the unrecoverable error or termination. Ignoring...');
-        return;
+        return typeof Notification !== 'undefined' ? Notification.permission : 'denied';
     }
     try {
         let sanitizedLanguageToForce: Language | undefined = languageToForce;
@@ -335,10 +337,11 @@ export async function requestPermission(languageToForce?: Language): Promise<voi
             sanitizedLanguageToForce = undefined;
         }
 
-        await CommandManager.getInstance().dispatch(new RequestPermissionCommand(sanitizedLanguageToForce));
+        return await CommandManager.getInstance().dispatch(new RequestPermissionCommand(sanitizedLanguageToForce));
     } catch (error) {
         const logger = SdkStateManager.halted ? console.warn : console.error;
         logger('[Notifly] Failed to request permission', error);
+        return typeof Notification !== 'undefined' ? Notification.permission : 'denied';
     }
 }
 
