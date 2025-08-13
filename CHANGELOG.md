@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.18.0]
+
+### Changed
+
+-   Modified `requestPermission` function to return the actual permission result from `Notification.requestPermission()`
+-   Improved error handling in `requestPermission` to return actual browser permission state instead of always returning 'denied'
+
 ## [2.17.6]
 
 ### Fixed
