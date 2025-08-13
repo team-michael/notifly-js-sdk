@@ -127,16 +127,16 @@ export class NotiflyWebPushManager {
         }
     }
 
-    static requestPermission(languageToForce?: Language) {
+    static requestPermission(languageToForce?: Language): Promise<NotificationPermission> {
         if (!this._isInitialized) {
             console.error('[Notifly] PushManager is not initialized.');
-            return;
+            return Promise.resolve(Notification.permission);
         }
         if (!this._canManuallyShowPermissionRequestPrompt()) {
-            return;
+            return Promise.resolve(Notification.permission);
         }
 
-        this._showRequestPermissionPrompt(languageToForce);
+        return this._showRequestPermissionPrompt(languageToForce);
     }
 
     private static _isWebPushSupported(): boolean {
@@ -433,9 +433,9 @@ export class NotiflyWebPushManager {
         return message;
     }
 
-    private static _showRequestPermissionPrompt(languageToForce?: Language): void {
+    private static _showRequestPermissionPrompt(languageToForce?: Language): Promise<NotificationPermission> {
         if (!this._isInitialized || this._isRequestPermissionPromptBeingShown) {
-            return;
+            return Promise.resolve(Notification.permission);
         }
         this._isRequestPermissionPromptBeingShown = true;
 
@@ -495,47 +495,53 @@ export class NotiflyWebPushManager {
                 // ignore
             }
         };
-        const onDenied = () => {
-            console.info('[Notifly] Notification permission was not granted.');
-            NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_NOTIFICATION_PERMISSION, 'denied')
-                .catch((e) => console.error('[Notifly] Failed to set notification permission to denied: ', e))
-                .finally(cleanup);
-        };
-        const onGranted = () => {
-            cleanup();
-            Notification.requestPermission().then((permission) => {
-                if (permission !== 'granted') {
-                    console.info('[Notifly] Notification permission was not granted.');
-                } else {
-                    this._getSubscription()
-                        .then((subscription) => this._logSubscription(subscription))
-                        .catch((e) => console.error('[Notifly] Failed to subscribe push notification: ', e));
-                }
+        return new Promise<NotificationPermission>((resolve) => {
+            const onGranted = () => {
+                cleanup();
+                Notification.requestPermission().then((permission) => {
+                    if (permission !== 'granted') {
+                        console.info('[Notifly] Notification permission was not granted.');
+                    } else {
+                        this._getSubscription()
+                            .then((subscription) => this._logSubscription(subscription))
+                            .catch((e) => console.error('[Notifly] Failed to subscribe push notification: ', e));
+                    }
+                    resolve(permission);
+                });
+            };
+            const onDenied = () => {
+                console.info('[Notifly] Notification permission was not granted.');
+                NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_NOTIFICATION_PERMISSION, 'denied')
+                    .catch((e) => console.error('[Notifly] Failed to set notification permission to denied: ', e))
+                    .finally(() => {
+                        cleanup();
+                        resolve('denied');
+                    });
+            };
+
+            grantButton.onclick = onGranted.bind(this);
+            denyButton.onclick = onDenied;
+            closeButton.onclick = onDenied;
+
+            [header, message, grantButton, denyButton].forEach((element) => {
+                element.style.setProperty(
+                    'font-family',
+                    "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+                    'important'
+                );
             });
-        };
 
-        grantButton.onclick = onGranted.bind(this);
-        denyButton.onclick = onDenied;
-        closeButton.onclick = onDenied;
-
-        [header, message, grantButton, denyButton].forEach((element) => {
-            element.style.setProperty(
-                'font-family',
-                "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
-                'important'
-            );
+            overlay.appendChild(popup);
+            headerContainer.appendChild(bellIcon);
+            headerContainer.appendChild(header);
+            popup.appendChild(headerContainer);
+            popup.appendChild(message);
+            buttonContainer.appendChild(grantButton);
+            buttonContainer.appendChild(denyButton);
+            popup.appendChild(closeButton);
+            popup.appendChild(buttonContainer);
+            document.body.appendChild(overlay);
         });
-
-        overlay.appendChild(popup);
-        headerContainer.appendChild(bellIcon);
-        headerContainer.appendChild(header);
-        popup.appendChild(headerContainer);
-        popup.appendChild(message);
-        buttonContainer.appendChild(grantButton);
-        buttonContainer.appendChild(denyButton);
-        popup.appendChild(closeButton);
-        popup.appendChild(buttonContainer);
-        document.body.appendChild(overlay);
     }
 
     private static _optTextByPreferredLanguage({
