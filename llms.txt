@@ -1,0 +1,80 @@
+<!-- repo: team-michael/notifly-js-sdk -->
+<!-- ref: main -->
+<!-- commit: 2043e3b73e8f98cb7699fcca5c81e2e5b5cc7771 -->
+<!-- generated_at: 2025-11-14T04:14:55Z -->
+# Platform: JavaScript
+
+## /
+- [Notifly Service Worker](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/notifly-service-worker.js): Bootstraps the service worker by importing '/dist/NotiflyServiceWorker.js' into the SW global scope, delegating all push/notification logic to the compiled NotiflyServiceWorker implementation.
+
+## examples/react/public
+- [Notifly Service Worker](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/examples/react/public/notifly-service-worker.js): Service worker bootstrap that imports the NotiflyServiceWorker runtime via importScripts from CDN, enabling push notification handling and Notifly SDK service-worker functionality in the app's public scope.
+
+## examples/react/src
+- [Index](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/examples/react/src/index.tsx): Application entry that mounts the React App into #root using ReactDOM.createRoot with BrowserRouter for routing, imports global styles, and initializes reportWebVitals for performance reporting.
+- [App](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/examples/react/src/App.tsx): React App demo (App.tsx) initializes notifly SDK on mount using env credentials, provides UI to invoke notifly APIs (initialize, setUserId/removeUserId, setUserProperties, trackEvent, getUserId) and inspects IndexedDB via NotiflyIndexedDBStore.
+- [Mypage](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/examples/react/src/MyPage.tsx): React functional component MyPage (default export) renders a simple "My Page" view and uses react-router-dom's Link for client-side navigation back to home; no side effects.
+- [App.test](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/examples/react/src/App.test.tsx): Jest test that uses React Testing Library to render the App component and assert a 'learn react' text node, depending on React, @testing-library/react, and App.
+- [Setuptests](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/examples/react/src/setupTests.ts): Imports @testing-library/jest-dom to globally register custom Jest DOM matchers (e.g.
+- [Reportwebvitals](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/examples/react/src/reportWebVitals.ts): Exports default reportWebVitals(onPerfEntry?) that dynamically imports 'web-vitals' and registers getCLS/getFID/getFCP/getLCP/getTTFB to invoke the provided ReportHandler callback with metrics.
+- [Playground](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/examples/react/src/Playground.tsx): React functional component exporting Playground that renders a static playground page with header and a react-router-dom Link navigating back to '/'.
+- [React App Env.d](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/examples/react/src/react-app-env.d.ts): Ambient TypeScript declaration that imports Create React App's react-scripts type definitions via a triple-slash reference, enabling CRA-specific globals and types for the example React app.
+
+## examples/vanilla/js
+- [App](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/examples/vanilla/js/app.js): Binds DOM inputs/buttons to window.notifly API: sets userId via setUserId (logs to console) and validates+calls trackEvent for events (alerts on missing name); depends on specific element IDs.
+
+## src
+- [Constants](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Constants.ts): Defines exported HashNamespace UUIDs for hash namespacing, BuiltInUserPropertyKey string keys for user attributes (phone/email/timezone), and LAST_SESSION_TIME_LOGGING_INTERVAL (5000ms) constant.
+- [Client](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Client.ts): Client.ts exposes public SDK entrypoints (initialize, trackEvent, setUserId/removeUserId, setUserProperties/getUserProperties, requestPermission, helpers) coordinating CommandManager, NotiflyAPI, SessionManager and SdkStateManager, performing validation, storage init, and lifecycle side-effects (window listeners, init semaphore).
+- [Index](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/index.ts): Exports a default "notifly" object aggregating Client APIs (initialize, trackEvent, user ID/properties/email/phone/timezone, permissions, SDK metadata) as the main SDK entry point.
+- [Version](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Version.ts): Exports SDK_VERSION constant (2.17.
+- [Notiflyserviceworker](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/NotiflyServiceWorker.ts): Service worker handling install/activate/push/notificationclick: shows notifications, opens/focuses windows, logs push_delivered/push_click to e.notifly.
+
+## src/Core
+- [Push](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Push.ts): Manages web push lifecycle: registers service worker, handles VAPID subscription/logging (EventLogger), schedules/displays customizable permission prompt UI, stores permission state (NotiflyStorage), exposes initialize(..
+- [Sdkstate](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/SdkState.ts): Defines SdkState/SdkType enums and SdkStateManager (depends on SDK_VERSION) that tracks SDK lifecycle, notifies observers on transitions (init/refresh/terminate), and exposes registerObserver, state/type/version/source, and allowUserSuppliedLogEvent.
+- [Session](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Session.ts): Manages session lifecycle: initializes SDK config, WebMessage and WebPush managers, persists LAST_SESSION_TIME periodically, detects expiration to emit EventLogger.sessionStart and trigger UserStateManager.
+- [Event](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Event.ts): Event.ts defines EventLogger (logEvent, sessionStart) that builds/validates event payloads (uses Storage, SdkState, Utils, UUID), POSTs to NOTIFLY_LOG_EVENT_URL via NotiflyAPI, and triggers WebMessageManager; handles internal events and segmentation keys.
+
+## src/Core/API
+- [Index](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/API/index.ts): Provides NotiflyAPI with initialize() and call(url, method, body?, redirect?
+- [Auth](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/API/Auth.ts): Exports getCognitoIdToken(username, password) to POST credentials to https://api.notifly.
+- [Configuration](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/API/Configuration.ts): Exports SdkConfiguration and getSdkConfiguration(), reads projectId from NotiflyStorage, fetches/validates remote SDK config (maps and defaults web_push_options), sends X-Notifly-SDK-Version header.
+
+## src/Core/Command
+- [Commands](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Command/Commands.ts): Defines CommandType, CommandBase and concrete commands (SetUserId/RemoveUserId, SetUserProperties, TrackEvent, RequestPermission, GetUserId, getUserProperties) invoking UserIdentityManager, EventLogger and NotiflyWebPushManager via execute() Promises with unrecoverable flags.
+- [Index](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Command/index.ts): Singleton CommandManager dispatches and queues CommandBase executions (active/pending via PriorityQueue), observes SdkState, flushes/aborts on state changes, and mutates SdkStateManager (REFRESHING/READY/TERMINATED); use getInstance().dispatch().
+- [Params](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Command/Params.ts): Exports TypeScript interfaces for core command parameter shapes: SetUserIdCommandParams/RemoveUserIdCommandParams (using SetUserIdOptions), SetUserPropertiesCommandParams (Record<string, any>), and TrackEventCommandParams (eventParams, segmentationEventParamKeys).
+
+## src/Core/Interfaces
+- [Requestpermissionpromptdesignparams](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Interfaces/RequestPermissionPromptDesignParams.ts): Defines a Language enum and typed UI design interfaces (TextContent, ButtonDesignParams, TextDesignParams, RequestPermissionPromptDesignParams) for theming colors, localized text, and grant/deny button designs used by the permission-prompt renderer.
+- [Comparable](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Interfaces/Comparable.ts): Defines generic IComparable<T> interface with compareTo(other: T): number contract (negative/zero/positive semantics) for object ordering/sorting; no dependencies, used by sorting/collection utilities.
+- [Campaign](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Interfaces/Campaign.ts): Type definitions for campaign payloads and targeting logic — exports Campaign, Condition, CampaignStatus, triggering/filter/operator types and re-eligibility rules; references InWebMessageTemplateProps from notifly-web-message-renderer.
+- [User](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Interfaces/User.ts): Defines exported TypeScript interfaces (DeviceProperties, UserProperties, UserMetadataProperties, CampaignHiddenUntil, EventIntermediateCounts) and the UserData intersection for SDK payload typing and serialization.
+- [Options](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Interfaces/Options.ts): Type definitions for NotiflyInitializeOptions (projectId, username, password, optional allowUserSuppliedLogEvent) and SetUserIdOptions (optional onlyIfChanged) used by SDK initialize and setUserId APIs.
+
+## src/Core/Storage
+- [Idb](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Storage/IDB.ts): IndexedDB-backed SdkState observer that registers with SdkStateManager, opens/creates DB/objectStore, exposes ready/getItem/setItem/setItems/removeItem/removeItems, and manages/aborts transactions and DB close on versionchange/termination.
+- [Index](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Storage/index.ts): Provides async, timeout-wrapped access to NotiflyIndexedDBStore (notifly/config), exposes NotiflyStorageKeys enum and APIs: ensureInitialized, getItem(s)/setItem(s)/removeItem(s), and getNotiflyUserId (uses generateNotiflyUserId).
+
+## src/Core/User
+- [State](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/User/State.ts): Manages in-memory user state and event counts, persisting to NotiflyStorage and syncing with NotiflyAPI (OVERWRITE/MERGE), handling external_user_id mismatches; APIs: saveState, sync, updateEventCounts, getMessageLogs.
+- [Utils](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/User/Utils.ts): User utility helpers: validate user/campaign/event counts, compute KST YYYY-MM-DD, sanitize bucket numbers, merge event counts (aggregate with cloneDeep/isEqual), and build default UserData via SdkStateManager.
+- [Index](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/User/index.ts): UserIdentityManager manages external user IDs and properties (set/get/remove), updates NotiflyStorage, logs internal events, triggers UserStateManager refresh/merge/overwrite, and supports onlyIfChanged plus JS_CAFE24 diffs.
+
+## src/Core/Utils
+- [Timezone](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Utils/Timezone.ts): Exports a canonical IANA timezone list (supportedTimezoneIds) plus getCurrentTimezoneId() (Intl.DateTimeFormat) and isValidTimezoneId(tz) for runtime detection/validation; returns null if Intl unavailable.
+- [Priorityqueue](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Utils/PriorityQueue.ts): Generic binary min-heap PriorityQueue<T extends IComparable<T>> implementing enqueue/dequeue/peek/clear/size/isEmpty, using compareTo-driven bubbleUp/sinkDown on internal heap array (dequeue null, peek undefined).
+- [Index](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/Utils/index.ts): Utility functions for Notifly: initializeNotiflyStorage (uses NotiflyStorage, uuid v4 to set deviceId), project-id/hash (isValidProjectId, generateNotiflyUserId using uuid v5), platform/timing, helpers.
+
+## src/Core/WebMessages
+- [Manager](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/WebMessages/Manager.ts): Evaluates campaigns' activation, triggering conditions, event filters and segment membership, then schedules selected web messages via WebMessageScheduler and updates/reads state through UserStateManager (initialize, maybeTrigger..
+- [Scheduler](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/WebMessages/Scheduler.ts): Schedules and displays in-web message iframes (render/close/getIframe), tracks open state/timers, handles iframe postMessage events (close/main_button/custom), logs events, updates user state, and exposes initialize(), scheduleInWebMessage(), descheduleInWebMessage().
+- [Utils](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/src/Core/WebMessages/Utils.ts): Exports PopupVersion and provides ValueComparator static comparison and type-casting utilities (console-warn on mismatches) plus matchRegex, getKSTCalendarDateString, isValueNotPresent, reEligibleConditionUnitToSec; depends on ValueType.
+
+## test/src
+- [Utils.spec](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/test/src/utils.spec.ts): Unit tests for Utils: mocks Core/Storage and uuid, verifies getPlatform(userAgent) detects ios/android/web by overriding window.navigator.
+- [Auth.spec](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/test/src/auth.spec.ts): Jest unit tests for getCognitoIdToken that mock NotiflyStorage and SdkState, stub global.fetch, and verify POST to https://api.
+- [User.spec](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/test/src/user.spec.ts): Jest tests for UserIdentityManager.setUserProperties verifying __notiflyExternalUserID storage writes, absence-case skipping write, and EventLogger.
+- [State Utils.spec](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/test/src/state_utils.spec.ts): Unit tests for mergeEventCounts (src/Core/User/Utils) verifying merging and aggregation of event-count entries by name/dt/event_params across arrays, ensuring counts are summed, duplicates consolidated, and distinct dates preserved.
+- [State.spec](https://raw.githubusercontent.com/team-michael/notifly-js-sdk/main/test/src/state.spec.ts): Unit tests verifying UserStateManager.updateEventCounts and WebMessageManager.
