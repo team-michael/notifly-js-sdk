@@ -84,7 +84,7 @@ export class TrackEventCommand implements CommandBase<void> {
     }
 }
 
-export class RequestPermissionCommand implements CommandBase<void> {
+export class RequestPermissionCommand implements CommandBase<NotificationPermission> {
     public type = CommandType.REQUEST_PERMISSON;
     public unrecoverable = false;
     private _languageToForce?: Language;
@@ -93,10 +93,8 @@ export class RequestPermissionCommand implements CommandBase<void> {
         this._languageToForce = languageToForce;
     }
 
-    execute(): Promise<void> {
-        return Promise.resolve(
-            NotiflyWebPushManager.requestPermission.call(NotiflyWebPushManager, this._languageToForce)
-        );
+    execute(): Promise<NotificationPermission> {
+        return NotiflyWebPushManager.requestPermission.call(NotiflyWebPushManager, this._languageToForce);
     }
 }
 
