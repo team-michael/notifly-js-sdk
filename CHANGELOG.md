@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.17.7]
+
+### Fixed
+
+-   Fix web popup user segment condition evaluation bugs
+    -   Fix falsy value (false, 0, "") being converted to null during user attribute extraction
+    -   Fix condition evaluation always returning false when comparison value is falsy
+    -   Fix null user attribute with `<>` operator now correctly returns true (server behavior match)
+    -   Add `NOT_INCLUDE` (array does not contain) operator support
+
 ## [2.17.6]
 
 ### Fixed
