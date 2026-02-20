@@ -1773,7 +1773,7 @@ describe('null user attribute with negative operators', () => {
 
 });
 
-describe('array does not contain (!@>) operator', () => {
+describe('array does not contain (NOT_INCLUDE) operator', () => {
     test('should return true when array does not contain the element', () => {
         UserStateManager.userData = {
             user_properties: {
@@ -1902,7 +1902,7 @@ describe('array does not contain (!@>) operator', () => {
         expect(WebMessageManager.isEntityOfSegment(campaign, {}, null)).toBe(false);
     });
 
-    test('should return true for !@> with empty array', () => {
+    test('should return true for NOT_INCLUDE with empty array', () => {
         UserStateManager.userData = {
             user_properties: {
                 roles: [],
@@ -1946,8 +1946,8 @@ describe('array does not contain (!@>) operator', () => {
     });
 });
 
-describe('triggering event filter with !@> and null handling', () => {
-    test('should correctly filter event params with !@> operator', () => {
+describe('triggering event filter with NOT_INCLUDE and null handling', () => {
+    test('should correctly filter event params with NOT_INCLUDE operator', () => {
         const campaign: Campaign = {
             id: 'test-event-filter-not-has',
             status: 1,
