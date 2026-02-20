@@ -232,8 +232,21 @@ export class WebMessageManager {
             return !isParamValueNotPresent;
         }
 
-        if (isParamValueNotPresent || !valueType) {
+        if (!valueType) {
             return false;
+        }
+
+        if (isParamValueNotPresent) {
+            switch (operator) {
+                case '<>':
+                case 'does_not_start_with':
+                case 'does_not_end_with':
+                case 'does_not_contain':
+                case 'does_not_match_regex':
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         switch (operator) {
@@ -251,6 +264,8 @@ export class WebMessageManager {
                 return ValueComparator.IsLessThanOrEqual(paramValue, value, valueType);
             case '@>':
                 return ValueComparator.HasElement(paramValue, value, valueType);
+            case 'NOT_INCLUDE':
+                return ValueComparator.DoesNotHaveElement(paramValue, value, valueType);
             case 'starts_with':
                 return ValueComparator.StartsWith(paramValue, value);
             case 'does_not_start_with':
@@ -423,9 +438,17 @@ export class WebMessageManager {
             value = condition.value;
         }
 
-        if (!value || isValueNotPresent(userAttributeValue)) {
-            // if the value or the attribute value is null, result should be always false;
+        if (isValueNotPresent(value)) {
             return false;
+        }
+
+        if (isValueNotPresent(userAttributeValue)) {
+            switch (operator) {
+                case '<>':
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         switch (operator) {
@@ -443,7 +466,9 @@ export class WebMessageManager {
                 return ValueComparator.IsLessThanOrEqual(userAttributeValue, value, valueType);
             case '@>':
                 return ValueComparator.HasElement(userAttributeValue, value, valueType);
-            // IS_NULL is handled above
+            case 'NOT_INCLUDE':
+                return ValueComparator.DoesNotHaveElement(userAttributeValue, value, valueType);
+            // IS_NULL and IS_NOT_NULL are handled above
             default:
                 console.warn(`[Notifly] Invalid operator - ${operator}`);
                 return false;
@@ -457,7 +482,7 @@ export class WebMessageManager {
     ) {
         switch (conditionUnit) {
             case 'user':
-                return userData.user_properties?.[attributeToGet] || null;
+                return userData.user_properties?.[attributeToGet] ?? null;
             case 'user_metadata':
                 return userData[attributeToGet as keyof UserMetadataProperties];
             case 'device':

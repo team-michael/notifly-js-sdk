@@ -1431,3 +1431,586 @@ describe('checkCondition', () => {
         expect(result).toBe(true);
     });
 });
+
+describe('falsy value handling in user property conditions', () => {
+    test('should correctly evaluate boolean false user property with <> operator', () => {
+        UserStateManager.userData = {
+            user_properties: {
+                isCompany: false,
+            },
+            sdk_type: 'js',
+            sdk_version: '2.17.6',
+            platform: 'web',
+        };
+
+        const campaign: Campaign = {
+            id: 'test-falsy-bool',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
+            triggering_conditions: [[{ type: 'event_name', operator: '=', operand: 'test-event' }]],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [
+                    {
+                        conditions: [
+                            {
+                                attribute: 'isCompany',
+                                operator: '<>',
+                                unit: 'user',
+                                value: true,
+                                valueType: 'BOOL',
+                            },
+                        ],
+                        condition_operator: null,
+                    },
+                ],
+                group_operator: null,
+            },
+        };
+
+        expect(WebMessageManager.isEntityOfSegment(campaign, {}, null)).toBe(true);
+    });
+
+    test('should correctly evaluate boolean false user property with = operator', () => {
+        UserStateManager.userData = {
+            user_properties: {
+                isCompany: false,
+            },
+            sdk_type: 'js',
+            sdk_version: '2.17.6',
+            platform: 'web',
+        };
+
+        const campaign: Campaign = {
+            id: 'test-falsy-bool-eq',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
+            triggering_conditions: [[{ type: 'event_name', operator: '=', operand: 'test-event' }]],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [
+                    {
+                        conditions: [
+                            {
+                                attribute: 'isCompany',
+                                operator: '=',
+                                unit: 'user',
+                                value: false,
+                                valueType: 'BOOL',
+                            },
+                        ],
+                        condition_operator: null,
+                    },
+                ],
+                group_operator: null,
+            },
+        };
+
+        expect(WebMessageManager.isEntityOfSegment(campaign, {}, null)).toBe(true);
+    });
+
+    test('should correctly evaluate numeric zero user property', () => {
+        UserStateManager.userData = {
+            user_properties: {
+                score: 0,
+            },
+            sdk_type: 'js',
+            sdk_version: '2.17.6',
+            platform: 'web',
+        };
+
+        const campaign: Campaign = {
+            id: 'test-falsy-zero',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
+            triggering_conditions: [[{ type: 'event_name', operator: '=', operand: 'test-event' }]],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [
+                    {
+                        conditions: [
+                            {
+                                attribute: 'score',
+                                operator: '=',
+                                unit: 'user',
+                                value: 0,
+                                valueType: 'INT',
+                            },
+                        ],
+                        condition_operator: null,
+                    },
+                ],
+                group_operator: null,
+            },
+        };
+
+        expect(WebMessageManager.isEntityOfSegment(campaign, {}, null)).toBe(true);
+    });
+
+    test('should correctly evaluate empty string user property', () => {
+        UserStateManager.userData = {
+            user_properties: {
+                nickname: '',
+            },
+            sdk_type: 'js',
+            sdk_version: '2.17.6',
+            platform: 'web',
+        };
+
+        const campaign: Campaign = {
+            id: 'test-falsy-empty-string',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
+            triggering_conditions: [[{ type: 'event_name', operator: '=', operand: 'test-event' }]],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [
+                    {
+                        conditions: [
+                            {
+                                attribute: 'nickname',
+                                operator: '<>',
+                                unit: 'user',
+                                value: 'admin',
+                                valueType: 'TEXT',
+                            },
+                        ],
+                        condition_operator: null,
+                    },
+                ],
+                group_operator: null,
+            },
+        };
+
+        expect(WebMessageManager.isEntityOfSegment(campaign, {}, null)).toBe(true);
+    });
+});
+
+describe('null user attribute with negative operators', () => {
+    test('should return true for <> when user property is null', () => {
+        UserStateManager.userData = {
+            user_properties: {},
+            sdk_type: 'js',
+            sdk_version: '2.17.6',
+            platform: 'web',
+        };
+
+        const campaign: Campaign = {
+            id: 'test-null-neq',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
+            triggering_conditions: [[{ type: 'event_name', operator: '=', operand: 'test-event' }]],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [
+                    {
+                        conditions: [
+                            {
+                                attribute: 'subscription_status',
+                                operator: '<>',
+                                unit: 'user',
+                                value: 'ACTIVE',
+                                valueType: 'TEXT',
+                            },
+                        ],
+                        condition_operator: null,
+                    },
+                ],
+                group_operator: null,
+            },
+        };
+
+        expect(WebMessageManager.isEntityOfSegment(campaign, {}, null)).toBe(true);
+    });
+
+    test('should return false for = when user property is null', () => {
+        UserStateManager.userData = {
+            user_properties: {},
+            sdk_type: 'js',
+            sdk_version: '2.17.6',
+            platform: 'web',
+        };
+
+        const campaign: Campaign = {
+            id: 'test-null-eq',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
+            triggering_conditions: [[{ type: 'event_name', operator: '=', operand: 'test-event' }]],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [
+                    {
+                        conditions: [
+                            {
+                                attribute: 'subscription_status',
+                                operator: '=',
+                                unit: 'user',
+                                value: 'ACTIVE',
+                                valueType: 'TEXT',
+                            },
+                        ],
+                        condition_operator: null,
+                    },
+                ],
+                group_operator: null,
+            },
+        };
+
+        expect(WebMessageManager.isEntityOfSegment(campaign, {}, null)).toBe(false);
+    });
+
+    test('should return false for > when user property is null', () => {
+        UserStateManager.userData = {
+            user_properties: {},
+            sdk_type: 'js',
+            sdk_version: '2.17.6',
+            platform: 'web',
+        };
+
+        const campaign: Campaign = {
+            id: 'test-null-gt',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
+            triggering_conditions: [[{ type: 'event_name', operator: '=', operand: 'test-event' }]],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [
+                    {
+                        conditions: [
+                            {
+                                attribute: 'age',
+                                operator: '>',
+                                unit: 'user',
+                                value: 0,
+                                valueType: 'INT',
+                            },
+                        ],
+                        condition_operator: null,
+                    },
+                ],
+                group_operator: null,
+            },
+        };
+
+        expect(WebMessageManager.isEntityOfSegment(campaign, {}, null)).toBe(false);
+    });
+
+    test('should return true for <> boolean when user property is null', () => {
+        UserStateManager.userData = {
+            user_properties: {},
+            sdk_type: 'js',
+            sdk_version: '2.17.6',
+            platform: 'web',
+        };
+
+        const campaign: Campaign = {
+            id: 'test-null-bool-neq',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
+            triggering_conditions: [[{ type: 'event_name', operator: '=', operand: 'test-event' }]],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [
+                    {
+                        conditions: [
+                            {
+                                attribute: 'isCompany',
+                                operator: '<>',
+                                unit: 'user',
+                                value: true,
+                                valueType: 'BOOL',
+                            },
+                        ],
+                        condition_operator: null,
+                    },
+                ],
+                group_operator: null,
+            },
+        };
+
+        expect(WebMessageManager.isEntityOfSegment(campaign, {}, null)).toBe(true);
+    });
+
+});
+
+describe('array does not contain (NOT_INCLUDE) operator', () => {
+    test('should return true when array does not contain the element', () => {
+        UserStateManager.userData = {
+            user_properties: {
+                roles: ['student', 'viewer'],
+            },
+            sdk_type: 'js',
+            sdk_version: '2.17.6',
+            platform: 'web',
+        };
+
+        const campaign: Campaign = {
+            id: 'test-not-has-element',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
+            triggering_conditions: [[{ type: 'event_name', operator: '=', operand: 'test-event' }]],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [
+                    {
+                        conditions: [
+                            {
+                                attribute: 'roles',
+                                operator: 'NOT_INCLUDE',
+                                unit: 'user',
+                                value: 'creator',
+                                valueType: 'TEXT',
+                            },
+                        ],
+                        condition_operator: null,
+                    },
+                ],
+                group_operator: null,
+            },
+        };
+
+        expect(WebMessageManager.isEntityOfSegment(campaign, {}, null)).toBe(true);
+    });
+
+    test('should return false when array contains the element', () => {
+        UserStateManager.userData = {
+            user_properties: {
+                roles: ['student', 'creator'],
+            },
+            sdk_type: 'js',
+            sdk_version: '2.17.6',
+            platform: 'web',
+        };
+
+        const campaign: Campaign = {
+            id: 'test-not-has-element-false',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
+            triggering_conditions: [[{ type: 'event_name', operator: '=', operand: 'test-event' }]],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [
+                    {
+                        conditions: [
+                            {
+                                attribute: 'roles',
+                                operator: 'NOT_INCLUDE',
+                                unit: 'user',
+                                value: 'creator',
+                                valueType: 'TEXT',
+                            },
+                        ],
+                        condition_operator: null,
+                    },
+                ],
+                group_operator: null,
+            },
+        };
+
+        expect(WebMessageManager.isEntityOfSegment(campaign, {}, null)).toBe(false);
+    });
+
+    test('should return false for NOT_INCLUDE when user property is null (matches server behavior)', () => {
+        UserStateManager.userData = {
+            user_properties: {},
+            sdk_type: 'js',
+            sdk_version: '2.17.6',
+            platform: 'web',
+        };
+
+        const campaign: Campaign = {
+            id: 'test-not-has-element-null',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
+            triggering_conditions: [[{ type: 'event_name', operator: '=', operand: 'test-event' }]],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [
+                    {
+                        conditions: [
+                            {
+                                attribute: 'roles',
+                                operator: 'NOT_INCLUDE',
+                                unit: 'user',
+                                value: 'creator',
+                                valueType: 'TEXT',
+                            },
+                        ],
+                        condition_operator: null,
+                    },
+                ],
+                group_operator: null,
+            },
+        };
+
+        // Server: Array.isArray(null) && !null.includes(...) → false
+        expect(WebMessageManager.isEntityOfSegment(campaign, {}, null)).toBe(false);
+    });
+
+    test('should return true for NOT_INCLUDE with empty array', () => {
+        UserStateManager.userData = {
+            user_properties: {
+                roles: [],
+            },
+            sdk_type: 'js',
+            sdk_version: '2.17.6',
+            platform: 'web',
+        };
+
+        const campaign: Campaign = {
+            id: 'test-not-has-element-empty',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
+            triggering_conditions: [[{ type: 'event_name', operator: '=', operand: 'test-event' }]],
+            segment_type: 'condition',
+            segment_info: {
+                groups: [
+                    {
+                        conditions: [
+                            {
+                                attribute: 'roles',
+                                operator: 'NOT_INCLUDE',
+                                unit: 'user',
+                                value: 'creator',
+                                valueType: 'TEXT',
+                            },
+                        ],
+                        condition_operator: null,
+                    },
+                ],
+                group_operator: null,
+            },
+        };
+
+        expect(WebMessageManager.isEntityOfSegment(campaign, {}, null)).toBe(true);
+    });
+});
+
+describe('triggering event filter with NOT_INCLUDE and null handling', () => {
+    test('should correctly filter event params with NOT_INCLUDE operator', () => {
+        const campaign: Campaign = {
+            id: 'test-event-filter-not-has',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
+            triggering_conditions: [[{ type: 'event_name', operator: '=', operand: 'test-event' }]],
+            triggering_event_filters: [
+                [
+                    {
+                        key: 'tags',
+                        operator: 'NOT_INCLUDE',
+                        value: 'premium',
+                        value_type: 'TEXT',
+                    },
+                ],
+            ],
+            segment_type: 'condition',
+            segment_info: { groups: [], group_operator: null },
+            delay: 0,
+        };
+
+        const result1 = WebMessageManager.isEventApplicableForCampaign(campaign, 'test-event', {
+            tags: ['basic', 'free'],
+        });
+        const result2 = WebMessageManager.isEventApplicableForCampaign(campaign, 'test-event', {
+            tags: ['premium', 'paid'],
+        });
+
+        expect(result1).toBe(true);
+        expect(result2).toBe(false);
+    });
+
+    test('should return true for <> event filter when param is not present', () => {
+        const campaign: Campaign = {
+            id: 'test-event-filter-null-neq',
+            status: 1,
+            channel: 'in-web-message',
+            updated_at: '2023-04-30T00:00:00.000Z',
+            message: {
+                html_url: '',
+                modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+            },
+            triggering_conditions: [[{ type: 'event_name', operator: '=', operand: 'test-event' }]],
+            triggering_event_filters: [
+                [
+                    {
+                        key: 'category',
+                        operator: '<>',
+                        value: 'vip',
+                        value_type: 'TEXT',
+                    },
+                ],
+            ],
+            segment_type: 'condition',
+            segment_info: { groups: [], group_operator: null },
+            delay: 0,
+        };
+
+        const result = WebMessageManager.isEventApplicableForCampaign(campaign, 'test-event', {});
+        expect(result).toBe(true);
+    });
+});

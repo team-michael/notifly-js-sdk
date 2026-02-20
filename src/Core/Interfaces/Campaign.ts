@@ -29,6 +29,7 @@ export type Operator =
     | '<'
     | '<='
     | '@>'
+    | 'NOT_INCLUDE'
     | 'IS_NULL'
     | 'IS_NOT_NULL'
     | 'starts_with'
