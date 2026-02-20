@@ -133,6 +133,25 @@ export class ValueComparator {
         }
     }
 
+    static DoesNotHaveElement(a: any, b: any, type: ValueType): boolean {
+        try {
+            const array = this._castOrThrow(a, 'ARRAY') as any[];
+            const value = this._castOrThrow(b, type);
+
+            return !array.some(
+                ((element: any) => {
+                    if (this.IsEqual(element, value, type)) {
+                        return true;
+                    }
+                    return false;
+                }).bind(this)
+            );
+        } catch (error) {
+            console.warn(`[Notifly] ${(error as Error).message}`);
+            return false;
+        }
+    }
+
     static StartsWith(a: any, b: any): boolean {
         const castedA = this._castOrNull(a, 'TEXT') as string | null;
         const castedB = this._castOrNull(b, 'TEXT') as string | null;
