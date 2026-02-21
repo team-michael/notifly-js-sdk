@@ -131,6 +131,10 @@ export class WebMessageScheduler {
                                     document.body.appendChild(a);
                                     a.setAttribute('style', 'display: none');
                                     a.href = message.link;
+                                    if (modalProperties?.link_open_mode === 'blank') {
+                                        a.target = '_blank';
+                                        a.rel = 'noopener noreferrer';
+                                    }
                                     a.click();
                                     document.body.removeChild(a);
                                 }
