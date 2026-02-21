@@ -65,6 +65,17 @@ export class WebMessageScheduler {
                         try {
                             if (event.source === getIframe().contentWindow) {
                                 const message = event.data;
+                                // Open blank-mode links synchronously to preserve user activation (popups are blocked after await)
+                                if (message.link && modalProperties?.link_open_mode === 'blank') {
+                                    const a = document.createElement('a');
+                                    document.body.appendChild(a);
+                                    a.setAttribute('style', 'display: none');
+                                    a.href = message.link;
+                                    a.target = '_blank';
+                                    a.rel = 'noopener noreferrer';
+                                    a.click();
+                                    document.body.removeChild(a);
+                                }
                                 if (message.type === 'close') {
                                     this._isWebMessageOpen = false;
                                     try {
@@ -125,8 +136,8 @@ export class WebMessageScheduler {
                                         EventLogger.logEvent(type, otherEventParams, null, isInternalEvent);
                                     }
                                 }
-                                if (message.link) {
-                                    // Navigate to link if necessary
+                                // Navigate same-tab links after async work completes
+                                if (message.link && modalProperties?.link_open_mode !== 'blank') {
                                     const a = document.createElement('a');
                                     document.body.appendChild(a);
                                     a.setAttribute('style', 'display: none');

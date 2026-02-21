@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.17.8]
+
+### Added
+
+-   Add `link_open_mode` support for in-web popup links
+    -   When `link_open_mode` is set to `'blank'`, links open in external browser with `target="_blank"`
+    -   Default behavior (`'self'`) is unchanged for backward compatibility
+
 ## [2.17.7]
 
 ### Fixed
