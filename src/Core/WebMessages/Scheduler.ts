@@ -65,6 +65,19 @@ export class WebMessageScheduler {
                         try {
                             if (event.source === getIframe().contentWindow) {
                                 const message = event.data;
+                                // Navigate synchronously before any await to preserve user activation
+                                if (message.link) {
+                                    const a = document.createElement('a');
+                                    document.body.appendChild(a);
+                                    a.setAttribute('style', 'display: none');
+                                    a.href = message.link;
+                                    if (modalProperties?.link_open_mode === 'blank') {
+                                        a.target = '_blank';
+                                        a.rel = 'noopener noreferrer';
+                                    }
+                                    a.click();
+                                    document.body.removeChild(a);
+                                }
                                 if (message.type === 'close') {
                                     this._isWebMessageOpen = false;
                                     try {
@@ -124,19 +137,6 @@ export class WebMessageScheduler {
                                         const isInternalEvent = Object.values(NotiflyInternalEvent).includes(type);
                                         EventLogger.logEvent(type, otherEventParams, null, isInternalEvent);
                                     }
-                                }
-                                if (message.link) {
-                                    // Navigate to link if necessary
-                                    const a = document.createElement('a');
-                                    document.body.appendChild(a);
-                                    a.setAttribute('style', 'display: none');
-                                    a.href = message.link;
-                                    if (modalProperties?.link_open_mode === 'blank') {
-                                        a.target = '_blank';
-                                        a.rel = 'noopener noreferrer';
-                                    }
-                                    a.click();
-                                    document.body.removeChild(a);
                                 }
                             }
                         } catch (error) {
