@@ -65,16 +65,14 @@ export class WebMessageScheduler {
                         try {
                             if (event.source === getIframe().contentWindow) {
                                 const message = event.data;
-                                // Navigate synchronously before any await to preserve user activation
-                                if (message.link) {
+                                // Open blank-mode links synchronously to preserve user activation (popups are blocked after await)
+                                if (message.link && modalProperties?.link_open_mode === 'blank') {
                                     const a = document.createElement('a');
                                     document.body.appendChild(a);
                                     a.setAttribute('style', 'display: none');
                                     a.href = message.link;
-                                    if (modalProperties?.link_open_mode === 'blank') {
-                                        a.target = '_blank';
-                                        a.rel = 'noopener noreferrer';
-                                    }
+                                    a.target = '_blank';
+                                    a.rel = 'noopener noreferrer';
                                     a.click();
                                     document.body.removeChild(a);
                                 }
@@ -137,6 +135,15 @@ export class WebMessageScheduler {
                                         const isInternalEvent = Object.values(NotiflyInternalEvent).includes(type);
                                         EventLogger.logEvent(type, otherEventParams, null, isInternalEvent);
                                     }
+                                }
+                                // Navigate same-tab links after async work completes
+                                if (message.link && modalProperties?.link_open_mode !== 'blank') {
+                                    const a = document.createElement('a');
+                                    document.body.appendChild(a);
+                                    a.setAttribute('style', 'display: none');
+                                    a.href = message.link;
+                                    a.click();
+                                    document.body.removeChild(a);
                                 }
                             }
                         } catch (error) {
