@@ -109,4 +109,6 @@ export interface Campaign {
     triggering_conditions: TriggeringConditions;
     triggering_event_filters?: TriggeringEventFilter[];
     delay?: number;
+    cancellation_conditions?: TriggeringConditions;
+    cancellation_event_filters?: TriggeringEventFilter[];
 }

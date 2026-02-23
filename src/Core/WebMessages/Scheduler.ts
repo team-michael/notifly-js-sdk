@@ -194,6 +194,10 @@ export class WebMessageScheduler {
         }
     }
 
+    static getScheduledCampaignIds(): string[] {
+        return this._scheduledWebMessages.map((item) => item.campaignId);
+    }
+
     static descheduleInWebMessage(campaignId: string | null = null) {
         if (!campaignId) {
             this._scheduledWebMessages.forEach((element) => clearTimeout(element.timerId));

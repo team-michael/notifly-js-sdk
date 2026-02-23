@@ -33,6 +33,7 @@ export class WebMessageManager {
         externalUserID: string | null,
         segmentationEventParamKeys?: string[] | null
     ) {
+        this._checkCancellationConditions(eventName, eventParams);
         this._triggerWebMessages(eventName, eventParams, externalUserID);
         UserStateManager.updateEventCounts(eventName, eventParams, segmentationEventParamKeys);
     }
@@ -121,6 +122,40 @@ export class WebMessageManager {
         }
 
         return result;
+    }
+
+    /**
+     * Check if any scheduled campaigns should be cancelled based on the incoming event.
+     */
+    private static _checkCancellationConditions(
+        eventName: string,
+        eventParams: Record<string, any>
+    ) {
+        const scheduledCampaignIds = WebMessageScheduler.getScheduledCampaignIds();
+        if (scheduledCampaignIds.length === 0) {
+            return;
+        }
+
+        const campaigns = UserStateManager.inWebMessageCampaigns;
+        for (const campaignId of scheduledCampaignIds) {
+            const campaign = campaigns.find((c) => c.id === campaignId);
+            if (!campaign?.cancellation_conditions) {
+                continue;
+            }
+
+            if (!this._matchTriggeringConditions(campaign.cancellation_conditions, eventName)) {
+                continue;
+            }
+
+            if (
+                campaign.cancellation_event_filters &&
+                !this._matchTriggeringEventFilters(campaign.cancellation_event_filters, eventParams)
+            ) {
+                continue;
+            }
+
+            WebMessageScheduler.descheduleInWebMessage(campaignId);
+        }
     }
 
     /**
