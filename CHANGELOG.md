@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.18.0]
+
+### Added
+
+-   Support cancellation conditions for in-web message campaigns
+    -   Scheduled web popups (with delay) can now be cancelled when a cancellation event is triggered
+    -   Reuses existing triggering condition matching logic for cancellation evaluation
+
 ## [2.17.8]
 
 ### Added
