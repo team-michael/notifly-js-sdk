@@ -19,6 +19,10 @@ jobs:
   release:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+      id-token: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,8 +30,10 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
-          registry-url: 'https://registry.npmjs.org/'
+          node-version: 22
+
+      - name: Upgrade npm
+        run: npm install -g npm@11.5.1
 
       - name: Install dependencies
         run: npm ci
@@ -35,11 +41,11 @@ jobs:
       - name: Update package name (prod or dev)
         run: |
           if [ "${{ inputs.release_type }}" = "dev" ]; then
-          echo "Updating package name to notifly-js-sdk-dev..."
-          node scripts/update_package_name.js notifly-js-sdk-dev
+            echo "Updating package name to notifly-js-sdk-dev..."
+            node scripts/update_package_name.js notifly-js-sdk-dev
           else
-          echo "Updating package name to notifly-js-sdk..."
-          node scripts/update_package_name.js notifly-js-sdk
+            echo "Updating package name to notifly-js-sdk..."
+            node scripts/update_package_name.js notifly-js-sdk
           fi
 
       - name: Read Changelog
@@ -64,15 +70,12 @@ jobs:
 
       - name: Publish to npm
         run: |
-          if [ "${{ inputs.release_type }}" = "dev" ]; then
-            echo "Publishing to notifly-js-sdk-dev..."
-            npm publish
+          if [ "${{ endsWith(github.event.inputs.version, 'SNAPSHOT') }}" = "true" ]; then
+            npm publish --provenance --access public --tag snapshot
           else
-            echo "Publishing to notifly-js-sdk..."
-            npm publish
+            npm publish --provenance --access public
           fi
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
