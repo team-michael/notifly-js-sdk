@@ -32,11 +32,7 @@ async function* readChunks(reader: ReadableStreamDefaultReader<Uint8Array>): Asy
 }
 
 export class FetchStreamLineProvider implements StreamLineProvider {
-    async open(
-        url: string,
-        headers: Record<string, string>,
-        signal: AbortSignal,
-    ): Promise<StreamResponse> {
+    async open(url: string, headers: Record<string, string>, signal: AbortSignal): Promise<StreamResponse> {
         const response = await fetch(url, {
             method: 'GET',
             headers,

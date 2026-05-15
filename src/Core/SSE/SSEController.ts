@@ -4,10 +4,7 @@ import { decodeSSEMessage } from './SSEMessage';
 export type SSEMode = 'sse' | 'fallback';
 export type Scheduler = (delayMs: number, work: () => void) => void;
 export type SyncRequestedCallback = (completion: () => void) => void;
-export type ServerEventCallback = (
-    name: string,
-    eventParams: Record<string, unknown> | null,
-) => void;
+export type ServerEventCallback = (name: string, eventParams: Record<string, unknown> | null) => void;
 
 export interface SSEControllerOptions {
     sseClient: SSEClient;
@@ -44,8 +41,7 @@ export class SSEController {
         this.onSyncRequested = opts.onSyncRequested;
         this.onServerEventTriggered = opts.onServerEventTriggered;
         this.syncDebounceMs = opts.syncDebounceMs ?? DEFAULT_SYNC_DEBOUNCE_MS;
-        this.fallbackAfterAttempts =
-            opts.fallbackAfterAttempts ?? DEFAULT_FALLBACK_AFTER_ATTEMPTS;
+        this.fallbackAfterAttempts = opts.fallbackAfterAttempts ?? DEFAULT_FALLBACK_AFTER_ATTEMPTS;
         this.scheduler = opts.scheduler ?? defaultScheduler;
 
         this.sseClient.onMessage = (type, data) => this.handleMessage(type, data);

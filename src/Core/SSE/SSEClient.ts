@@ -57,10 +57,7 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
 }
 
 function isAbortError(e: unknown): boolean {
-    return (
-        e instanceof DOMException &&
-        (e.name === 'AbortError' || e.name === 'TimeoutError')
-    );
+    return e instanceof DOMException && (e.name === 'AbortError' || e.name === 'TimeoutError');
 }
 
 export class SSEClient {
@@ -109,11 +106,7 @@ export class SSEClient {
     }
 
     connect(): void {
-        if (
-            this.state.kind === 'connecting' ||
-            this.state.kind === 'open' ||
-            this.state.kind === 'reconnecting'
-        ) {
+        if (this.state.kind === 'connecting' || this.state.kind === 'open' || this.state.kind === 'reconnecting') {
             return;
         }
         this.runAbortController?.abort();
@@ -130,7 +123,8 @@ export class SSEClient {
         this.state = { kind: 'stopped' };
         try {
             previous?.abort();
-        } catch (e) { void e;
+        } catch (e) {
+            void e;
         }
         if (!wasStopped) this.emitState(this.state);
     }
@@ -150,17 +144,15 @@ export class SSEClient {
             if (this.isStopped() || signal.aborted) break;
 
             const openedAt = this.lastOpenAt;
-            if (
-                openedAt !== null &&
-                this.opts.nowProvider() - openedAt >= this.opts.openStableThresholdMs
-            ) {
+            if (openedAt !== null && this.opts.nowProvider() - openedAt >= this.opts.openStableThresholdMs) {
                 attempt = 0;
             }
             attempt += 1;
             this.transition({ kind: 'reconnecting', attempt });
             try {
                 await sleep(this.backoffDelayMs(attempt), signal);
-            } catch (e) { void e;
+            } catch (e) {
+                void e;
                 break;
             }
         }
@@ -178,7 +170,8 @@ export class SSEClient {
         if (response.statusCode !== HTTP_OK) {
             try {
                 response.close();
-            } catch (e) { void e;
+            } catch (e) {
+                void e;
             }
             throw new Error(`SSE http status ${response.statusCode}`);
         }
@@ -186,7 +179,8 @@ export class SSEClient {
         if (!ct.startsWith('text/event-stream')) {
             try {
                 response.close();
-            } catch (e) { void e;
+            } catch (e) {
+                void e;
             }
             throw new Error('SSE invalid response');
         }
@@ -201,15 +195,13 @@ export class SSEClient {
         } finally {
             try {
                 response.close();
-            } catch (e) { void e;
+            } catch (e) {
+                void e;
             }
         }
     }
 
-    private async consumeStream(
-        lines: AsyncIterable<string>,
-        signal: AbortSignal,
-    ): Promise<void> {
+    private async consumeStream(lines: AsyncIterable<string>, signal: AbortSignal): Promise<void> {
         const parser = new SSELineParser();
         for await (const line of lines) {
             if (signal.aborted) return;
@@ -223,11 +215,8 @@ export class SSEClient {
 
     private async runHeartbeatWatchdog(signal: AbortSignal): Promise<void> {
         const checkInterval = Math.max(
-            Math.min(
-                Math.floor(this.opts.heartbeatTimeoutMs / WATCHDOG_RESOLUTION_DIVISOR),
-                WATCHDOG_MAX_INTERVAL_MS,
-            ),
-            WATCHDOG_MIN_INTERVAL_MS,
+            Math.min(Math.floor(this.opts.heartbeatTimeoutMs / WATCHDOG_RESOLUTION_DIVISOR), WATCHDOG_MAX_INTERVAL_MS),
+            WATCHDOG_MIN_INTERVAL_MS
         );
         while (!signal.aborted) {
             await sleep(checkInterval, signal);
@@ -242,9 +231,7 @@ export class SSEClient {
         if (this.state.kind === 'stopped') return;
         const changed =
             this.state.kind !== next.kind ||
-            (this.state.kind === 'reconnecting' &&
-                next.kind === 'reconnecting' &&
-                this.state.attempt !== next.attempt);
+            (this.state.kind === 'reconnecting' && next.kind === 'reconnecting' && this.state.attempt !== next.attempt);
         this.state = next;
         this.lastOpenAt = next.kind === 'open' ? this.opts.nowProvider() : null;
         if (changed) this.emitState(next);
@@ -255,7 +242,8 @@ export class SSEClient {
         if (!cb) return;
         try {
             cb(s);
-        } catch (e) { void e;
+        } catch (e) {
+            void e;
         }
     }
 
@@ -264,7 +252,8 @@ export class SSEClient {
         if (!cb) return;
         try {
             cb(type, data);
-        } catch (e) { void e;
+        } catch (e) {
+            void e;
         }
     }
 
@@ -278,7 +267,9 @@ export class SSEClient {
 
     private buildUrl(): string {
         const base = this.opts.baseUrl.replace(/\/+$/, '');
-        const path = `/projects/${encodeURIComponent(this.opts.projectId)}/users/${encodeURIComponent(this.opts.notiflyUserId)}/streams`;
+        const path = `/projects/${encodeURIComponent(this.opts.projectId)}/users/${encodeURIComponent(
+            this.opts.notiflyUserId
+        )}/streams`;
         const query =
             this.opts.deviceId && this.opts.deviceId.length > 0
                 ? `?deviceId=${encodeURIComponent(this.opts.deviceId)}`
@@ -286,10 +277,7 @@ export class SSEClient {
         return `${base}${path}${query}`;
     }
 
-    private buildHeaders(
-        token: string,
-        lastEventId: string | null,
-    ): Record<string, string> {
+    private buildHeaders(token: string, lastEventId: string | null): Record<string, string> {
         const headers: Record<string, string> = {
             Authorization: `Bearer ${token}`,
             'x-notifly-sdk-version': this.opts.sdkVersionHeader,

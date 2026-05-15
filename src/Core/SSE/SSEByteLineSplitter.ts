@@ -34,9 +34,7 @@ class GrowableByteBuffer {
     }
 }
 
-export async function* splitSSELines(
-    chunks: AsyncIterable<Uint8Array>,
-): AsyncGenerator<string> {
+export async function* splitSSELines(chunks: AsyncIterable<Uint8Array>): AsyncGenerator<string> {
     const decoder = new TextDecoder('utf-8');
     const buffer = new GrowableByteBuffer(INITIAL_BUFFER_CAPACITY);
     let prevWasCR = false;
@@ -58,9 +56,7 @@ export async function* splitSSELines(
             } else {
                 prevWasCR = false;
                 if (buffer.size >= MAX_LINE_BYTES) {
-                    throw new Error(
-                        `SSE line exceeded ${MAX_LINE_BYTES} bytes without terminator`,
-                    );
+                    throw new Error(`SSE line exceeded ${MAX_LINE_BYTES} bytes without terminator`);
                 }
                 buffer.append(byte);
             }

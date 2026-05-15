@@ -39,8 +39,7 @@ export class SSELineParser {
     }
 
     private dispatch(): SSEEvent | null {
-        const type =
-            this.eventType && this.eventType.length > 0 ? this.eventType : DEFAULT_TYPE;
+        const type = this.eventType && this.eventType.length > 0 ? this.eventType : DEFAULT_TYPE;
         const data = this.dataLines.length === 0 ? null : this.dataLines.join('\n');
         this.eventType = null;
         this.dataLines = [];
