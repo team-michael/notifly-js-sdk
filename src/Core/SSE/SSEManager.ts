@@ -49,12 +49,16 @@ export class SSEManager {
                 NotiflyStorageKeys.PROJECT_ID,
                 NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
             ]);
-            if (!projectId || !deviceId) return;
+            if (!projectId || !deviceId) {
+                this.stop();
+                return;
+            }
 
             let notiflyUserId: string;
             try {
                 notiflyUserId = await NotiflyStorage.getNotiflyUserId();
             } catch {
+                this.stop();
                 return;
             }
 

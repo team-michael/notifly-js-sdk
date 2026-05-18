@@ -90,7 +90,7 @@ describe('SSEController', () => {
             },
         });
         controller.handleMessage('sync', '{}');
-        pendingWork?.();
+        if (pendingWork) (pendingWork as () => void)();
         controller.handleMessage('sync', '{}');
         expect(called).toBe(2);
     });
@@ -131,7 +131,7 @@ describe('SSEController', () => {
         controller.handleMessage('shutdown', '{"reconnectInMs":1500}');
         expect(client.disconnectCalls).toBe(1);
         expect(capturedDelay).toBe(1500);
-        capturedWork?.();
+        if (capturedWork) (capturedWork as () => void)();
         expect(client.connectCalls).toBe(1);
     });
 
@@ -144,7 +144,7 @@ describe('SSEController', () => {
         });
         controller.handleMessage('shutdown', '{"reconnectInMs":100}');
         controller.stop();
-        capturedWork?.();
+        if (capturedWork) (capturedWork as () => void)();
         expect(client.connectCalls).toBe(0);
     });
 
