@@ -27,6 +27,7 @@
   },
   "author": "Grey Box Inc.",
   "license": "ISC",
+  "repository": "https://github.com/team-michael/notifly-js-sdk",
   "dependencies": {
     "lodash": "^4.17.21",
     "notifly-web-message-renderer": "^2.4.0",
