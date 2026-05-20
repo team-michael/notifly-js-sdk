@@ -174,6 +174,10 @@ export class WebMessageScheduler {
         if (delayInSeconds <= 0) {
             this._showInWebMessage(campaign);
         } else {
+            // delay 윈도우 동안 hide_until 이 아직 비어있어 동일 캠페인이 중복 큐잉되는 것을 막는다.
+            // iOS/Android SDK 와 동일하게 기존 타이머를 cancel-and-replace 한다.
+            this.descheduleInWebMessage(campaign.id);
+
             const timerId = setTimeout(() => {
                 try {
                     this._showInWebMessage(campaign);

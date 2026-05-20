@@ -39,6 +39,9 @@ describe('cancellation conditions', () => {
     beforeEach(() => {
         UserStateManager.eventIntermediateCounts = [];
         UserStateManager.inWebMessageCampaigns = [];
+        // scheduleInWebMessage 가 cancel-and-replace 패턴으로 동일 campaignId 의 기존 타이머를
+        // 정리하면서 descheduleInWebMessage 를 호출하므로, cancellation_conditions 동작을 검증하기 위해
+        // 각 테스트가 scheduleInWebMessage 호출을 마친 뒤에 spy 를 명시적으로 mockClear() 해 줘야 한다.
         descheduleSpy = jest.spyOn(WebMessageScheduler, 'descheduleInWebMessage');
     });
 
@@ -72,6 +75,7 @@ describe('cancellation conditions', () => {
 
             UserStateManager.inWebMessageCampaigns = [campaign];
             WebMessageScheduler.scheduleInWebMessage(campaign);
+            descheduleSpy.mockClear();
 
             WebMessageManager.maybeTriggerWebMessagesAndUpdateEventCounts('unrelated_event', {}, null);
 
@@ -86,6 +90,7 @@ describe('cancellation conditions', () => {
 
             UserStateManager.inWebMessageCampaigns = [campaign];
             WebMessageScheduler.scheduleInWebMessage(campaign);
+            descheduleSpy.mockClear();
 
             WebMessageManager.maybeTriggerWebMessagesAndUpdateEventCounts('cancel_event', {}, null);
 
@@ -163,6 +168,7 @@ describe('cancellation conditions', () => {
 
             UserStateManager.inWebMessageCampaigns = [campaign];
             WebMessageScheduler.scheduleInWebMessage(campaign);
+            descheduleSpy.mockClear();
 
             WebMessageManager.maybeTriggerWebMessagesAndUpdateEventCounts(
                 'cancel_event',
@@ -205,6 +211,7 @@ describe('cancellation conditions', () => {
 
             UserStateManager.inWebMessageCampaigns = [campaign];
             WebMessageScheduler.scheduleInWebMessage(campaign);
+            descheduleSpy.mockClear();
 
             WebMessageManager.maybeTriggerWebMessagesAndUpdateEventCounts('cancel_event', {}, null);
 
@@ -315,6 +322,7 @@ describe('cancellation conditions', () => {
 
             UserStateManager.inWebMessageCampaigns = [campaign];
             WebMessageScheduler.scheduleInWebMessage(campaign);
+            descheduleSpy.mockClear();
 
             WebMessageManager.maybeTriggerWebMessagesAndUpdateEventCounts('user_checkout_done', {}, null);
 
@@ -347,6 +355,7 @@ describe('cancellation conditions', () => {
 
             UserStateManager.inWebMessageCampaigns = [campaign];
             WebMessageScheduler.scheduleInWebMessage(campaign);
+            descheduleSpy.mockClear();
 
             WebMessageManager.maybeTriggerWebMessagesAndUpdateEventCounts('keep_alive', {}, null);
 
@@ -421,6 +430,7 @@ describe('cancellation conditions', () => {
 
             UserStateManager.inWebMessageCampaigns = [campaign];
             WebMessageScheduler.scheduleInWebMessage(campaign);
+            descheduleSpy.mockClear();
 
             // Matches starts_with but NOT ends_with
             WebMessageManager.maybeTriggerWebMessagesAndUpdateEventCounts('purchase_started', {}, null);
@@ -437,6 +447,7 @@ describe('cancellation conditions', () => {
 
             UserStateManager.inWebMessageCampaigns = [campaign];
             WebMessageScheduler.scheduleInWebMessage(campaign);
+            descheduleSpy.mockClear();
 
             WebMessageManager.maybeTriggerWebMessagesAndUpdateEventCounts('any_event', {}, null);
 
