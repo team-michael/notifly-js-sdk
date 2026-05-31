@@ -33,11 +33,13 @@ export class SSEManager {
     static stop(): void {
         if (!this.active) return;
         this.active.controller.stop();
-        this.active = null;
     }
 
     static dispose(): void {
-        this.stop();
+        if (this.active) {
+            this.active.controller.stop();
+            this.active = null;
+        }
         this.unregisterObservers();
     }
 
