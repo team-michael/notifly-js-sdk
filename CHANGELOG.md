@@ -2,14 +2,17 @@
 
 ## [2.19.0]
 
+### Added
+
+-   **Real-time campaign data sync over SSE**
+    -   Open a long-lived SSE channel from the SDK to Notifly server. When campaign state changes server-side (e.g. a new in-web message is triggered or a popup is updated), the SDK refreshes its local campaign data immediately instead of waiting for the next event-driven fetch.
+    -   On reconnect, the SDK sends `Last-Event-ID` so the server can replay popup entries that were missed during the disconnect window, recovering messages that fired while offline.
+    -   If the SSE channel cannot reach OPEN state within the fallback threshold, the SDK falls back to the legacy event-driven sync path automatically.
+
 ### Changed
 
--   Switch SSE reconnect backoff to full jitter (100ms ~ 10s) across all attempts
-    -   Previous schedule was `[1, 2, 4, 8, 30]s` with ±20% multiplicative jitter; attempt 1 spread was only ~400ms
-    -   New schedule uses a single 10s base with 0~1 uniform jitter (clamped to 100ms minimum), producing a ~9.9s window to better disperse reconnect bursts after server-side disconnects (e.g. rolling deploys)
--   Reduce SSE verbose logging
-    -   Keep: `connected`, `disconnected`, `sync received` + error logs
-    -   Remove: per-attempt fetch/token/response traces, `Last-Event-ID` headers, `event received`, `shutdown received`, lifecycle entry/exit logs
+-   Reconnect backoff uses full jitter (100ms ~ 10s) across all attempts to disperse reconnect bursts after server-side disconnects such as rolling deploys.
+-   Reduce SSE verbose logging. Keep: `connected`, `disconnected`, `sync received` + error logs.
 
 ## [2.18.0]
 
