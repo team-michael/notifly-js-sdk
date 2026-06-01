@@ -14,6 +14,14 @@
 -   Reconnect backoff uses full jitter (100ms ~ 10s) across all attempts to disperse reconnect bursts after server-side disconnects such as rolling deploys.
 -   Reduce SSE verbose logging. Keep: `connected`, `disconnected`, `sync received` + error logs.
 
+## [2.18.1]
+
+### Fixed
+
+-   Prevent duplicate timer queuing for the same in-web message campaign within the delay window
+    -   When the same trigger event fires multiple times before the scheduled timer fires, only the latest timer is kept (cancel-and-replace)
+    -   Aligns behavior with iOS / Android SDK and removes short-interval repeat exposures observed in production
+
 ## [2.18.0]
 
 ### Added
