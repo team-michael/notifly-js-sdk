@@ -74,6 +74,7 @@ export class SSEController {
                 this.modeInternal = 'sse';
                 break;
             case 'sync':
+                console.info('[Notifly][sse] sync received');
                 this.triggerSyncDebounced();
                 break;
             case 'event':

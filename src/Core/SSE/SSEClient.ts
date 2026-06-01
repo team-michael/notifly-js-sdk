@@ -111,9 +111,6 @@ export class SSEClient {
         }
         this.runAbortController?.abort();
         this.runAbortController = new AbortController();
-        console.info(
-            `[Notifly][sse] connect requested: projectId=${this.opts.projectId} userId=${this.opts.notiflyUserId} deviceId=${this.opts.deviceId ?? '-'}`
-        );
         const next: SSEState = { kind: 'connecting' };
         const changed = this.state.kind !== next.kind;
         this.state = next;
@@ -123,7 +120,6 @@ export class SSEClient {
     }
 
     disconnect(): void {
-        console.warn(`[Notifly][sse] disconnect() called: state=${this.state.kind}`);
         const previous = this.runAbortController;
         this.runAbortController = null;
         this.lastOpenAt = null;
@@ -135,9 +131,7 @@ export class SSEClient {
             void e;
         }
         if (!wasStopped) {
-            console.info(
-                `[Notifly][sse] disconnect requested: projectId=${this.opts.projectId} userId=${this.opts.notiflyUserId}`
-            );
+            console.info('[Notifly][sse] disconnected');
             this.emitState(this.state);
         }
     }
@@ -148,7 +142,6 @@ export class SSEClient {
 
     private async runConnectionLoop(signal: AbortSignal): Promise<void> {
         let attempt = 0;
-        console.info(`[Notifly][sse] runConnectionLoop entered: state=${this.state.kind} aborted=${signal.aborted}`);
         while (!this.isStopped() && !signal.aborted) {
             try {
                 await this.runOneConnection(attempt, signal);
@@ -177,13 +170,10 @@ export class SSEClient {
         if (attempt > 0) this.transition({ kind: 'connecting' });
         this.lastDataAt = this.opts.nowProvider();
 
-        console.info(`[Notifly][sse] runOneConnection attempt=${attempt}: fetching token`);
         const token = await this.opts.tokenProvider();
-        console.info(`[Notifly][sse] runOneConnection attempt=${attempt}: token ok, opening stream`);
         const url = this.buildUrl();
         const headers = this.buildHeaders(token, this.lastEventIdInternal);
         const response = await this.opts.provider.open(url, headers, signal);
-        console.info(`[Notifly][sse] runOneConnection attempt=${attempt}: response status=${response.statusCode}`);
 
         if (response.statusCode !== HTTP_OK) {
             console.error(
@@ -208,9 +198,7 @@ export class SSEClient {
         }
 
         this.transition({ kind: 'open' });
-        console.info(
-            `[Notifly][sse] connected: projectId=${this.opts.projectId} userId=${this.opts.notiflyUserId} deviceId=${this.opts.deviceId ?? '-'}`
-        );
+        console.info('[Notifly][sse] connected');
         this.lastDataAt = this.opts.nowProvider();
 
         const consume = this.consumeStream(response.lines, signal);
@@ -287,9 +275,7 @@ export class SSEClient {
         const idx = Math.min(Math.max(attempt - 1, 0), schedule.length - 1);
         const base = schedule[idx];
         const jitter = this.opts.jitterProvider();
-        const delay = Math.max(100, Math.floor(base * jitter));
-        console.info(`[Notifly][sse] backoff attempt=${attempt} delay=${delay}ms`);
-        return delay;
+        return Math.max(100, Math.floor(base * jitter));
     }
 
     private buildUrl(): string {
@@ -312,9 +298,6 @@ export class SSEClient {
         };
         if (lastEventId && lastEventId.length > 0) {
             headers['Last-Event-ID'] = lastEventId;
-            console.info(`[Notifly][sse] sending Last-Event-ID: ${lastEventId}`);
-        } else {
-            console.info('[Notifly][sse] sending Last-Event-ID: (none)');
         }
         return headers;
     }
