@@ -112,10 +112,9 @@ export class SSEClient {
         this.runAbortController?.abort();
         this.runAbortController = new AbortController();
         const next: SSEState = { kind: 'connecting' };
-        const changed = this.state.kind !== next.kind;
         this.state = next;
         this.lastOpenAt = null;
-        if (changed) this.emitState(next);
+        this.emitState(next);
         void this.runConnectionLoop(this.runAbortController.signal);
     }
 
