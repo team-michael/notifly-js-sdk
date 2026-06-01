@@ -26,7 +26,7 @@ export interface SSEClientOptions {
     nowProvider?: () => number;
 }
 
-const DEFAULT_BACKOFF_SCHEDULE_MS = [1000, 2000, 4000, 8000, 30000];
+const DEFAULT_BACKOFF_SCHEDULE_MS = [10000];
 const DEFAULT_HEARTBEAT_TIMEOUT_MS = 60000;
 const DEFAULT_OPEN_STABLE_THRESHOLD_MS = 30000;
 const WATCHDOG_RESOLUTION_DIVISOR = 4;
@@ -35,7 +35,7 @@ const WATCHDOG_MIN_INTERVAL_MS = 50;
 const HTTP_OK = 200;
 
 function defaultJitter(): number {
-    return 0.8 + Math.random() * 0.4;
+    return Math.random();
 }
 
 function sleep(ms: number, signal: AbortSignal): Promise<void> {
@@ -111,6 +111,9 @@ export class SSEClient {
         }
         this.runAbortController?.abort();
         this.runAbortController = new AbortController();
+        console.info(
+            `[Notifly][sse] connect requested: projectId=${this.opts.projectId} userId=${this.opts.notiflyUserId} deviceId=${this.opts.deviceId ?? '-'}`
+        );
         const next: SSEState = { kind: 'connecting' };
         const changed = this.state.kind !== next.kind;
         this.state = next;
@@ -120,6 +123,7 @@ export class SSEClient {
     }
 
     disconnect(): void {
+        console.warn(`[Notifly][sse] disconnect() called: state=${this.state.kind}`);
         const previous = this.runAbortController;
         this.runAbortController = null;
         this.lastOpenAt = null;
@@ -130,7 +134,12 @@ export class SSEClient {
         } catch (e) {
             void e;
         }
-        if (!wasStopped) this.emitState(this.state);
+        if (!wasStopped) {
+            console.info(
+                `[Notifly][sse] disconnect requested: projectId=${this.opts.projectId} userId=${this.opts.notiflyUserId}`
+            );
+            this.emitState(this.state);
+        }
     }
 
     private isStopped(): boolean {
@@ -139,11 +148,13 @@ export class SSEClient {
 
     private async runConnectionLoop(signal: AbortSignal): Promise<void> {
         let attempt = 0;
+        console.info(`[Notifly][sse] runConnectionLoop entered: state=${this.state.kind} aborted=${signal.aborted}`);
         while (!this.isStopped() && !signal.aborted) {
             try {
                 await this.runOneConnection(attempt, signal);
             } catch (e) {
                 if (isAbortError(e)) break;
+                console.warn(`[Notifly][sse] connection error: ${(e as Error)?.message ?? e}`);
             }
             if (this.isStopped() || signal.aborted) break;
 
@@ -166,12 +177,18 @@ export class SSEClient {
         if (attempt > 0) this.transition({ kind: 'connecting' });
         this.lastDataAt = this.opts.nowProvider();
 
+        console.info(`[Notifly][sse] runOneConnection attempt=${attempt}: fetching token`);
         const token = await this.opts.tokenProvider();
+        console.info(`[Notifly][sse] runOneConnection attempt=${attempt}: token ok, opening stream`);
         const url = this.buildUrl();
         const headers = this.buildHeaders(token, this.lastEventIdInternal);
         const response = await this.opts.provider.open(url, headers, signal);
+        console.info(`[Notifly][sse] runOneConnection attempt=${attempt}: response status=${response.statusCode}`);
 
         if (response.statusCode !== HTTP_OK) {
+            console.error(
+                `[Notifly][sse] handshake failed: status=${response.statusCode} projectId=${this.opts.projectId}`
+            );
             try {
                 response.close();
             } catch (e) {
@@ -181,6 +198,7 @@ export class SSEClient {
         }
         const ct = (response.contentType ?? '').toLowerCase();
         if (!ct.startsWith('text/event-stream')) {
+            console.error(`[Notifly][sse] invalid content-type: ${ct} projectId=${this.opts.projectId}`);
             try {
                 response.close();
             } catch (e) {
@@ -190,6 +208,9 @@ export class SSEClient {
         }
 
         this.transition({ kind: 'open' });
+        console.info(
+            `[Notifly][sse] connected: projectId=${this.opts.projectId} userId=${this.opts.notiflyUserId} deviceId=${this.opts.deviceId ?? '-'}`
+        );
         this.lastDataAt = this.opts.nowProvider();
 
         const consume = this.consumeStream(response.lines, signal);
@@ -266,7 +287,9 @@ export class SSEClient {
         const idx = Math.min(Math.max(attempt - 1, 0), schedule.length - 1);
         const base = schedule[idx];
         const jitter = this.opts.jitterProvider();
-        return Math.max(0, Math.floor(base * jitter));
+        const delay = Math.max(100, Math.floor(base * jitter));
+        console.info(`[Notifly][sse] backoff attempt=${attempt} delay=${delay}ms`);
+        return delay;
     }
 
     private buildUrl(): string {
@@ -289,6 +312,9 @@ export class SSEClient {
         };
         if (lastEventId && lastEventId.length > 0) {
             headers['Last-Event-ID'] = lastEventId;
+            console.info(`[Notifly][sse] sending Last-Event-ID: ${lastEventId}`);
+        } else {
+            console.info('[Notifly][sse] sending Last-Event-ID: (none)');
         }
         return headers;
     }
