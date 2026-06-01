@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.19.0]
+
+### Changed
+
+-   Switch SSE reconnect backoff to full jitter (100ms ~ 10s) across all attempts
+    -   Previous schedule was `[1, 2, 4, 8, 30]s` with ±20% multiplicative jitter; attempt 1 spread was only ~400ms
+    -   New schedule uses a single 10s base with 0~1 uniform jitter (clamped to 100ms minimum), producing a ~9.9s window to better disperse reconnect bursts after server-side disconnects (e.g. rolling deploys)
+-   Reduce SSE verbose logging
+    -   Keep: `connected`, `disconnected`, `sync received` + error logs
+    -   Remove: per-attempt fetch/token/response traces, `Last-Event-ID` headers, `event received`, `shutdown received`, lifecycle entry/exit logs
+
 ## [2.18.0]
 
 ### Added
