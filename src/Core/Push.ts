@@ -201,7 +201,7 @@ export class NotiflyWebPushManager {
         const convertedVapidKey = this._urlBase64ToUint8Array(this._vapidPublicKey);
         return registration.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: convertedVapidKey,
+            applicationServerKey: convertedVapidKey.buffer as ArrayBuffer,
         });
     }
 

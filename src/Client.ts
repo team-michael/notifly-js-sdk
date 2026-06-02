@@ -15,6 +15,7 @@ import { CommandManager } from './Core/Command';
 import { NotiflyAPI } from './Core/API';
 import { SdkStateManager, SdkState, type SdkType } from './Core/SdkState';
 import { SessionManager } from './Core/Session';
+import { SSEManager } from './Core/SSE/SSEManager';
 import { initializeNotiflyStorage, isValidProjectId, isValidTimezoneId, removeKeys } from './Core/Utils';
 import { BuiltInUserPropertyKey } from './Constants';
 
@@ -87,6 +88,9 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
         await initializeNotiflyStorage(projectId, username, password);
         await NotiflyAPI.initialize();
         await SessionManager.initialize();
+        SSEManager.start().catch((error) => {
+            console.warn('[Notifly] SSEManager.start failed', error);
+        });
         return onInitializationSuccess();
     } catch (error) {
         console.error('[Notifly] Error initializing SDK: ', error);
@@ -149,6 +153,9 @@ export async function setUserId(userId?: string | null | undefined, options?: Se
                 options: options,
             })
         );
+        SSEManager.start().catch((error) => {
+            console.warn('[Notifly] SSEManager.start (setUserId) failed', error);
+        });
     } catch (error) {
         const logger = SdkStateManager.halted ? console.warn : console.error;
         logger('[Notifly] Error setting user ID: ', error);
@@ -174,6 +181,9 @@ export async function removeUserId(options?: SetUserIdOptions): Promise<void> {
                 options: options,
             })
         );
+        SSEManager.start().catch((error) => {
+            console.warn('[Notifly] SSEManager.start (removeUserId) failed', error);
+        });
     } catch (error) {
         const logger = SdkStateManager.halted ? console.warn : console.error;
         logger('[Notifly] Error removing user ID: ', error);

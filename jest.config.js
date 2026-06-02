@@ -5,5 +5,6 @@ module.exports = {
         color: 'blue',
     },
     collectCoverage: false,
+    setupFiles: ['<rootDir>/test/jest.setup.js'],
     testPathIgnorePatterns: ['node_modules/', 'dist/', 'lib/', 'examples/'],
 };

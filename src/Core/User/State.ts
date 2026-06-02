@@ -210,8 +210,8 @@ export class UserStateManager {
         }
 
         const data = await NotiflyAPI.call(
-            `https://api.notifly.tech/user-state/${projectId}/${notiflyUserId}?${
-                notiflyDeviceId ? `deviceId=${notiflyDeviceId}` : ''
+            `https://api.notifly.tech/user-state/${projectId}/${notiflyUserId}?channel=in-web-message${
+                notiflyDeviceId ? `&deviceId=${notiflyDeviceId}` : ''
             }`,
             'GET'
         );
