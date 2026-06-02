@@ -24,6 +24,8 @@ export interface SSEClientOptions {
     provider?: StreamLineProvider;
     jitterProvider?: () => number;
     nowProvider?: () => number;
+    initialLastEventId?: string | null;
+    onLastEventIdChange?: (id: string) => void;
 }
 
 const DEFAULT_BACKOFF_SCHEDULE_MS = [10000];
@@ -62,7 +64,10 @@ function isAbortError(e: unknown): boolean {
 
 export class SSEClient {
     private readonly opts: Required<
-        Omit<SSEClientOptions, 'provider' | 'jitterProvider' | 'nowProvider' | 'deviceId'>
+        Omit<
+            SSEClientOptions,
+            'provider' | 'jitterProvider' | 'nowProvider' | 'deviceId' | 'initialLastEventId' | 'onLastEventIdChange'
+        >
     > & {
         deviceId: string | null;
         provider: StreamLineProvider;
@@ -71,10 +76,11 @@ export class SSEClient {
     };
 
     private state: SSEState = { kind: 'idle' };
-    private lastEventIdInternal: string | null = null;
+    private lastEventIdInternal: string | null;
     private lastDataAt: number;
     private lastOpenAt: number | null = null;
     private runAbortController: AbortController | null = null;
+    private readonly onLastEventIdChange: ((id: string) => void) | null;
 
     onState: SSEStateListener | null = null;
     onMessage: SSEMessageListener | null = null;
@@ -95,6 +101,8 @@ export class SSEClient {
             nowProvider: opts.nowProvider ?? (() => Date.now()),
         };
         this.lastDataAt = this.opts.nowProvider();
+        this.lastEventIdInternal = opts.initialLastEventId ?? null;
+        this.onLastEventIdChange = opts.onLastEventIdChange ?? null;
     }
 
     getState(): SSEState {
@@ -146,7 +154,7 @@ export class SSEClient {
                 await this.runOneConnection(attempt, signal);
             } catch (e) {
                 if (isAbortError(e)) break;
-                console.warn(`[Notifly][sse] connection error: ${(e as Error)?.message ?? e}`);
+                console.info(`[Notifly][sse] connection error: ${(e as Error)?.message ?? e}`);
             }
             if (this.isStopped() || signal.aborted) break;
 
@@ -220,7 +228,14 @@ export class SSEClient {
             this.lastDataAt = this.opts.nowProvider();
             const event = parser.feed(line);
             if (!event) continue;
-            if (event.id !== null) this.lastEventIdInternal = event.id;
+            if (event.id !== null) {
+                this.lastEventIdInternal = event.id;
+                try {
+                    this.onLastEventIdChange?.(event.id);
+                } catch {
+                    void 0;
+                }
+            }
             this.emitMessage(event.type, event.data);
         }
     }

@@ -87,7 +87,9 @@ export class SSEController {
                 this.reconnect();
                 break;
             case 'unknown':
+                break;
             case 'malformed':
+                console.error(`[Notifly][sse] malformed message: type=${type}`);
                 break;
         }
     }

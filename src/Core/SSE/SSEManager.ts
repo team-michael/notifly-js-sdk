@@ -7,6 +7,31 @@ import { SSEClient } from './SSEClient';
 import { SSEController } from './SSEController';
 
 const SSE_BASE_URL = 'https://api.notifly.tech';
+const LAST_EVENT_ID_SESSION_KEY = '__notiflyLastEventID';
+
+function readLastEventIdFromSession(): string | null {
+    try {
+        return window.sessionStorage.getItem(LAST_EVENT_ID_SESSION_KEY);
+    } catch {
+        return null;
+    }
+}
+
+function writeLastEventIdToSession(id: string): void {
+    try {
+        window.sessionStorage.setItem(LAST_EVENT_ID_SESSION_KEY, id);
+    } catch {
+        void 0;
+    }
+}
+
+function clearLastEventIdFromSession(): void {
+    try {
+        window.sessionStorage.removeItem(LAST_EVENT_ID_SESSION_KEY);
+    } catch {
+        void 0;
+    }
+}
 
 interface ActiveController {
     controller: SSEController;
@@ -40,6 +65,7 @@ export class SSEManager {
             this.active.controller.stop();
             this.active = null;
         }
+        clearLastEventIdFromSession();
         this.unregisterObservers();
     }
 
@@ -77,6 +103,8 @@ export class SSEManager {
             if (current) {
                 current.controller.stop();
                 this.active = null;
+                // user/project 가 바뀌어 controller 를 새로 만드는 경로면 이전 user 의 cursor 가 따라가지 않게 reset.
+                clearLastEventIdFromSession();
             }
 
             const client = new SSEClient({
@@ -86,6 +114,8 @@ export class SSEManager {
                 baseUrl: SSE_BASE_URL,
                 sdkVersionHeader: `notifly/js/${SdkStateManager.getSdkVersion()}`,
                 tokenProvider: () => this.resolveToken(),
+                initialLastEventId: readLastEventIdFromSession(),
+                onLastEventIdChange: writeLastEventIdToSession,
             });
             const controller = new SSEController({
                 sseClient: client,
