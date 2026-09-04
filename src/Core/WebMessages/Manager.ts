@@ -33,9 +33,27 @@ export class WebMessageManager {
         externalUserID: string | null,
         segmentationEventParamKeys?: string[] | null
     ) {
+        this._checkCancellationConditionsAndTriggerWebMessages(eventName, eventParams, externalUserID);
+        UserStateManager.updateEventCounts(eventName, eventParams, segmentationEventParamKeys);
+    }
+
+    static updateEventCountsAndMaybeTriggerWebMessages(
+        eventName: string,
+        eventParams: Record<string, any>,
+        externalUserID: string | null,
+        segmentationEventParamKeys?: string[] | null
+    ) {
+        UserStateManager.updateEventCounts(eventName, eventParams, segmentationEventParamKeys);
+        this._checkCancellationConditionsAndTriggerWebMessages(eventName, eventParams, externalUserID);
+    }
+
+    private static _checkCancellationConditionsAndTriggerWebMessages(
+        eventName: string,
+        eventParams: Record<string, any>,
+        externalUserID: string | null
+    ) {
         this._checkCancellationConditions(eventName, eventParams);
         this._triggerWebMessages(eventName, eventParams, externalUserID);
-        UserStateManager.updateEventCounts(eventName, eventParams, segmentationEventParamKeys);
     }
 
     private static _triggerWebMessages(
@@ -127,10 +145,7 @@ export class WebMessageManager {
     /**
      * Check if any scheduled campaigns should be cancelled based on the incoming event.
      */
-    private static _checkCancellationConditions(
-        eventName: string,
-        eventParams: Record<string, any>
-    ) {
+    private static _checkCancellationConditions(eventName: string, eventParams: Record<string, any>) {
         const scheduledCampaignIds = WebMessageScheduler.getScheduledCampaignIds();
         if (scheduledCampaignIds.length === 0) {
             return;
