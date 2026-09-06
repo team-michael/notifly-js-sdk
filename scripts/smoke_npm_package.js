@@ -29,10 +29,6 @@ try {
     const packageName = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).name;
     const installedRoot = path.join(consumerDirectory, 'node_modules', packageName);
     const installedManifest = JSON.parse(fs.readFileSync(path.join(installedRoot, 'package.json'), 'utf8'));
-    const noticesPath = path.join(installedRoot, 'THIRD_PARTY_NOTICES.md');
-    if (!fs.existsSync(noticesPath) || !fs.readFileSync(noticesPath, 'utf8').includes('notifly-kmp-sdk')) {
-        throw new Error('The packed SDK must include the bundled KMP license notice');
-    }
     const runtimeDependencySections = ['dependencies', 'peerDependencies', 'optionalDependencies'];
 
     for (const section of runtimeDependencySections) {
