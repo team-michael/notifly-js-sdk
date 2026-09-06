@@ -196,6 +196,21 @@ describe('local event count evaluation order', () => {
             expect.objectContaining({ name: 'test_event', count: 1 }),
         ]);
     });
+
+    test('should defer existing entry point evaluation while the document is loading', () => {
+        jest.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+        const scheduleSpy = jest.spyOn(WebMessageScheduler, 'scheduleInWebMessage').mockImplementation(() => undefined);
+        const campaign = makeEventCountCampaign(1);
+        UserStateManager.inWebMessageCampaigns = [campaign];
+
+        WebMessageManager.maybeTriggerWebMessagesAndUpdateEventCounts('test_event', {}, null);
+
+        expect(scheduleSpy).not.toHaveBeenCalled();
+        window.dispatchEvent(new Event('DOMContentLoaded'));
+
+        expect(scheduleSpy).toHaveBeenCalledTimes(1);
+        expect(scheduleSpy.mock.calls[0][0]).toBe(campaign);
+    });
 });
 
 describe('getCampaignsToSchedule', () => {

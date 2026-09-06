@@ -44,31 +44,38 @@ export class WebMessageManager {
         segmentationEventParamKeys?: string[] | null
     ) {
         UserStateManager.updateEventCounts(eventName, eventParams, segmentationEventParamKeys);
-        this._checkCancellationConditionsAndTriggerWebMessages(eventName, eventParams, externalUserID);
+        this._checkCancellationConditionsAndTriggerWebMessages(eventName, eventParams, externalUserID, true);
     }
 
     private static _checkCancellationConditionsAndTriggerWebMessages(
         eventName: string,
         eventParams: Record<string, any>,
-        externalUserID: string | null
+        externalUserID: string | null,
+        evaluateCampaignsImmediately = false
     ) {
         this._checkCancellationConditions(eventName, eventParams);
-        this._triggerWebMessages(eventName, eventParams, externalUserID);
+        const campaignsToSchedule = evaluateCampaignsImmediately
+            ? this._getCampaignsToSchedule(UserStateManager.inWebMessageCampaigns, eventName, eventParams, externalUserID)
+            : undefined;
+        this._triggerWebMessages(eventName, eventParams, externalUserID, campaignsToSchedule);
     }
 
     private static _triggerWebMessages(
         eventName: string,
         eventParams: Record<string, any>,
-        externalUserID: string | null
+        externalUserID: string | null,
+        campaignsToSchedule?: Campaign[]
     ) {
-        const campaignsToSchedule = this._getCampaignsToSchedule(
-            UserStateManager.inWebMessageCampaigns,
-            eventName,
-            eventParams,
-            externalUserID
-        );
         const schedule = () =>
-            campaignsToSchedule.forEach(WebMessageScheduler.scheduleInWebMessage.bind(WebMessageScheduler));
+            (
+                campaignsToSchedule ??
+                this._getCampaignsToSchedule(
+                    UserStateManager.inWebMessageCampaigns,
+                    eventName,
+                    eventParams,
+                    externalUserID
+                )
+            ).forEach(WebMessageScheduler.scheduleInWebMessage.bind(WebMessageScheduler));
 
         if (document.readyState === 'loading') {
             const task = () => {
