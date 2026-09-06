@@ -27,3 +27,9 @@ jobs:
 
       - name: Run type check
         run: npm run type-check
+
+      - name: Build and verify distributable package
+        run: |
+          npm run build
+          npm run verify:kmp-bundle
+          npm run smoke:npm

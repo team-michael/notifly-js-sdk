@@ -25,6 +25,7 @@
     "write-version": "node ./scripts/write_version.js",
     "type-check": "tsc -p ./tsconfig.json",
     "verify:kmp-bundle": "node ./scripts/verify_kmp_bundle.js",
+    "smoke:npm": "node ./scripts/smoke_npm_package.js",
     "example-react": "npm run write-version && source ./scripts/copy_sdk.sh && npm run --prefix examples/react start"
   },
   "author": "Grey Box Inc.",
@@ -33,6 +34,7 @@
   "dependencies": {
     "lodash": "^4.17.21",
     "notifly-web-message-renderer": "^2.4.0",
+    "tslib": "^2.8.1",
     "uuid": "^9.0.0"
   },
   "devDependencies": {

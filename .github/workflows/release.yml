@@ -68,6 +68,11 @@ jobs:
       - name: Build package
         run: npm run build
 
+      - name: Verify distributable package
+        run: |
+          npm run verify:kmp-bundle
+          npm run smoke:npm
+
       - name: Publish to npm
         run: |
           if [ "${{ endsWith(github.event.inputs.version, 'SNAPSHOT') }}" = "true" ]; then
