@@ -166,6 +166,24 @@ describe('local event count evaluation order', () => {
         expect(scheduleSpy.mock.calls[0][0]).toBe(campaign);
     });
 
+    test('should preserve each event count while DOM scheduling is deferred', () => {
+        jest.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+        const scheduleSpy = jest.spyOn(WebMessageScheduler, 'scheduleInWebMessage').mockImplementation(() => undefined);
+        const countOneCampaign = makeEventCountCampaign(1);
+        const countTwoCampaign = makeEventCountCampaign(2);
+        UserStateManager.inWebMessageCampaigns = [countOneCampaign, countTwoCampaign];
+
+        WebMessageManager.updateEventCountsAndMaybeTriggerWebMessages('test_event', {}, null);
+        WebMessageManager.updateEventCountsAndMaybeTriggerWebMessages('test_event', {}, null);
+
+        expect(scheduleSpy).not.toHaveBeenCalled();
+        window.dispatchEvent(new Event('DOMContentLoaded'));
+
+        expect(scheduleSpy).toHaveBeenCalledTimes(2);
+        expect(scheduleSpy.mock.calls[0][0]).toBe(countOneCampaign);
+        expect(scheduleSpy.mock.calls[1][0]).toBe(countTwoCampaign);
+    });
+
     test('should preserve evaluation-before-count behavior for the existing entry point', () => {
         jest.spyOn(document, 'readyState', 'get').mockReturnValue('complete');
         const scheduleSpy = jest.spyOn(WebMessageScheduler, 'scheduleInWebMessage').mockImplementation(() => undefined);

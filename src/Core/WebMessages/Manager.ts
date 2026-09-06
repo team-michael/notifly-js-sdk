@@ -61,13 +61,14 @@ export class WebMessageManager {
         eventParams: Record<string, any>,
         externalUserID: string | null
     ) {
+        const campaignsToSchedule = this._getCampaignsToSchedule(
+            UserStateManager.inWebMessageCampaigns,
+            eventName,
+            eventParams,
+            externalUserID
+        );
         const schedule = () =>
-            this._getCampaignsToSchedule(
-                UserStateManager.inWebMessageCampaigns,
-                eventName,
-                eventParams,
-                externalUserID
-            ).forEach(WebMessageScheduler.scheduleInWebMessage.bind(WebMessageScheduler));
+            campaignsToSchedule.forEach(WebMessageScheduler.scheduleInWebMessage.bind(WebMessageScheduler));
 
         if (document.readyState === 'loading') {
             const task = () => {
