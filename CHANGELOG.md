@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.20.0]
+
+### Fixed
+
+-   Include a successfully uploaded local event in in-web message event-count segment evaluation
+    -   Update local event counts before evaluating `count X` and `count X in Y days` conditions for local events
+    -   Preserve the existing evaluation order for server-triggered SSE events, and do not update counts or evaluate messages when an upload fails
+
 ## [2.19.0]
 
 ### Added
