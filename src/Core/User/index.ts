@@ -7,6 +7,7 @@ import { EventLogger, NotiflyInternalEvent } from '../Event';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { SetUserIdOptions } from '../Interfaces/Options';
 import { SdkStateManager, SdkType } from '../SdkState';
+import { evaluateUserIdTransition } from '../KMP/UserIdTransitionPolicy';
 
 /**
  * Sets or removes user ID for the current user.
@@ -32,7 +33,8 @@ export class UserIdentityManager {
         const onlyIfChanged = options?.onlyIfChanged ?? this.DEFAULT_SET_USER_ID_OPTIONS.onlyIfChanged;
         if (onlyIfChanged) {
             const previousUserId = await this.getUserId();
-            if (this._areUserIdsIdentical(userId, previousUserId)) {
+            const transition = evaluateUserIdTransition(previousUserId || null, userId || null);
+            if (!transition.changed) {
                 return;
             }
         }
@@ -70,15 +72,16 @@ export class UserIdentityManager {
             params.previous_notifly_user_id = previousNotiflyUserId;
             params.previous_external_user_id = previousExternalUserId;
 
-            if (!this._areUserIdsIdentical(externalUserId, previousExternalUserId)) {
+            const transition = evaluateUserIdTransition(previousExternalUserId || null, externalUserId);
+            if (transition.changed) {
                 // Caution: order matters here!
                 await NotiflyStorage.setItem(NotiflyStorageKeys.EXTERNAL_USER_ID, externalUserId);
                 await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, params, null, true);
 
-                const policy = previousExternalUserId
-                    ? SyncStatePolicy.OVERWRITE // A -> B
-                    : SyncStatePolicy.MERGE; // null -> A
-                await UserStateManager.refresh(policy);
+                if (transition.shouldSync) {
+                    const policy = transition.shouldMerge ? SyncStatePolicy.MERGE : SyncStatePolicy.OVERWRITE;
+                    await UserStateManager.refresh(policy);
+                }
             }
         } else {
             if (SdkStateManager.type === SdkType.JS_CAFE24) {
@@ -106,23 +109,22 @@ export class UserIdentityManager {
 
     static async removeUserId(): Promise<void> {
         const previousExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
-        if (previousExternalUserId) {
+        const transition = evaluateUserIdTransition(previousExternalUserId || null, null);
+        if (transition.changed) {
             // A -> null
             await this._cleanUserIdInLocalStorage();
-            await UserStateManager.refresh(); // Should refresh data due to the random bucket number
+            if (transition.shouldSync) {
+                await UserStateManager.refresh(); // Should refresh data due to the random bucket number
+            }
         }
         await EventLogger.logEvent(NotiflyInternalEvent.REMOVE_EXTERNAL_USER_ID, {}, null, true);
-        UserStateManager.clearAll();
+        if (transition.shouldClear) {
+            UserStateManager.clearAll();
+        }
     }
 
     private static async _cleanUserIdInLocalStorage() {
         await NotiflyStorage.removeItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
     }
 
-    private static _areUserIdsIdentical(
-        userId: string | null | undefined,
-        anotherUserId: string | null | undefined
-    ): boolean {
-        return (!userId && !anotherUserId) || userId === anotherUserId;
-    }
 }

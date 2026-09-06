@@ -2,6 +2,7 @@ import { NotiflyStorage } from '../../src/Core/Storage';
 import { SdkState, SdkStateManager } from '../../src/Core/SdkState';
 import { EventLogger } from '../../src/Core/Event';
 import { UserIdentityManager } from '../../src/Core/User';
+import * as KmpUserIdTransitionPolicy from '../../src/Core/KMP/UserIdTransitionPolicy';
 
 jest.mock('../../src/Core/Event');
 jest.mock('../../src/Core/Storage', () => ({
@@ -81,5 +82,31 @@ describe('setUserProperties', () => {
         await UserIdentityManager.setUserProperties(params);
 
         expect(EventLogger.logEvent).toHaveBeenCalledWith('set_user_properties', expectedParams, null, true);
+    });
+});
+
+describe('setUserId', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
+    test('uses the shared KMP transition decision before changing identity', async () => {
+        jest.spyOn(NotiflyStorage, 'getItem').mockResolvedValue('previous-user-id');
+        const evaluate = jest.spyOn(KmpUserIdTransitionPolicy, 'evaluateUserIdTransition').mockReturnValue({
+            changed: false,
+            shouldSync: false,
+            shouldMerge: false,
+            shouldClear: false,
+        });
+
+        await UserIdentityManager.setUserId('new-user-id');
+
+        expect(evaluate).toHaveBeenCalledWith('previous-user-id', 'new-user-id');
+        expect(NotiflyStorage.setItem).not.toHaveBeenCalled();
+        expect(EventLogger.logEvent).not.toHaveBeenCalled();
     });
 });
