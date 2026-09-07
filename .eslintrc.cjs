@@ -14,7 +14,16 @@ module.exports = {
         'plugin:@typescript-eslint/recommended',
         'plugin:react-hooks/recommended',
     ],
-    ignorePatterns: ['*.d.ts', '/scripts/**', '/dist/**', '/lib/**', '/examples/**', 'node_modules/**', '/test/jest.setup.js'],
+    ignorePatterns: [
+        '*.d.ts',
+        '/scripts/**',
+        '/dist/**',
+        '/lib/**',
+        '/examples/**',
+        '/notifly-kmp-sdk/**',
+        'node_modules/**',
+        '/test/jest.setup.js',
+    ],
     rules: {
         'react/prop-types': 'off',
         'react/react-in-jsx-scope': 'off',
