@@ -25,9 +25,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -63,6 +64,14 @@ jobs:
         with:
           version: ${{ github.event.inputs.version }}
 
+      - name: Build package
+        run: npm run build
+
+      - name: Verify distributable package
+        run: |
+          npm run verify:kmp-bundle
+          npm run smoke:npm
+
       - name: Create GitHub Release
         if: steps.read_changelog.outputs.changes
         uses: ncipollo/release-action@v1
@@ -72,14 +81,6 @@ jobs:
           body: ${{ steps.read_changelog.outputs.changes }}
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build package
-        run: npm run build
-
-      - name: Verify distributable package
-        run: |
-          npm run verify:kmp-bundle
-          npm run smoke:npm
 
       - name: Publish to npm
         run: |

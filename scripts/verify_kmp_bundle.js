@@ -11,8 +11,18 @@ const runtimePaths = [
     'dist/index.global.min.js',
 ];
 
-const bareKmpImport = /(?:require\(\s*|from\s+)["']notifly-kmp-sdk["']/;
+const bareKmpImport = /(?:\brequire\s*\(\s*|\bimport\s+|\bfrom\s+)["']notifly-kmp-sdk["']/;
 const failures = [];
+
+for (const source of [
+    'require("notifly-kmp-sdk")',
+    'import value from "notifly-kmp-sdk"',
+    'import "notifly-kmp-sdk"',
+]) {
+    if (!bareKmpImport.test(source)) {
+        failures.push(`verifier did not detect: ${source}`);
+    }
+}
 
 function collectJavaScriptFiles(relativePath) {
     const absolutePath = path.join(root, relativePath);
