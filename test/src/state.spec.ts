@@ -3,6 +3,7 @@ import type { Campaign } from '../../src/Core/Interfaces/Campaign';
 
 import { UserStateManager } from '../../src/Core/User/State';
 import { WebMessageManager } from '../../src/Core/WebMessages/Manager';
+import { WebMessageScheduler } from '../../src/Core/WebMessages/Scheduler';
 
 jest.mock('../../src/Core/Storage', () => ({
     ...jest.requireActual('../../src/Core/Storage'),
@@ -18,6 +19,39 @@ jest.mock('../../src/Core/Storage', () => ({
 }));
 
 jest.useFakeTimers().setSystemTime(new Date('2023-05-31'));
+
+const makeEventCountCampaign = (expectedCount: number): Campaign => ({
+    id: `event-count-${expectedCount}`,
+    status: 1,
+    channel: 'in-web-message',
+    updated_at: '2023-05-30T00:00:00.000Z',
+    starts: [1685400000],
+    end: null,
+    message: {
+        html_url: '',
+        modal_properties: { template_name: 'test-template' } as InWebMessageTemplateProps,
+    },
+    triggering_conditions: [[{ type: 'event_name', operator: '=', operand: 'test_event' }]],
+    segment_type: 'condition',
+    segment_info: {
+        groups: [
+            {
+                conditions: [
+                    {
+                        unit: 'event',
+                        event: 'test_event',
+                        event_condition_type: 'count X',
+                        operator: '=',
+                        value: expectedCount,
+                    },
+                ],
+                condition_operator: null,
+            },
+        ],
+        group_operator: null,
+    },
+    delay: 0,
+});
 
 describe('updateEventIntermediateCounts', () => {
     beforeEach(() => {
@@ -84,6 +118,98 @@ describe('updateEventIntermediateCounts', () => {
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event A')[0].dt === '2023-05-26');
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event B')[0].count === 1);
         expect(eventIntermediateCounts.filter((x) => x.name == 'Event B')[0].dt === '2023-05-26');
+    });
+});
+
+describe('local event count evaluation order', () => {
+    beforeEach(() => {
+        UserStateManager.eventIntermediateCounts = [];
+        UserStateManager.inWebMessageCampaigns = [];
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
+        UserStateManager.eventIntermediateCounts = [];
+        UserStateManager.inWebMessageCampaigns = [];
+    });
+
+    test('should count a local event before evaluation when the document is complete', () => {
+        jest.spyOn(document, 'readyState', 'get').mockReturnValue('complete');
+        const scheduleSpy = jest.spyOn(WebMessageScheduler, 'scheduleInWebMessage').mockImplementation(() => undefined);
+        const campaign = makeEventCountCampaign(1);
+        UserStateManager.inWebMessageCampaigns = [campaign];
+
+        WebMessageManager.updateEventCountsAndMaybeTriggerWebMessages('test_event', {}, null);
+
+        expect(scheduleSpy).toHaveBeenCalledTimes(1);
+        expect(scheduleSpy.mock.calls[0][0]).toBe(campaign);
+        expect(UserStateManager.eventIntermediateCounts).toEqual([
+            expect.objectContaining({ name: 'test_event', count: 1 }),
+        ]);
+    });
+
+    test('should count one local event before deferred evaluation while the document is loading', () => {
+        jest.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+        const scheduleSpy = jest.spyOn(WebMessageScheduler, 'scheduleInWebMessage').mockImplementation(() => undefined);
+        const campaign = makeEventCountCampaign(1);
+        UserStateManager.inWebMessageCampaigns = [campaign];
+
+        WebMessageManager.updateEventCountsAndMaybeTriggerWebMessages('test_event', {}, null);
+        expect(UserStateManager.eventIntermediateCounts).toEqual([
+            expect.objectContaining({ name: 'test_event', count: 1 }),
+        ]);
+        expect(scheduleSpy).not.toHaveBeenCalled();
+
+        window.dispatchEvent(new Event('DOMContentLoaded'));
+
+        expect(scheduleSpy).toHaveBeenCalledTimes(1);
+        expect(scheduleSpy.mock.calls[0][0]).toBe(campaign);
+    });
+
+    test('should preserve each event count while DOM scheduling is deferred', () => {
+        jest.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+        const scheduleSpy = jest.spyOn(WebMessageScheduler, 'scheduleInWebMessage').mockImplementation(() => undefined);
+        const countOneCampaign = makeEventCountCampaign(1);
+        const countTwoCampaign = makeEventCountCampaign(2);
+        UserStateManager.inWebMessageCampaigns = [countOneCampaign, countTwoCampaign];
+
+        WebMessageManager.updateEventCountsAndMaybeTriggerWebMessages('test_event', {}, null);
+        WebMessageManager.updateEventCountsAndMaybeTriggerWebMessages('test_event', {}, null);
+
+        expect(scheduleSpy).not.toHaveBeenCalled();
+        window.dispatchEvent(new Event('DOMContentLoaded'));
+
+        expect(scheduleSpy).toHaveBeenCalledTimes(2);
+        expect(scheduleSpy.mock.calls[0][0]).toBe(countOneCampaign);
+        expect(scheduleSpy.mock.calls[1][0]).toBe(countTwoCampaign);
+    });
+
+    test('should preserve evaluation-before-count behavior for the existing entry point', () => {
+        jest.spyOn(document, 'readyState', 'get').mockReturnValue('complete');
+        const scheduleSpy = jest.spyOn(WebMessageScheduler, 'scheduleInWebMessage').mockImplementation(() => undefined);
+        UserStateManager.inWebMessageCampaigns = [makeEventCountCampaign(1)];
+
+        WebMessageManager.maybeTriggerWebMessagesAndUpdateEventCounts('test_event', {}, null);
+
+        expect(scheduleSpy).not.toHaveBeenCalled();
+        expect(UserStateManager.eventIntermediateCounts).toEqual([
+            expect.objectContaining({ name: 'test_event', count: 1 }),
+        ]);
+    });
+
+    test('should defer existing entry point evaluation while the document is loading', () => {
+        jest.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+        const scheduleSpy = jest.spyOn(WebMessageScheduler, 'scheduleInWebMessage').mockImplementation(() => undefined);
+        const campaign = makeEventCountCampaign(1);
+        UserStateManager.inWebMessageCampaigns = [campaign];
+
+        WebMessageManager.maybeTriggerWebMessagesAndUpdateEventCounts('test_event', {}, null);
+
+        expect(scheduleSpy).not.toHaveBeenCalled();
+        window.dispatchEvent(new Event('DOMContentLoaded'));
+
+        expect(scheduleSpy).toHaveBeenCalledTimes(1);
+        expect(scheduleSpy.mock.calls[0][0]).toBe(campaign);
     });
 });
 
@@ -1770,7 +1896,6 @@ describe('null user attribute with negative operators', () => {
 
         expect(WebMessageManager.isEntityOfSegment(campaign, {}, null)).toBe(true);
     });
-
 });
 
 describe('array does not contain (NOT_INCLUDE) operator', () => {

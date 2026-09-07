@@ -33,22 +33,48 @@ export class WebMessageManager {
         externalUserID: string | null,
         segmentationEventParamKeys?: string[] | null
     ) {
-        this._checkCancellationConditions(eventName, eventParams);
-        this._triggerWebMessages(eventName, eventParams, externalUserID);
+        this._checkCancellationConditionsAndTriggerWebMessages(eventName, eventParams, externalUserID);
         UserStateManager.updateEventCounts(eventName, eventParams, segmentationEventParamKeys);
+    }
+
+    static updateEventCountsAndMaybeTriggerWebMessages(
+        eventName: string,
+        eventParams: Record<string, any>,
+        externalUserID: string | null,
+        segmentationEventParamKeys?: string[] | null
+    ) {
+        UserStateManager.updateEventCounts(eventName, eventParams, segmentationEventParamKeys);
+        this._checkCancellationConditionsAndTriggerWebMessages(eventName, eventParams, externalUserID, true);
+    }
+
+    private static _checkCancellationConditionsAndTriggerWebMessages(
+        eventName: string,
+        eventParams: Record<string, any>,
+        externalUserID: string | null,
+        evaluateCampaignsImmediately = false
+    ) {
+        this._checkCancellationConditions(eventName, eventParams);
+        const campaignsToSchedule = evaluateCampaignsImmediately
+            ? this._getCampaignsToSchedule(UserStateManager.inWebMessageCampaigns, eventName, eventParams, externalUserID)
+            : undefined;
+        this._triggerWebMessages(eventName, eventParams, externalUserID, campaignsToSchedule);
     }
 
     private static _triggerWebMessages(
         eventName: string,
         eventParams: Record<string, any>,
-        externalUserID: string | null
+        externalUserID: string | null,
+        campaignsToSchedule?: Campaign[]
     ) {
         const schedule = () =>
-            this._getCampaignsToSchedule(
-                UserStateManager.inWebMessageCampaigns,
-                eventName,
-                eventParams,
-                externalUserID
+            (
+                campaignsToSchedule ??
+                this._getCampaignsToSchedule(
+                    UserStateManager.inWebMessageCampaigns,
+                    eventName,
+                    eventParams,
+                    externalUserID
+                )
             ).forEach(WebMessageScheduler.scheduleInWebMessage.bind(WebMessageScheduler));
 
         if (document.readyState === 'loading') {
@@ -127,10 +153,7 @@ export class WebMessageManager {
     /**
      * Check if any scheduled campaigns should be cancelled based on the incoming event.
      */
-    private static _checkCancellationConditions(
-        eventName: string,
-        eventParams: Record<string, any>
-    ) {
+    private static _checkCancellationConditions(eventName: string, eventParams: Record<string, any>) {
         const scheduledCampaignIds = WebMessageScheduler.getScheduledCampaignIds();
         if (scheduledCampaignIds.length === 0) {
             return;

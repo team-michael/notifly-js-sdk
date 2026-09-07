@@ -109,7 +109,7 @@ export class EventLogger {
                 'follow'
             );
 
-            WebMessageManager.maybeTriggerWebMessagesAndUpdateEventCounts(
+            WebMessageManager.updateEventCountsAndMaybeTriggerWebMessages(
                 isInternalEvent ? `notifly__${eventName}` : eventName,
                 eventParams,
                 externalUserId,
