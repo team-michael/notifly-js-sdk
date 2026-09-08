@@ -21,8 +21,10 @@ tsconfig.*
 .github/
 .vscode/
 .gitignore
+.gitmodules
 .npmignore
 package-lock.json
 node_modules/
 notifly-service-worker.js
-
+/core
+/build

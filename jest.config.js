@@ -6,5 +6,6 @@ module.exports = {
     },
     collectCoverage: false,
     setupFiles: ['<rootDir>/test/jest.setup.js'],
+    modulePathIgnorePatterns: ['<rootDir>/core/'],
     testPathIgnorePatterns: ['node_modules/', 'dist/', 'lib/', 'examples/'],
 };

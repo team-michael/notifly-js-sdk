@@ -26,6 +26,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
 
       - name: Setup node
         uses: actions/setup-node@v4
@@ -34,6 +42,14 @@ jobs:
 
       - name: Upgrade npm
         run: npm install -g npm@11.5.1
+
+      - name: Validate version and build KMP Core package
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          test "$(node -p "require('./package.json').version")" = "$VERSION"
+          npm run build:kmp-core
+          npm run verify:kmp-core
 
       - name: Install dependencies
         run: npm ci
@@ -68,11 +84,13 @@ jobs:
       - name: Build package
         run: npm run build
 
-      - name: Publish to npm
+      - name: Publish Core and Full SDKs to npm
         run: |
           if [ "${{ endsWith(github.event.inputs.version, 'SNAPSHOT') }}" = "true" ]; then
+            npm publish ./build/notifly-core-sdk --provenance --access public --tag snapshot
             npm publish --provenance --access public --tag snapshot
           else
+            npm publish ./build/notifly-core-sdk --provenance --access public
             npm publish --provenance --access public
           fi
         env:
