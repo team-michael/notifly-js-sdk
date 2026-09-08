@@ -27,6 +27,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          persist-credentials: false
           submodules: recursive
 
       - name: Setup Java
@@ -71,6 +72,9 @@ jobs:
         with:
           version: ${{ github.event.inputs.version }}
 
+      - name: Build package
+        run: npm run build
+
       - name: Create GitHub Release
         if: steps.read_changelog.outputs.changes
         uses: ncipollo/release-action@v1
@@ -80,9 +84,6 @@ jobs:
           body: ${{ steps.read_changelog.outputs.changes }}
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build package
-        run: npm run build
 
       - name: Publish Core and Full SDKs to npm
         run: |

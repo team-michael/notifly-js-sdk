@@ -1,6 +1,9 @@
 name: CI
 on: push
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -9,6 +12,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          persist-credentials: false
           submodules: recursive
 
       - name: Setup Java
