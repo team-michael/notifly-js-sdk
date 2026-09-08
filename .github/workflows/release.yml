@@ -72,8 +72,14 @@ jobs:
         with:
           version: ${{ github.event.inputs.version }}
 
-      - name: Build package
-        run: npm run build
+      - name: Build package and deploy service worker
+        run: |
+          npm run build
+          npm run deploy:sw
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Create GitHub Release
         if: steps.read_changelog.outputs.changes
@@ -87,14 +93,28 @@ jobs:
 
       - name: Publish Core and Full SDKs to npm
         run: |
+          publish_if_missing() {
+            package_dir="$1"
+            dist_tag="$2"
+            package_name="$(node -p "require('./${package_dir}/package.json').name")"
+            package_version="$(node -p "require('./${package_dir}/package.json').version")"
+
+            if npm view "$package_name@$package_version" version >/dev/null 2>&1; then
+              echo "$package_name@$package_version is already published; skipping."
+              return
+            fi
+
+            publish_args=(--ignore-scripts --provenance --access public)
+            if [[ -n "$dist_tag" ]]; then
+              publish_args+=(--tag "$dist_tag")
+            fi
+            npm publish "$package_dir" "${publish_args[@]}"
+          }
+
           if [ "${{ endsWith(github.event.inputs.version, 'SNAPSHOT') }}" = "true" ]; then
-            npm publish ./build/notifly-core-sdk --provenance --access public --tag snapshot
-            npm publish --provenance --access public --tag snapshot
+            publish_if_missing "build/notifly-core-sdk" "snapshot"
+            publish_if_missing "." "snapshot"
           else
-            npm publish ./build/notifly-core-sdk --provenance --access public
-            npm publish --provenance --access public
+            publish_if_missing "build/notifly-core-sdk" ""
+            publish_if_missing "." ""
           fi
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
