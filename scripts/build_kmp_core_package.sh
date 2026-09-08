@@ -37,7 +37,10 @@ mkdir -p "$output_dir"
 cp -R "$source_dir/." "$output_dir/"
 
 node -e '
+  const fs = require("node:fs");
   const manifest = require(process.argv[1]);
+  manifest.repository = "https://github.com/team-michael/notifly-js-sdk";
+  fs.writeFileSync(process.argv[1], `${JSON.stringify(manifest, null, 2)}\n`);
   if (manifest.name !== "notifly-core-sdk" || manifest.version !== process.argv[2]) {
     throw new Error(`unexpected Core package identity: ${manifest.name}@${manifest.version}`);
   }

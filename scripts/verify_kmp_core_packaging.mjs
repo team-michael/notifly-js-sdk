@@ -6,6 +6,7 @@ const core = JSON.parse(readFileSync(new URL('../build/notifly-core-sdk/package.
 
 assert.equal(core.name, 'notifly-core-sdk');
 assert.equal(core.version, sdk.version);
+assert.equal(core.repository, sdk.repository);
 assert.equal(sdk.dependencies['notifly-core-sdk'], sdk.version);
 
 console.log(`Verified notifly-core-sdk@${core.version} as an exact Full SDK dependency.`);
