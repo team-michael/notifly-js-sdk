@@ -21,7 +21,7 @@ module.exports = {
         '/lib/**',
         '/examples/**',
         '/build/**',
-        '/core/**',
+        '/notifly-kmp-sdk/**',
         'node_modules/**',
         '/test/jest.setup.js',
     ],

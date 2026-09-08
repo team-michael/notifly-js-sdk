@@ -26,5 +26,5 @@ tsconfig.*
 package-lock.json
 node_modules/
 notifly-service-worker.js
-/core
+/notifly-kmp-sdk
 /build
