@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to be released'
+        description: 'Version to be released (x.y.z, x.y.z-alpha.N, or x.y.z-SNAPSHOT)'
         required: true
       release_type:
         type: choice
@@ -45,10 +45,30 @@ jobs:
         run: npm install -g npm@11.5.1
 
       - name: Validate version and build KMP Core package
+        id: release_channel
         env:
           VERSION: ${{ github.event.inputs.version }}
         run: |
           test "$(node -p "require('./package.json').version")" = "$VERSION"
+
+          number='(0|[1-9][0-9]*)'
+          base_version="$number\\.$number\\.$number"
+          if [[ "$VERSION" =~ ^$base_version$ ]]; then
+            npm_tag=latest
+            prerelease=false
+          elif [[ "$VERSION" =~ ^$base_version-alpha\.$number$ ]]; then
+            npm_tag=alpha
+            prerelease=true
+          elif [[ "$VERSION" =~ ^$base_version-SNAPSHOT$ ]]; then
+            npm_tag=snapshot
+            prerelease=true
+          else
+            echo "Unsupported release version: $VERSION. Use x.y.z, x.y.z-alpha.N, or x.y.z-SNAPSHOT." >&2
+            exit 1
+          fi
+          echo "npm_tag=$npm_tag" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+
           npm run build:kmp-core
 
       - name: Install dependencies
@@ -71,10 +91,12 @@ jobs:
         with:
           version: ${{ github.event.inputs.version }}
 
-      - name: Build package and deploy service worker
-        run: |
-          npm run build
-          npm run deploy:sw
+      - name: Build package
+        run: npm run build
+
+      - name: Deploy production service worker
+        if: ${{ steps.release_channel.outputs.npm_tag == 'latest' }}
+        run: npm run deploy:sw
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
@@ -87,10 +109,13 @@ jobs:
           tag: ${{ github.event.inputs.version }}
           name: Release ${{ github.event.inputs.version }}
           body: ${{ steps.read_changelog.outputs.changes }}
+          prerelease: ${{ steps.release_channel.outputs.prerelease }}
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish Core and Full SDKs to npm
+        env:
+          NPM_DIST_TAG: ${{ steps.release_channel.outputs.npm_tag }}
         run: |
           package_output_dir="$RUNNER_TEMP/notifly-npm-packages"
           mkdir -p "$package_output_dir"
@@ -132,10 +157,5 @@ jobs:
             npm publish "$package_tarball" "${publish_args[@]}"
           }
 
-          if [ "${{ endsWith(github.event.inputs.version, 'SNAPSHOT') }}" = "true" ]; then
-            publish_if_missing "build/notifly-core-sdk" "snapshot"
-            publish_if_missing "." "snapshot"
-          else
-            publish_if_missing "build/notifly-core-sdk" ""
-            publish_if_missing "." ""
-          fi
+          publish_if_missing "build/notifly-core-sdk" "$NPM_DIST_TAG"
+          publish_if_missing "." "$NPM_DIST_TAG"
