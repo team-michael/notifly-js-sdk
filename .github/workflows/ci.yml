@@ -29,9 +29,7 @@ jobs:
           cache-dependency-path: '**/package-lock.json'
 
       - name: Build KMP Core package
-        run: |
-          npm run build:kmp-core
-          npm run verify:kmp-core
+        run: npm run build:kmp-core
 
       - name: Install dependencies
         run: npm ci

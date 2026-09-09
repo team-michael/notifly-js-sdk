@@ -27,7 +27,6 @@
     "write-version": "node ./scripts/write_version.js",
     "type-check": "tsc -p ./tsconfig.json",
     "build:kmp-core": "./scripts/build_kmp_core_package.sh",
-    "verify:kmp-core": "node ./scripts/verify_kmp_core_packaging.mjs",
     "example-react": "npm run write-version && source ./scripts/copy_sdk.sh && npm run --prefix examples/react start"
   },
   "author": "Grey Box Inc.",

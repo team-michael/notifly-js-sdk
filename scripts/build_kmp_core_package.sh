@@ -37,13 +37,18 @@ mkdir -p "$output_dir"
 cp -R "$source_dir/." "$output_dir/"
 
 node -e '
+  const assert = require("node:assert/strict");
   const fs = require("node:fs");
   const manifest = require(process.argv[1]);
+  const sdk = require(process.argv[2]);
   manifest.repository = "https://github.com/team-michael/notifly-js-sdk";
+
+  assert.equal(manifest.name, "notifly-core-sdk", "unexpected Core package name");
+  assert.equal(manifest.version, sdk.version, "Core and Full SDK versions must match");
+  assert.equal(manifest.repository, sdk.repository, "Core and Full SDK repositories must match");
+  assert.equal(sdk.dependencies["notifly-core-sdk"], sdk.version, "Core must be an exact Full SDK dependency");
+
   fs.writeFileSync(process.argv[1], `${JSON.stringify(manifest, null, 2)}\n`);
-  if (manifest.name !== "notifly-core-sdk" || manifest.version !== process.argv[2]) {
-    throw new Error(`unexpected Core package identity: ${manifest.name}@${manifest.version}`);
-  }
-' "$output_dir/package.json" "$version"
+' "$output_dir/package.json" "$root_dir/package.json"
 
 echo "Prepared notifly-core-sdk@$version at $output_dir"
