@@ -5,6 +5,9 @@
   "main": "lib/cjs/index.js",
   "module": "lib/esm/index.js",
   "types": "lib/esm/index.d.ts",
+  "workspaces": [
+    "build/notifly-core-sdk"
+  ],
   "scripts": {
     "test": "jest",
     "pretty": "prettier --write \"src/**/*.{js,jsx,json,ts}\"",
@@ -23,6 +26,7 @@
     "deploy:sw": "aws s3 cp --content-type \"application/javascript\" dist/NotiflyServiceWorker.js s3://notifly-content/notifly-js-sdk/dist/NotiflyServiceWorker.js && aws cloudfront create-invalidation --distribution-id E2M7VD2WC9S1MI --paths \"/notifly-js-sdk/dist/NotiflyServiceWorker.js\"",
     "write-version": "node ./scripts/write_version.js",
     "type-check": "tsc -p ./tsconfig.json",
+    "build:kmp-core": "./scripts/build_kmp_core_package.sh",
     "example-react": "npm run write-version && source ./scripts/copy_sdk.sh && npm run --prefix examples/react start"
   },
   "author": "Grey Box Inc.",
@@ -30,6 +34,7 @@
   "repository": "https://github.com/team-michael/notifly-js-sdk",
   "dependencies": {
     "lodash": "^4.17.21",
+    "notifly-core-sdk": "2.20.0",
     "notifly-web-message-renderer": "^2.4.0",
     "uuid": "^9.0.0"
   },

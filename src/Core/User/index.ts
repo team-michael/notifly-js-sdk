@@ -7,6 +7,7 @@ import { EventLogger, NotiflyInternalEvent } from '../Event';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { SetUserIdOptions } from '../Interfaces/Options';
 import { SdkStateManager, SdkType } from '../SdkState';
+import { KmpUserIdTransitionPolicy } from '../KmpCore';
 
 /**
  * Sets or removes user ID for the current user.
@@ -123,6 +124,6 @@ export class UserIdentityManager {
         userId: string | null | undefined,
         anotherUserId: string | null | undefined
     ): boolean {
-        return (!userId && !anotherUserId) || userId === anotherUserId;
+        return !KmpUserIdTransitionPolicy.evaluate(userId || null, anotherUserId || null).changed;
     }
 }

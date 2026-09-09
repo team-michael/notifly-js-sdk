@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to be released'
+        description: 'Version to be released (x.y.z, x.y.z-alpha.N, or x.y.z-SNAPSHOT)'
         required: true
       release_type:
         type: choice
@@ -26,6 +26,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
 
       - name: Setup node
         uses: actions/setup-node@v4
@@ -34,6 +43,33 @@ jobs:
 
       - name: Upgrade npm
         run: npm install -g npm@11.5.1
+
+      - name: Validate version and build KMP Core package
+        id: release_channel
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          test "$(node -p "require('./package.json').version")" = "$VERSION"
+
+          number='(0|[1-9][0-9]*)'
+          base_version="$number\\.$number\\.$number"
+          if [[ "$VERSION" =~ ^$base_version$ ]]; then
+            npm_tag=latest
+            prerelease=false
+          elif [[ "$VERSION" =~ ^$base_version-alpha\.$number$ ]]; then
+            npm_tag=alpha
+            prerelease=true
+          elif [[ "$VERSION" =~ ^$base_version-SNAPSHOT$ ]]; then
+            npm_tag=snapshot
+            prerelease=true
+          else
+            echo "Unsupported release version: $VERSION. Use x.y.z, x.y.z-alpha.N, or x.y.z-SNAPSHOT." >&2
+            exit 1
+          fi
+          echo "npm_tag=$npm_tag" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+
+          npm run build:kmp-core
 
       - name: Install dependencies
         run: npm ci
@@ -55,6 +91,17 @@ jobs:
         with:
           version: ${{ github.event.inputs.version }}
 
+      - name: Build package
+        run: npm run build
+
+      - name: Deploy production service worker
+        if: ${{ steps.release_channel.outputs.npm_tag == 'latest' }}
+        run: npm run deploy:sw
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
       - name: Create GitHub Release
         if: steps.read_changelog.outputs.changes
         uses: ncipollo/release-action@v1
@@ -62,20 +109,53 @@ jobs:
           tag: ${{ github.event.inputs.version }}
           name: Release ${{ github.event.inputs.version }}
           body: ${{ steps.read_changelog.outputs.changes }}
+          prerelease: ${{ steps.release_channel.outputs.prerelease }}
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build package
-        run: npm run build
-
-      - name: Publish to npm
-        run: |
-          if [ "${{ endsWith(github.event.inputs.version, 'SNAPSHOT') }}" = "true" ]; then
-            npm publish --provenance --access public --tag snapshot
-          else
-            npm publish --provenance --access public
-          fi
+      - name: Publish Core and Full SDKs to npm
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          NPM_DIST_TAG: ${{ steps.release_channel.outputs.npm_tag }}
+        run: |
+          package_output_dir="$RUNNER_TEMP/notifly-npm-packages"
+          mkdir -p "$package_output_dir"
+
+          publish_if_missing() {
+            local source_dir="$1"
+            local dist_tag="$2"
+            local package_name
+            local package_version
+            local pack_result
+            local packed_file
+            local local_integrity
+            local package_tarball
+            local registry_integrity
+
+            package_name="$(node -p "require('./${source_dir}/package.json').name")"
+            package_version="$(node -p "require('./${source_dir}/package.json').version")"
+            pack_result="$(npm pack "./$source_dir" --json --pack-destination "$package_output_dir")"
+            packed_file="$(node -e 'const result = JSON.parse(process.argv[1]); process.stdout.write(result[0].filename)' "$pack_result")"
+            local_integrity="$(node -e 'const result = JSON.parse(process.argv[1]); process.stdout.write(result[0].integrity)' "$pack_result")"
+            package_tarball="$package_output_dir/$packed_file"
+
+            if npm view "$package_name@$package_version" version >/dev/null 2>&1; then
+              registry_integrity="$(npm view "$package_name@$package_version" dist.integrity)"
+              if [[ "$registry_integrity" != "$local_integrity" ]]; then
+                echo "Published $package_name@$package_version does not match the local package." >&2
+                echo "Registry integrity: $registry_integrity" >&2
+                echo "Local integrity:    $local_integrity" >&2
+                exit 1
+              fi
+              echo "$package_name@$package_version is already published with matching integrity; skipping."
+              return
+            fi
+
+            publish_args=(--ignore-scripts --provenance --access public)
+            if [[ -n "$dist_tag" ]]; then
+              publish_args+=(--tag "$dist_tag")
+            fi
+            npm publish "$package_tarball" "${publish_args[@]}"
+          }
+
+          publish_if_missing "build/notifly-core-sdk" "$NPM_DIST_TAG"
+          publish_if_missing "." "$NPM_DIST_TAG"
