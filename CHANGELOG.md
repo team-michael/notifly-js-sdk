@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.21.0-alpha.1]
+
+### Added
+
+-   Expose shared KMP Core as a separate `notifly-core-sdk` npm package, versioned together with the JS SDK.
+
+### Changed
+
+-   Use the shared Core policy to detect user ID changes while preserving anonymous user ID normalization.
+-   Publish Core alongside the full SDK with an exact matching version dependency.
+-   Publish alpha versions under the npm `alpha` tag and skip production Service Worker deployment for prereleases.
+
 ## [2.20.0]
 
 ### Fixed
