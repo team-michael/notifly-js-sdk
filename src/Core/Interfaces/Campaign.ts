@@ -97,6 +97,7 @@ export interface Campaign {
     re_eligible_condition?: ReEligibleCondition;
     message: {
         html_url: string;
+        template_rendering_mode?: string;
         modal_properties: InWebMessageTemplateProps;
     };
     segment_info?: {
