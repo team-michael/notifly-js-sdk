@@ -82,6 +82,14 @@ export class UserIdentityManager {
                 await UserStateManager.refresh(policy);
             }
         } else {
+            const existing = await this.getUserProperties();
+            const unchanged =
+                existing &&
+                Object.keys(params).every(
+                    (key) => Object.prototype.hasOwnProperty.call(existing, key) && isEqual(existing[key], params[key])
+                );
+            if (unchanged) return;
+
             if (SdkStateManager.type === SdkType.JS_CAFE24) {
                 // If SDK State is JS_CAFE24, Only send diffs
                 // Update local state
