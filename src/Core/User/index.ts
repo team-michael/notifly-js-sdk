@@ -23,6 +23,8 @@ import { KmpUserIdTransitionPolicy } from '../KmpCore';
  * await setUserId() // Removes the user ID
  */
 export class UserIdentityManager {
+    private static _lastUserPropertiesSentAt = -Infinity;
+
     private static readonly DEFAULT_SET_USER_ID_OPTIONS = {
         onlyIfChanged: false,
     };
@@ -72,6 +74,7 @@ export class UserIdentityManager {
             params.previous_external_user_id = previousExternalUserId;
 
             if (!this._areUserIdsIdentical(externalUserId, previousExternalUserId)) {
+                this._lastUserPropertiesSentAt = -Infinity;
                 // Caution: order matters here!
                 await NotiflyStorage.setItem(NotiflyStorageKeys.EXTERNAL_USER_ID, externalUserId);
                 await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, params, null, true);
@@ -88,7 +91,8 @@ export class UserIdentityManager {
                 Object.keys(params).every(
                     (key) => Object.prototype.hasOwnProperty.call(existing, key) && isEqual(existing[key], params[key])
                 );
-            if (unchanged) return;
+            const elapsed = Date.now() - this._lastUserPropertiesSentAt;
+            if (unchanged && elapsed >= 0 && elapsed < 5000) return;
 
             if (SdkStateManager.type === SdkType.JS_CAFE24) {
                 // If SDK State is JS_CAFE24, Only send diffs
@@ -108,12 +112,14 @@ export class UserIdentityManager {
                 }
             } else {
                 UserStateManager.updateUserProperties(params);
+                this._lastUserPropertiesSentAt = Date.now();
                 await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, params, null, true);
             }
         }
     }
 
     static async removeUserId(): Promise<void> {
+        this._lastUserPropertiesSentAt = -Infinity;
         const previousExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
         if (previousExternalUserId) {
             // A -> null
