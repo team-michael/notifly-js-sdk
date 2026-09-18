@@ -42,10 +42,10 @@ let identity: Record<string, string | null>;
 let requests: { input: Input; complete: (output: Output) => void; cancel: jest.Mock }[];
 let configs: tech.notifly.kmp.popup.model.PopupRendererConfig[];
 let log: jest.SpyInstance;
-const complete = (index = 0, outcome = 'rendered') =>
+const complete = (index = 0, outcome = 'rendered', renderedHtml = html) =>
     requests[index].complete({
         outcome,
-        html: outcome === 'rendered' ? html : null,
+        html: outcome === 'rendered' ? renderedHtml : null,
         errorCode: outcome === 'failed' ? 'render_failed' : null,
         httpStatus: outcome === 'rendered' ? 200 : null,
     });
@@ -256,6 +256,50 @@ test('reserves the display slot so a later static popup cannot overtake SSR', as
     complete();
     await flush();
     expect(visibleFrame()?.srcdoc).toContain('Hello personalized user');
+});
+
+test.each(['campaign', 'all'])(
+    'leaves iframe loading to the renderer after handoff when cancelling %s schedules',
+    async (target) => {
+        WebMessageScheduler.scheduleInWebMessage(campaign());
+        await flush();
+        complete(0, 'rendered', `${html}<!-- handoff-${target} -->`);
+        await flush();
+        const frame = visibleFrame();
+        expect(frame).not.toBeNull();
+
+        WebMessageScheduler.descheduleInWebMessage(target === 'campaign' ? 'campaign-1' : null);
+
+        expect(visibleFrame()).toBe(frame);
+        expect(requests[0].cancel).not.toHaveBeenCalled();
+        expect(WebMessageScheduler.getScheduledCampaignIds()).toEqual([]);
+        loaded();
+        await flush();
+        expect(log).toHaveBeenCalledWith(
+            NotiflyInternalEvent.IN_WEB_MESSAGE_SHOW,
+            expect.objectContaining({ campaign_id: 'campaign-1' }),
+            null,
+            true
+        );
+    }
+);
+
+test('finishes scheduling when handing rendered HTML to the existing display path', async () => {
+    const update = jest.spyOn(UserStateManager, 'updateAndGetCampaignHiddenUntilDataAccordingToReEligibleCondition');
+    WebMessageScheduler.scheduleInWebMessage({ ...campaign(), re_eligible_condition: { unit: 'd', value: 1 } });
+    await flush();
+    expect(update).not.toHaveBeenCalled();
+    expect(WebMessageScheduler.getScheduledCampaignIds()).toEqual(['campaign-1']);
+
+    complete(0, 'rendered', `${html}<!-- display-handoff -->`);
+    await flush();
+
+    expect(WebMessageScheduler.getScheduledCampaignIds()).toEqual([]);
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(log).not.toHaveBeenCalledWith(NotiflyInternalEvent.IN_WEB_MESSAGE_SHOW, expect.anything(), null, true);
+    loaded();
+    await flush();
+    expect(update).toHaveBeenCalledTimes(1);
 });
 
 test('does not update campaign eligibility when rendering fails', async () => {

@@ -1,6 +1,6 @@
 import type { Campaign } from '../Interfaces/Campaign';
 
-import { render, close, dispose, getIframe, RendererCallbacks } from 'notifly-web-message-renderer';
+import { render, close, getIframe, RendererCallbacks } from 'notifly-web-message-renderer';
 
 import { UserIdentityManager } from '../User';
 import { EventLogger, NotiflyInternalEvent } from '../Event';
@@ -42,23 +42,19 @@ export class WebMessageScheduler {
         SdkStateManager.registerObserver(new SdkStateObserverForWebMessageScheduler());
     }
 
-    private static _showInWebMessage(campaign: Campaign, renderedHtml?: string, scheduled?: ScheduledWebMessage) {
-        if (this._isWebMessageOpen || (this._renderingWebMessage && this._renderingWebMessage !== scheduled)) {
+    private static _showInWebMessage(campaign: Campaign, renderedHtml?: string) {
+        if (this._isWebMessageOpen || this._renderingWebMessage) {
             console.warn(
                 `[Notifly] Web message is already open. Ignoring this message from campaign ${campaign.id}...`
             );
             return;
         }
-        this._isWebMessageOpen = true;
-
-        const updateHiddenUntil = () =>
-            campaign.re_eligible_condition
-                ? UserStateManager.updateAndGetCampaignHiddenUntilDataAccordingToReEligibleCondition(
-                      campaign.id,
-                      campaign.re_eligible_condition
-                  )
-                : null;
-        let campaignHiddenUntilData = scheduled ? null : updateHiddenUntil();
+        const campaignHiddenUntilData = campaign.re_eligible_condition
+            ? UserStateManager.updateAndGetCampaignHiddenUntilDataAccordingToReEligibleCondition(
+                  campaign.id,
+                  campaign.re_eligible_condition
+              )
+            : null;
 
         const message = campaign.message;
         const modalProperties = message.modal_properties;
@@ -66,11 +62,6 @@ export class WebMessageScheduler {
 
         const callbacks: RendererCallbacks = {
             onRenderCompleted: () => {
-                if (scheduled) {
-                    if (!this._isCurrentRendering(scheduled)) return;
-                    campaignHiddenUntilData = updateHiddenUntil();
-                    this._finishRendering(scheduled);
-                }
                 EventLogger.logEvent(
                     NotiflyInternalEvent.IN_WEB_MESSAGE_SHOW,
                     {
@@ -182,24 +173,25 @@ export class WebMessageScheduler {
                 window.addEventListener('message', messageEventListener);
             },
             onRenderFailed: () => {
-                if (scheduled) {
-                    if (!this._isCurrentRendering(scheduled)) return;
-                    this._finishRendering(scheduled);
-                }
                 this._isWebMessageOpen = false;
                 console.error(
                     '[Notifly] Error creating in web message. Web message content is either invalid or not found'
                 );
             },
             onAutoDismissed: () => {
-                if (scheduled && this._isCurrentRendering(scheduled)) this._finishRendering(scheduled);
                 this._isWebMessageOpen = false;
             },
         };
-        if (renderedHtml === undefined) {
-            render(modalProperties, message.html_url, callbacks);
-        } else {
-            render(modalProperties, renderedHtml, callbacks, { htmlBaseUrl: message.html_url });
+        this._isWebMessageOpen = true;
+        try {
+            if (renderedHtml === undefined) {
+                render(modalProperties, message.html_url, callbacks);
+            } else {
+                render(modalProperties, renderedHtml, callbacks, { htmlBaseUrl: message.html_url });
+            }
+        } catch (error) {
+            this._isWebMessageOpen = false;
+            throw error;
         }
     }
 
@@ -260,10 +252,6 @@ export class WebMessageScheduler {
             clearTimeout(item.timerId);
             if (this._renderingWebMessage === item) {
                 this._renderingWebMessage = null;
-                if (this._isWebMessageOpen) {
-                    dispose();
-                    this._isWebMessageOpen = false;
-                }
             }
             item.renderTask?.cancel();
         }
@@ -333,9 +321,10 @@ export class WebMessageScheduler {
                 this._finishRendering(scheduled);
                 return;
             }
-            this._showInWebMessage(campaign, html, scheduled);
+            this._finishRendering(scheduled);
+            this._showInWebMessage(campaign, html);
         } catch {
-            this.descheduleInWebMessage(scheduled.campaignId);
+            this._finishRendering(scheduled);
             console.warn('[Notifly] Could not display rendered popup');
         }
     }
