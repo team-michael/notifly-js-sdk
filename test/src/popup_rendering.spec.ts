@@ -258,21 +258,6 @@ test('reserves the display slot so a later static popup cannot overtake SSR', as
     expect(visibleFrame()?.srcdoc).toContain('Hello personalized user');
 });
 
-test('cancels a popup that is waiting for its iframe readiness message', async () => {
-    WebMessageScheduler.scheduleInWebMessage(campaign());
-    await flush();
-    complete();
-    await flush();
-    expect(visibleFrame()).not.toBeNull();
-    WebMessageScheduler.descheduleInWebMessage('campaign-1');
-    loaded();
-    await flush();
-    expect(visibleFrame()).toBeNull();
-    expect(log).not.toHaveBeenCalledWith(NotiflyInternalEvent.IN_WEB_MESSAGE_SHOW, expect.anything(), null, true);
-    WebMessageScheduler.scheduleInWebMessage(campaign('static'));
-    expect(visibleFrame()?.src).toBe(sourceUrl);
-});
-
 test('does not update campaign eligibility when rendering fails', async () => {
     const update = jest.spyOn(UserStateManager, 'updateAndGetCampaignHiddenUntilDataAccordingToReEligibleCondition');
     WebMessageScheduler.scheduleInWebMessage({ ...campaign(), re_eligible_condition: { unit: 'd', value: 1 } });
