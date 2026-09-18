@@ -193,6 +193,14 @@ export async function removeUserId(options?: SetUserIdOptions): Promise<void> {
 /**
  * Sets user properties for the current user.
  *
+ * Calls are skipped if every supplied key and value matches the available local user state
+ * and less than 5 seconds have elapsed since the last user-property send attempt.
+ * Skipped calls do not extend the window. First calls, changed values, and calls at or after
+ * 5 seconds follow the normal send path. Changing or removing the user ID resets the window.
+ * The window starts when an event is handed to the send path, regardless of server confirmation.
+ * Local user state may not yet reflect changes made through other APIs.
+ * Cafe24 retains its existing policy of sending only changed properties, without this timeout.
+ *
  * @async
  *
  * @example
