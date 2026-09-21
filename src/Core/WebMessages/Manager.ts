@@ -75,7 +75,9 @@ export class WebMessageManager {
                     eventParams,
                     externalUserID
                 )
-            ).forEach(WebMessageScheduler.scheduleInWebMessage.bind(WebMessageScheduler));
+            ).forEach((campaign) =>
+                WebMessageScheduler.scheduleInWebMessage(campaign, eventName, eventParams, externalUserID)
+            );
 
         if (document.readyState === 'loading') {
             const task = () => {

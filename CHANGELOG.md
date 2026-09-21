@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.21.0]
+
+### Added
+
+-   Support KMP-based popup personalization with Liquid, catalogs, Connected Content, and render-abort handling.
+-   Publish shared Core as `notifly-core-sdk` and unify user ID transition handling.
+
+### Changed
+
+-   Skip unchanged user-property updates within five seconds.
+-   Upgrade the popup renderer to `2.5.0`, preserving static popups and handling cancellation, identity changes, and display ordering.
+-   Update Core build and publication pipelines, with separate stable and prerelease channels.
+
 ## [2.21.0-alpha.1]
 
 ### Added
