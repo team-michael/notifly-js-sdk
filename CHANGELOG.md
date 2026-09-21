@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.21.0]
+
+### Added
+
+-   Support server-rendered web popup personalization through the shared KMP Core, including Liquid, catalogs, Connected Content, and aborted renders.
+
+### Changed
+
+-   Promote the SDK and its exact matching `notifly-core-sdk` dependency to the stable 2.21.0 release.
+
 ## [2.21.0-alpha.1]
 
 ### Added
