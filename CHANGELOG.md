@@ -4,11 +4,24 @@
 
 ### Added
 
--   Support server-rendered web popup personalization through the shared KMP Core, including Liquid, catalogs, Connected Content, and aborted renders.
+-   Integrate KMP Core 0.1.0 to display server-rendered web popups with Liquid personalization, catalogs, Connected Content, and render-abort handling.
+-   Read `message.template_rendering_mode`; request rendered HTML only for `ssr`, while preserving the existing URL-based path for static, missing, or unrecognized modes.
+-   Pass the triggering event name and nested event parameters together with the campaign, user, and device IDs to the rendering service after the campaign delay.
+-   Supply rendered HTML to the iframe renderer with the original template URL as its base URL, preserving relative resources and existing click, close, and display-event behavior.
+-   Track and cancel pending render requests when campaigns are cancelled or replaced, SDK refresh starts, or the SDK terminates. Recheck project, user, and device identity before displaying a result; skip aborted/failed renders without loading raw templates or consuming campaign re-eligibility.
+-   Reserve the popup display slot while rendering so a later static popup cannot overtake the selected SSR popup; ignore late results from replaced requests and release the slot when rendering finishes.
+-   Expose shared Core as a separate `notifly-core-sdk` npm package, versioned together with the full SDK.
+-   Add Core smoke tests and popup regression coverage for delays, event context, cancellation, replacement, refresh, identity changes, display ordering, failures, and the initial session-start popup.
 
 ### Changed
 
--   Promote the SDK and its exact matching `notifly-core-sdk` dependency to the stable 2.21.0 release.
+-   Use shared Core decisions to detect user ID changes while preserving anonymous ID normalization.
+-   Skip `setUserProperties` calls whose supplied keys and values match available local state within five seconds of the last property send attempt. First calls, changed values, and calls at or after five seconds use the normal path; skipped calls do not extend the window, and identity changes reset it. This comparison uses local state rather than server acknowledgement; Cafe24 retains its existing changed-properties-only behavior.
+-   Upgrade `notifly-web-message-renderer` from `^2.4.0` to `^2.5.0` for rendered-HTML and base-URL support.
+-   Build the pinned KMP submodule into a local npm workspace before dependency installation, and validate that Core and full-SDK versions match. Include distributable builds in CI and exclude Core source/build directories from the full-SDK npm package.
+-   Publish Core before the full SDK with an exact matching dependency, validating package integrity when a version is already published.
+-   Validate release versions, use separate `latest`, `alpha`, and `snapshot` npm channels, mark GitHub prereleases, and deploy the production Service Worker only for stable releases.
+-   Promote the SDK and its exactly matching `notifly-core-sdk` dependency to stable `2.21.0`.
 
 ## [2.21.0-alpha.1]
 
