@@ -173,7 +173,8 @@ export class NotiflyWebPushManager {
             if (permission !== 'granted') return permission === 'denied' ? 'denied' : 'dismissed';
             if (
                 SdkStateManager.state !== SdkState.READY ||
-                (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId
+                (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId ||
+                (await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID)) !== expectedExternalUserId
             )
                 return 'identity_changed';
             const subscription = await this._getSubscription();

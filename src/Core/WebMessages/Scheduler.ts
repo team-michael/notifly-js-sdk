@@ -96,6 +96,14 @@ export class WebMessageScheduler {
                             ) {
                                 const message = event.data;
                                 if (!message || typeof message !== 'object' || Array.isArray(message)) return;
+                                if (message.type === '__notifly_web_message_loaded') {
+                                    // A reused iframe may reload after onRenderCompleted has already fired.
+                                    getIframe().contentWindow?.postMessage(
+                                        { type: '__notifly_web_push_consent_ready' },
+                                        '*'
+                                    );
+                                    return;
+                                }
                                 if (message.type === 'web_push_consent') {
                                     if (handlingWebPushConsent) return;
                                     const popupWindow = getIframe().contentWindow;
@@ -143,6 +151,7 @@ export class WebMessageScheduler {
                                             popupExternalUserId
                                         );
                                         const [, status] = await Promise.all([saveConsent, requestPermission]);
+                                        const storedExternalUserId = await UserIdentityManager.getUserId();
                                         if (
                                             !this._isWebMessageOpen ||
                                             popupGeneration !== this._webMessageGeneration ||
@@ -150,7 +159,9 @@ export class WebMessageScheduler {
                                         )
                                             return;
                                         if (
-                                            (UserStateManager.userData.external_user_id ?? null) !== popupExternalUserId
+                                            (UserStateManager.userData.external_user_id ?? null) !==
+                                                popupExternalUserId ||
+                                            storedExternalUserId !== popupExternalUserId
                                         ) {
                                             respond('identity_changed');
                                             return;

@@ -91,9 +91,11 @@ export class UserIdentityManager {
             }
         } else {
             const existing = await this.getUserProperties();
+            const storedExternalUserId = expectedExternalUserId === undefined ? undefined : await this.getUserId();
             if (
                 expectedExternalUserId !== undefined &&
-                (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId
+                ((UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId ||
+                    storedExternalUserId !== expectedExternalUserId)
             )
                 return;
             const unchanged =

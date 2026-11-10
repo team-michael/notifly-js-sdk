@@ -274,3 +274,32 @@ test('retries with the same consent timestamp after dismissing browser permissio
     expect(nativePermission).toHaveBeenCalledTimes(2);
     expect(user.userData.user_properties?.$web_push_consented_at).toBe('2026-11-06T01:02:03.000Z');
 });
+
+test('repeats the compatibility acknowledgement when reused popup content finishes loading', async () => {
+    send({ type: 'close' });
+    await flush();
+    scheduler.scheduleInWebMessage(campaign);
+    await flush();
+    const response = captureResponses();
+    response.mockClear();
+    log.mockClear();
+    send({ type: '__notifly_web_message_loaded' });
+    await flush();
+    expect(response).toHaveBeenCalledWith({ type: '__notifly_web_push_consent_ready' }, '*');
+    expect(log).not.toHaveBeenCalled();
+});
+
+test('does not change local consent or associate a subscription after another tab changes the stored user', async () => {
+    const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
+    jest.spyOn(storage, 'getItem').mockResolvedValue('user-from-another-tab');
+    const response = captureResponses();
+    send();
+    expect(nativePermission).toHaveBeenCalledTimes(1);
+    await flush();
+    expect(user.userData.user_properties?.$web_push_consent).toBeUndefined();
+    expect(subscribe).not.toHaveBeenCalled();
+    expect(log.mock.calls.some(([name]) => name === 'set_user_properties' || name === 'set_device_properties')).toBe(
+        false
+    );
+    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'identity_changed' }), '*');
+});
