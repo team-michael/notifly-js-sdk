@@ -128,7 +128,7 @@ export class WebMessageScheduler {
                                     handlingWebPushConsent = true;
                                     try {
                                         consentedAt ??= new Date().toISOString();
-                                        const saveConsent = UserIdentityManager.setUserProperties(
+                                        const saveConsent = UserIdentityManager.setUserPropertiesWithResult(
                                             {
                                                 [BuiltInUserPropertyKey.WEB_PUSH_CONSENT]: true,
                                                 [BuiltInUserPropertyKey.WEB_PUSH_CONSENTED_AT]: consentedAt,
@@ -150,7 +150,10 @@ export class WebMessageScheduler {
                                             true,
                                             popupExternalUserId
                                         );
-                                        const [, status] = await Promise.all([saveConsent, requestPermission]);
+                                        const [consentResult, permissionResult] = await Promise.all([
+                                            saveConsent,
+                                            requestPermission,
+                                        ]);
                                         const storedExternalUserId = await UserIdentityManager.getUserId();
                                         if (
                                             !this._isWebMessageOpen ||
@@ -166,6 +169,7 @@ export class WebMessageScheduler {
                                             respond('identity_changed');
                                             return;
                                         }
+                                        const status = consentResult === 'sent' ? permissionResult : consentResult;
                                         respond(status);
                                         if (status === 'granted') {
                                             this._isWebMessageOpen = false;

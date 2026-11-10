@@ -118,4 +118,27 @@ describe('EventLogger web-message evaluation order', () => {
         expect(payload).not.toHaveProperty('external_user_id');
         expect(payload.event_params.$web_push_consent).toBe(true);
     });
+
+    test('returns sent after an acknowledged internal event upload', async () => {
+        await expect(
+            EventLogger.logInternalEventWithResult('set_user_properties', {}, 'test-external-user-id')
+        ).resolves.toBe('sent');
+        expect(NotiflyAPI.call).toHaveBeenCalledTimes(1);
+    });
+
+    test('returns failed to internal callers while legacy logging still resolves void', async () => {
+        jest.mocked(NotiflyAPI.call).mockRejectedValue(new Error('synthetic upload failure'));
+        jest.spyOn(console, 'error').mockImplementation(() => undefined);
+        await expect(
+            EventLogger.logInternalEventWithResult('set_user_properties', {}, 'test-external-user-id')
+        ).resolves.toBe('failed');
+        await expect(EventLogger.logEvent('test_event', {})).resolves.toBeUndefined();
+    });
+
+    test('distinguishes an identity change from an acknowledged internal event', async () => {
+        await expect(EventLogger.logInternalEventWithResult('set_user_properties', {}, null)).resolves.toBe(
+            'identity_changed'
+        );
+        expect(NotiflyAPI.call).not.toHaveBeenCalled();
+    });
 });

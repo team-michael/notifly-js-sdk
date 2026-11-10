@@ -183,8 +183,12 @@ export class NotiflyWebPushManager {
                 (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId
             )
                 return 'identity_changed';
-            await this._logSubscription(subscription, expectedExternalUserId);
-            return 'granted';
+            const result = await EventLogger.logInternalEventWithResult(
+                'set_device_properties',
+                { device_token: JSON.stringify(subscription) },
+                expectedExternalUserId
+            );
+            return result === 'sent' ? 'granted' : result;
         } catch (error) {
             console.error('[Notifly] Failed to request web push permission or register the subscription.', error);
             return 'failed';
@@ -259,21 +263,7 @@ export class NotiflyWebPushManager {
         });
     }
 
-    private static async _logSubscription(
-        subscription: PushSubscription,
-        expectedExternalUserId?: string | null
-    ): Promise<void> {
-        if (expectedExternalUserId !== undefined) {
-            return EventLogger.logEvent(
-                'set_device_properties',
-                {
-                    device_token: JSON.stringify(subscription),
-                },
-                null,
-                true,
-                expectedExternalUserId
-            );
-        }
+    private static async _logSubscription(subscription: PushSubscription): Promise<void> {
         return await EventLogger.logEvent(
             'set_device_properties',
             {

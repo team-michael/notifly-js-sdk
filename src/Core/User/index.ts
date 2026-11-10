@@ -3,7 +3,7 @@ import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 
 import { SyncStatePolicy, UserStateManager } from './State';
-import { EventLogger, NotiflyInternalEvent } from '../Event';
+import { EventLogger, NotiflyInternalEvent, type EventLogResult } from '../Event';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { SetUserIdOptions } from '../Interfaces/Options';
 import { SdkStateManager, SdkType } from '../SdkState';
@@ -56,12 +56,34 @@ export class UserIdentityManager {
         return UserStateManager.state.userData.user_properties || null;
     }
 
-    static async setUserProperties(params: Record<string, any>, expectedExternalUserId?: string | null) {
+    /** Confirms guarded writes before changing local state; failed writes must remain retryable. */
+    static async setUserPropertiesWithResult(
+        params: Record<string, any>,
+        expectedExternalUserId: string | null
+    ): Promise<EventLogResult> {
         if (
-            expectedExternalUserId !== undefined &&
-            (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId
+            (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId ||
+            (await this.getUserId()) !== expectedExternalUserId
         )
-            return;
+            return 'identity_changed';
+
+        const result = await EventLogger.logInternalEventWithResult(
+            NotiflyInternalEvent.SET_USER_PROPERTIES,
+            params,
+            expectedExternalUserId
+        );
+        if (result !== 'sent') return result;
+        if (
+            (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId ||
+            (await this.getUserId()) !== expectedExternalUserId
+        )
+            return 'identity_changed';
+
+        UserStateManager.updateUserProperties(params);
+        return 'sent';
+    }
+
+    static async setUserProperties(params: Record<string, any>) {
         const externalUserId = params.external_user_id?.toString();
 
         if (externalUserId) {
@@ -91,13 +113,6 @@ export class UserIdentityManager {
             }
         } else {
             const existing = await this.getUserProperties();
-            const storedExternalUserId = expectedExternalUserId === undefined ? undefined : await this.getUserId();
-            if (
-                expectedExternalUserId !== undefined &&
-                ((UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId ||
-                    storedExternalUserId !== expectedExternalUserId)
-            )
-                return;
             const unchanged =
                 existing &&
                 Object.keys(params).every(
@@ -111,11 +126,6 @@ export class UserIdentityManager {
                 // Update local state
                 const diff: Record<string, any> = {};
                 const previousUserProperties = (await this.getUserProperties()) || {};
-                if (
-                    expectedExternalUserId !== undefined &&
-                    (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId
-                )
-                    return;
 
                 Object.keys(params).forEach((key) => {
                     if (!isEqual(previousUserProperties[key], params[key])) {
@@ -125,27 +135,14 @@ export class UserIdentityManager {
 
                 if (!isEmpty(diff)) {
                     UserStateManager.updateUserProperties(diff);
-                    await this._logUserProperties(diff, expectedExternalUserId);
+                    await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, diff, null, true);
                 }
             } else {
                 UserStateManager.updateUserProperties(params);
                 this._lastUserPropertiesSentAt = Date.now();
-                await this._logUserProperties(params, expectedExternalUserId);
+                await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, params, null, true);
             }
         }
-    }
-
-    private static async _logUserProperties(params: Record<string, any>, expectedExternalUserId?: string | null) {
-        if (expectedExternalUserId === undefined) {
-            return EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, params, null, true);
-        }
-        return EventLogger.logEvent(
-            NotiflyInternalEvent.SET_USER_PROPERTIES,
-            params,
-            null,
-            true,
-            expectedExternalUserId
-        );
     }
 
     static async removeUserId(): Promise<void> {

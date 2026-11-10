@@ -1,4 +1,5 @@
 import type { Campaign } from '../../src/Core/Interfaces/Campaign';
+import { SdkType } from '../../src/Core/SdkState';
 
 let scheduler: typeof import('../../src/Core/WebMessages/Scheduler').WebMessageScheduler;
 let push: typeof import('../../src/Core/Push').NotiflyWebPushManager;
@@ -7,6 +8,8 @@ let user: typeof import('../../src/Core/User/State').UserStateManager;
 let identity: typeof import('../../src/Core/User').UserIdentityManager;
 let renderer: typeof import('notifly-web-message-renderer');
 let log: jest.SpyInstance;
+let internalLog: jest.SpyInstance;
+let upload: jest.SpyInstance;
 let nativePermission: jest.Mock;
 let subscribe: jest.Mock;
 let notification: { permission: NotificationPermission; requestPermission: jest.Mock };
@@ -17,7 +20,7 @@ const descriptors = {
     activation: Object.getOwnPropertyDescriptor(navigator, 'userActivation'),
 };
 const flush = async () => {
-    for (let i = 0; i < 35; i++) await Promise.resolve();
+    for (let i = 0; i < 60; i++) await Promise.resolve();
 };
 const captureResponses = () => {
     const popupWindow = renderer.getIframe().contentWindow;
@@ -61,8 +64,12 @@ beforeEach(async () => {
     renderer = await import('notifly-web-message-renderer');
     const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
     const { EventLogger } = await import('../../src/Core/Event');
+    const { NotiflyAPI } = await import('../../src/Core/API');
     jest.spyOn(storage, 'getItem').mockResolvedValue(null);
     jest.spyOn(storage, 'setItem').mockResolvedValue();
+    jest.spyOn(storage, 'getItems').mockResolvedValue(['test-project', 'test-device', null]);
+    upload = jest.spyOn(NotiflyAPI, 'call').mockResolvedValue({});
+    internalLog = jest.spyOn(EventLogger, 'logInternalEventWithResult');
     log = jest.spyOn(EventLogger, 'logEvent').mockResolvedValue();
     nativePermission = jest.fn().mockResolvedValue('granted');
     subscribe = jest.fn().mockResolvedValue({ endpoint: 'https://push.example.com/subscription' });
@@ -86,6 +93,8 @@ beforeEach(async () => {
     send({ type: '__notifly_web_message_loaded' });
     await flush();
     log.mockClear();
+    internalLog.mockClear();
+    upload.mockClear();
 });
 
 afterEach(async () => {
@@ -115,21 +124,17 @@ test('records anonymous consent and requests native permission without the Notif
         $web_push_consent: true,
         $web_push_consented_at: '2026-11-06T01:02:03.000Z',
     });
-    expect(log).toHaveBeenCalledWith(
+    expect(internalLog).toHaveBeenCalledWith(
         'set_user_properties',
         {
             $web_push_consent: true,
             $web_push_consented_at: '2026-11-06T01:02:03.000Z',
         },
-        null,
-        true,
         null
     );
-    expect(log).toHaveBeenCalledWith(
+    expect(internalLog).toHaveBeenCalledWith(
         'set_device_properties',
         expect.objectContaining({ device_token: expect.any(String) }),
-        null,
-        true,
         null
     );
     expect(subscribe).toHaveBeenCalledTimes(1);
@@ -137,10 +142,10 @@ test('records anonymous consent and requests native permission without the Notif
 
 test('does not await consent persistence before requesting browser permission', async () => {
     let complete: () => void = () => undefined;
-    jest.spyOn(identity, 'setUserProperties').mockImplementation(
+    jest.spyOn(identity, 'setUserPropertiesWithResult').mockImplementation(
         () =>
-            new Promise<void>((resolve) => {
-                complete = resolve;
+            new Promise<'sent'>((resolve) => {
+                complete = () => resolve('sent');
             })
     );
     send();
@@ -213,7 +218,7 @@ test('does not attach a subscription after the user changes during the permissio
     complete('granted');
     await flush();
     expect(subscribe).not.toHaveBeenCalled();
-    expect(log).not.toHaveBeenCalledWith('set_device_properties', expect.anything(), null, true, expect.anything());
+    expect(internalLog).not.toHaveBeenCalledWith('set_device_properties', expect.anything(), expect.anything());
 });
 
 test('suppresses a previously scheduled Notifly prompt after direct permission was requested', async () => {
@@ -244,7 +249,7 @@ test('keeps consent in an unsupported browser and reports the result', async () 
 });
 
 test('reports persistence failure and keeps the popup available for retry', async () => {
-    jest.spyOn(identity, 'setUserProperties').mockRejectedValue(new Error('synthetic storage failure'));
+    jest.spyOn(identity, 'setUserPropertiesWithResult').mockRejectedValue(new Error('synthetic storage failure'));
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
     const response = captureResponses();
     send();
@@ -261,7 +266,7 @@ test('does not associate a subscription if the user changes while subscribing', 
     });
     send();
     await flush();
-    expect(log.mock.calls.some(([name]) => name === 'set_device_properties')).toBe(false);
+    expect(internalLog.mock.calls.some(([name]) => name === 'set_device_properties')).toBe(false);
 });
 
 test('retries with the same consent timestamp after dismissing browser permission', async () => {
@@ -283,6 +288,8 @@ test('repeats the compatibility acknowledgement when reused popup content finish
     const response = captureResponses();
     response.mockClear();
     log.mockClear();
+    internalLog.mockClear();
+    upload.mockClear();
     send({ type: '__notifly_web_message_loaded' });
     await flush();
     expect(response).toHaveBeenCalledWith({ type: '__notifly_web_push_consent_ready' }, '*');
@@ -298,8 +305,74 @@ test('does not change local consent or associate a subscription after another ta
     await flush();
     expect(user.userData.user_properties?.$web_push_consent).toBeUndefined();
     expect(subscribe).not.toHaveBeenCalled();
-    expect(log.mock.calls.some(([name]) => name === 'set_user_properties' || name === 'set_device_properties')).toBe(
-        false
+    expect(
+        internalLog.mock.calls.some(([name]) => name === 'set_user_properties' || name === 'set_device_properties')
+    ).toBe(false);
+    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'identity_changed' }), '*');
+});
+
+test.each(['set_user_properties', 'set_device_properties'])(
+    'reports failed %s uploads instead of closing the popup as granted',
+    async (failedEvent) => {
+        upload.mockImplementation(async (_url, _method, body) => {
+            if (JSON.parse(body.records[0].data).name === failedEvent) {
+                throw new Error('synthetic event upload failure');
+            }
+            return {};
+        });
+        jest.spyOn(console, 'error').mockImplementation(() => undefined);
+        const response = captureResponses();
+        send();
+        expect(nativePermission).toHaveBeenCalledTimes(1);
+        await flush();
+        expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }), '*');
+        expect(response).not.toHaveBeenCalledWith(expect.objectContaining({ status: 'granted' }), '*');
+        expect(renderer.getIframe().isConnected).toBe(true);
+    }
+);
+
+test.each([SdkType.JS, SdkType.JS_CAFE24])(
+    'retries failed consent immediately with the same timestamp for %s',
+    async (sdkType) => {
+        state.type = sdkType;
+        nativePermission.mockResolvedValue('default');
+        upload.mockRejectedValueOnce(new Error('synthetic consent upload failure'));
+        jest.spyOn(console, 'error').mockImplementation(() => undefined);
+        const response = captureResponses();
+        send();
+        await flush();
+        expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }), '*');
+        expect(user.userData.user_properties?.$web_push_consent).toBeUndefined();
+        send();
+        await flush();
+        expect(upload).toHaveBeenCalledTimes(2);
+        const properties = upload.mock.calls.map(([, , body]) => JSON.parse(body.records[0].data).event_params);
+        expect(properties[1]).toEqual(properties[0]);
+        expect(user.userData.user_properties).toMatchObject({
+            $web_push_consent: true,
+            $web_push_consented_at: '2026-11-06T01:02:03.000Z',
+        });
+        expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'dismissed' }), '*');
+    }
+);
+
+test('does not apply acknowledged consent to a user who changed while the upload was pending', async () => {
+    let complete: () => void = () => undefined;
+    upload.mockImplementationOnce(
+        () =>
+            new Promise((resolve) => {
+                complete = () => resolve({});
+            })
     );
+    nativePermission.mockResolvedValue('default');
+    const response = captureResponses();
+    send();
+    await flush();
+    user.userData = { ...user.userData, external_user_id: 'new-user', user_properties: {} };
+    const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
+    jest.spyOn(storage, 'getItem').mockResolvedValue('new-user');
+    complete();
+    await flush();
+    expect(user.userData.user_properties).toEqual({});
     expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'identity_changed' }), '*');
 });

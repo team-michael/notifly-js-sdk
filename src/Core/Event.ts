@@ -16,6 +16,8 @@ import {
 
 const NOTIFLY_LOG_EVENT_URL = 'https://e.notifly.tech/records';
 
+export type EventLogResult = 'sent' | 'identity_changed' | 'failed';
+
 export enum NotiflyInternalEvent {
     SESSION_START = 'session_start',
     SET_USER_PROPERTIES = 'set_user_properties',
@@ -54,20 +56,29 @@ export class EventLogger {
         );
     }
 
+    static async logInternalEventWithResult(
+        eventName: string,
+        eventParams: Record<string, any>,
+        expectedExternalUserId: string | null
+    ): Promise<EventLogResult> {
+        return this._logEvent(eventName, eventParams, null, true, expectedExternalUserId);
+    }
+
     private static async _logEvent(
         eventName: string,
         eventParams: Record<string, any>,
         segmentationEventParamKeys: string[] | null = null,
         isInternalEvent = false,
         expectedExternalUserId?: string | null
-    ): Promise<void> {
+    ): Promise<EventLogResult> {
         try {
             const [projectId, notiflyDeviceId, externalUserId] = await NotiflyStorage.getItems([
                 NotiflyStorageKeys.PROJECT_ID,
                 NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
                 NotiflyStorageKeys.EXTERNAL_USER_ID,
             ]);
-            if (expectedExternalUserId !== undefined && externalUserId !== expectedExternalUserId) return;
+            if (expectedExternalUserId !== undefined && externalUserId !== expectedExternalUserId)
+                return 'identity_changed';
             if (!projectId || !notiflyDeviceId) {
                 throw new Error('Notifly storage is not initialized');
             }
@@ -124,8 +135,10 @@ export class EventLogger {
                 externalUserId,
                 segmentationEventParamKeys
             );
+            return 'sent';
         } catch (err) {
             console.error('[Notifly] Error logging event', err);
+            return 'failed';
         }
     }
 
