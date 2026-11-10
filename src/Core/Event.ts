@@ -15,6 +15,7 @@ import {
 } from './Utils';
 
 const NOTIFLY_LOG_EVENT_URL = 'https://e.notifly.tech/records';
+const INTERNAL_EVENT_TIMEOUT_MS = 10000;
 
 export type EventLogResult = 'sent' | 'identity_changed' | 'failed';
 
@@ -61,7 +62,21 @@ export class EventLogger {
         eventParams: Record<string, any>,
         expectedExternalUserId: string | null
     ): Promise<EventLogResult> {
-        return this._logEvent(eventName, eventParams, null, true, expectedExternalUserId);
+        const controller = new AbortController();
+        let timeout: ReturnType<typeof setTimeout> | undefined;
+        try {
+            return await Promise.race([
+                this._logEvent(eventName, eventParams, null, true, expectedExternalUserId, controller.signal),
+                new Promise<EventLogResult>((resolve) => {
+                    timeout = setTimeout(() => {
+                        controller.abort();
+                        resolve('failed');
+                    }, INTERNAL_EVENT_TIMEOUT_MS);
+                }),
+            ]);
+        } finally {
+            clearTimeout(timeout);
+        }
     }
 
     private static async _logEvent(
@@ -69,7 +84,8 @@ export class EventLogger {
         eventParams: Record<string, any>,
         segmentationEventParamKeys: string[] | null = null,
         isInternalEvent = false,
-        expectedExternalUserId?: string | null
+        expectedExternalUserId?: string | null,
+        signal?: AbortSignal
     ): Promise<EventLogResult> {
         try {
             const [projectId, notiflyDeviceId, externalUserId] = await NotiflyStorage.getItems([
@@ -77,6 +93,7 @@ export class EventLogger {
                 NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
                 NotiflyStorageKeys.EXTERNAL_USER_ID,
             ]);
+            if (signal?.aborted) return 'failed';
             if (expectedExternalUserId !== undefined && externalUserId !== expectedExternalUserId)
                 return 'identity_changed';
             if (!projectId || !notiflyDeviceId) {
@@ -126,8 +143,10 @@ export class EventLogger {
                         },
                     ],
                 },
-                'follow'
+                'follow',
+                signal
             );
+            if (signal?.aborted) return 'failed';
 
             WebMessageManager.updateEventCountsAndMaybeTriggerWebMessages(
                 isInternalEvent ? `notifly__${eventName}` : eventName,

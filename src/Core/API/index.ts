@@ -28,8 +28,14 @@ export class NotiflyAPI {
         }
     }
 
-    static async call(url: string, method: 'GET' | 'POST', body?: any, redirect?: RequestRedirect) {
-        return await this._call(url, method, body, redirect);
+    static async call(
+        url: string,
+        method: 'GET' | 'POST',
+        body?: any,
+        redirect?: RequestRedirect,
+        signal?: AbortSignal
+    ) {
+        return await this._call(url, method, body, redirect, 0, signal);
     }
 
     private static async _call(
@@ -37,8 +43,10 @@ export class NotiflyAPI {
         method: 'GET' | 'POST',
         body?: any,
         redirect?: RequestRedirect,
-        retryCount = 0
+        retryCount = 0,
+        signal?: AbortSignal
     ): Promise<any> {
+        if (signal?.aborted) throw new Error('Notifly request was aborted');
         if (!this._username || !this._password) {
             console.warn('[Notifly]: APIManager has not been initialized. API may not work as expected.');
         }
@@ -58,8 +66,12 @@ export class NotiflyAPI {
         if (redirect) {
             request.redirect = redirect;
         }
+        if (signal) {
+            request.signal = signal;
+        }
 
         const response = await fetch(url, request);
+        if (signal?.aborted) throw new Error('Notifly request was aborted');
         if (response.ok) {
             return await response.json();
         } else {
@@ -71,12 +83,14 @@ export class NotiflyAPI {
                             'Username or password required when token has expired. Please retry initialization.'
                         );
                     }
-                    this._cognitoIdToken = await saveAndGetCognitoIdToken(this._username, this._password);
-                    if (!this._cognitoIdToken) {
+                    const refreshedToken = await saveAndGetCognitoIdToken(this._username, this._password, signal);
+                    if (signal?.aborted) throw new Error('Notifly request was aborted');
+                    if (!refreshedToken) {
                         throw new Error('Failed to get authentication token.');
                     }
+                    this._cognitoIdToken = refreshedToken;
                 }
-                return await this._call(url, method, body, redirect, retryCount + 1);
+                return await this._call(url, method, body, redirect, retryCount + 1, signal);
             } else {
                 throw new Error(response.statusText);
             }

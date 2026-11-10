@@ -112,7 +112,8 @@ describe('EventLogger web-message evaluation order', () => {
             {
                 records: [expect.objectContaining({ data: expect.any(String) })],
             },
-            'follow'
+            'follow',
+            undefined
         );
         const payload = JSON.parse(jest.mocked(NotiflyAPI.call).mock.calls[0][2].records[0].data);
         expect(payload).not.toHaveProperty('external_user_id');
@@ -124,6 +125,7 @@ describe('EventLogger web-message evaluation order', () => {
             EventLogger.logInternalEventWithResult('set_user_properties', {}, 'test-external-user-id')
         ).resolves.toBe('sent');
         expect(NotiflyAPI.call).toHaveBeenCalledTimes(1);
+        expect(jest.getTimerCount()).toBe(0);
     });
 
     test('returns failed to internal callers while legacy logging still resolves void', async () => {
@@ -139,6 +141,44 @@ describe('EventLogger web-message evaluation order', () => {
         await expect(EventLogger.logInternalEventWithResult('set_user_properties', {}, null)).resolves.toBe(
             'identity_changed'
         );
+        expect(NotiflyAPI.call).not.toHaveBeenCalled();
+    });
+
+    test('aborts a stalled internal upload and ignores a late response', async () => {
+        let complete: () => void = () => undefined;
+        jest.mocked(NotiflyAPI.call).mockImplementationOnce(
+            () =>
+                new Promise((resolve) => {
+                    complete = () => resolve({});
+                })
+        );
+        const result = EventLogger.logInternalEventWithResult('set_user_properties', {}, 'test-external-user-id');
+        for (let i = 0; i < 10; i++) await Promise.resolve();
+        const signal = jest.mocked(NotiflyAPI.call).mock.calls[0][4];
+        expect(signal?.aborted).toBe(false);
+        jest.advanceTimersByTime(10000);
+        await expect(result).resolves.toBe('failed');
+        expect(signal?.aborted).toBe(true);
+        complete();
+        for (let i = 0; i < 10; i++) await Promise.resolve();
+        expect(UserStateManager.eventIntermediateCounts).toEqual([]);
+        expect(scheduleSpy).not.toHaveBeenCalled();
+        expect(jest.getTimerCount()).toBe(0);
+    });
+
+    test('does not upload after its storage read outlives the internal event deadline', async () => {
+        let complete: () => void = () => undefined;
+        jest.mocked(NotiflyStorage.getItems).mockImplementationOnce(
+            () =>
+                new Promise((resolve) => {
+                    complete = () => resolve(['test-project', 'test-device', null]);
+                })
+        );
+        const result = EventLogger.logInternalEventWithResult('set_user_properties', {}, null);
+        jest.advanceTimersByTime(10000);
+        await expect(result).resolves.toBe('failed');
+        complete();
+        for (let i = 0; i < 10; i++) await Promise.resolve();
         expect(NotiflyAPI.call).not.toHaveBeenCalled();
     });
 });

@@ -376,3 +376,73 @@ test('does not apply acknowledged consent to a user who changed while the upload
     expect(user.userData.user_properties).toEqual({});
     expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'identity_changed' }), '*');
 });
+
+test.each(['set_user_properties', 'set_device_properties'])(
+    'times out a stalled %s upload and allows a successful retry',
+    async (stalledEvent) => {
+        let complete: () => void = () => undefined;
+        let requestSignal: AbortSignal | undefined;
+        let stalled = false;
+        upload.mockImplementation((_url, _method, body, _redirect, signal) => {
+            if (!stalled && JSON.parse(body.records[0].data).name === stalledEvent) {
+                stalled = true;
+                requestSignal = signal;
+                return new Promise((resolve) => {
+                    complete = () => resolve({});
+                });
+            }
+            return Promise.resolve({});
+        });
+        const response = captureResponses();
+        send();
+        expect(nativePermission).toHaveBeenCalledTimes(1);
+        await flush();
+        jest.advanceTimersByTime(9999);
+        await flush();
+        expect(response).not.toHaveBeenCalledWith(
+            expect.objectContaining({ type: '__notifly_web_push_consent_result' }),
+            '*'
+        );
+        jest.advanceTimersByTime(1);
+        await flush();
+        expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }), '*');
+        expect(requestSignal?.aborted).toBe(true);
+        expect(renderer.getIframe().isConnected).toBe(true);
+        if (stalledEvent === 'set_user_properties') {
+            expect(user.userData.user_properties?.$web_push_consent).toBeUndefined();
+        }
+        complete();
+        await flush();
+        if (stalledEvent === 'set_user_properties') {
+            expect(user.userData.user_properties?.$web_push_consent).toBeUndefined();
+        }
+        notification.permission = 'granted';
+        send();
+        await flush();
+        expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'granted' }), '*');
+        expect(user.userData.user_properties?.$web_push_consented_at).toBe('2026-11-06T01:02:03.000Z');
+    }
+);
+
+test('keeps the native permission dialog pending without applying the server upload deadline to it', async () => {
+    let complete: () => void = () => undefined;
+    nativePermission.mockImplementation(
+        () =>
+            new Promise((resolve) => {
+                complete = () => resolve('granted');
+            })
+    );
+    const response = captureResponses();
+    send();
+    await flush();
+    jest.advanceTimersByTime(20000);
+    await flush();
+    expect(response).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: '__notifly_web_push_consent_result' }),
+        '*'
+    );
+    expect(user.userData.user_properties?.$web_push_consent).toBe(true);
+    complete();
+    await flush();
+    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'granted' }), '*');
+});
