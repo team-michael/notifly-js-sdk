@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+-   Warn when `setUserProperties` receives custom keys containing characters other than ASCII letters, digits, or underscores (or an empty key). Known built-in keys remain exempt, and warnings do not block or modify property updates.
+
 ## [2.21.0]
 
 ### Added
