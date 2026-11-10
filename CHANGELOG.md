@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+-   Handle web popup consent buttons with reserved consent properties and direct browser permission requests, subscription registration, duplicate prevention, and user-identity checks.
+
 ## [2.21.0]
 
 ### Added
