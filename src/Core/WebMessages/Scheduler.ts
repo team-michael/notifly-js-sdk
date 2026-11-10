@@ -10,6 +10,8 @@ import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { generateNotiflyUserId } from '../Utils';
 import { KmpPopupRenderTask } from '../KmpCore';
 import { renderPopup } from './Renderer';
+import { BuiltInUserPropertyKey } from '../../Constants';
+import { NotiflyWebPushManager } from '../Push';
 
 interface ScheduledWebMessage {
     timerId?: ReturnType<typeof setTimeout>;
@@ -37,6 +39,7 @@ export class WebMessageScheduler {
     private static _isWebMessageOpen = false;
     private static _scheduledWebMessages: ScheduledWebMessage[] = [];
     private static _renderingWebMessage: ScheduledWebMessage | null = null;
+    private static _webMessageGeneration = 0;
 
     static initialize() {
         SdkStateManager.registerObserver(new SdkStateObserverForWebMessageScheduler());
@@ -59,6 +62,12 @@ export class WebMessageScheduler {
         const message = campaign.message;
         const modalProperties = message.modal_properties;
         const templateName = modalProperties.template_name;
+        const popupExternalUserId = UserStateManager.userData.external_user_id ?? null;
+        const popupGeneration = ++this._webMessageGeneration;
+        let activeMessageListener: ((event: MessageEvent) => void) | undefined;
+        const removeMessageListener = () => {
+            if (activeMessageListener) window.removeEventListener('message', activeMessageListener);
+        };
 
         const callbacks: RendererCallbacks = {
             onRenderCompleted: () => {
@@ -77,10 +86,93 @@ export class WebMessageScheduler {
 
                 // Listen for messages from the iframe
                 const messageEventListener = (() => {
+                    let handlingWebPushConsent = false;
+                    let consentedAt: string | undefined;
                     const func = async (event: MessageEvent) => {
                         try {
-                            if (event.source === getIframe().contentWindow) {
+                            if (
+                                popupGeneration === this._webMessageGeneration &&
+                                event.source === getIframe().contentWindow
+                            ) {
                                 const message = event.data;
+                                if (!message || typeof message !== 'object' || Array.isArray(message)) return;
+                                if (message.type === 'web_push_consent') {
+                                    if (handlingWebPushConsent) return;
+                                    const popupWindow = getIframe().contentWindow;
+                                    const buttonName = typeof message.buttonName === 'string' ? message.buttonName : '';
+                                    const respond = (status: string) =>
+                                        popupWindow?.postMessage(
+                                            { type: '__notifly_web_push_consent_result', status, buttonName },
+                                            '*'
+                                        );
+                                    if ((UserStateManager.userData.external_user_id ?? null) !== popupExternalUserId) {
+                                        respond('identity_changed');
+                                        return;
+                                    }
+                                    if (SdkStateManager.state !== SdkState.READY) {
+                                        respond('not_ready');
+                                        return;
+                                    }
+                                    if (navigator.userActivation && !navigator.userActivation.isActive) {
+                                        respond('interaction_required');
+                                        return;
+                                    }
+                                    handlingWebPushConsent = true;
+                                    try {
+                                        consentedAt ??= new Date().toISOString();
+                                        const saveConsent = UserIdentityManager.setUserProperties(
+                                            {
+                                                [BuiltInUserPropertyKey.WEB_PUSH_CONSENT]: true,
+                                                [BuiltInUserPropertyKey.WEB_PUSH_CONSENTED_AT]: consentedAt,
+                                            },
+                                            popupExternalUserId
+                                        );
+                                        // Begin the browser request before any async work can expire user activation.
+                                        const requestPermission =
+                                            NotiflyWebPushManager.requestPermissionDirectly(popupExternalUserId);
+                                        void EventLogger.logEvent(
+                                            NotiflyInternalEvent.MAIN_BUTTON_CLICK,
+                                            {
+                                                type: 'message_event',
+                                                channel: 'in-web-message',
+                                                button_name: buttonName,
+                                                campaign_id: campaign.id,
+                                            },
+                                            null,
+                                            true,
+                                            popupExternalUserId
+                                        );
+                                        const [, status] = await Promise.all([saveConsent, requestPermission]);
+                                        if (
+                                            !this._isWebMessageOpen ||
+                                            popupGeneration !== this._webMessageGeneration ||
+                                            getIframe().contentWindow !== popupWindow
+                                        )
+                                            return;
+                                        if (
+                                            (UserStateManager.userData.external_user_id ?? null) !== popupExternalUserId
+                                        ) {
+                                            respond('identity_changed');
+                                            return;
+                                        }
+                                        respond(status);
+                                        if (status === 'granted') {
+                                            this._isWebMessageOpen = false;
+                                            close();
+                                            window.removeEventListener('message', messageEventListener);
+                                        }
+                                    } catch (error) {
+                                        if (
+                                            popupGeneration === this._webMessageGeneration &&
+                                            getIframe().contentWindow === popupWindow
+                                        )
+                                            respond('failed');
+                                        console.error('[Notifly] Failed to save web push consent.', error);
+                                    } finally {
+                                        handlingWebPushConsent = false;
+                                    }
+                                    return;
+                                }
                                 // Open blank-mode links synchronously to preserve user activation (popups are blocked after await)
                                 if (message.link && modalProperties?.link_open_mode === 'blank') {
                                     const a = document.createElement('a');
@@ -171,14 +263,18 @@ export class WebMessageScheduler {
                 })();
 
                 window.addEventListener('message', messageEventListener);
+                activeMessageListener = messageEventListener;
+                getIframe().contentWindow?.postMessage({ type: '__notifly_web_push_consent_ready' }, '*');
             },
             onRenderFailed: () => {
+                removeMessageListener();
                 this._isWebMessageOpen = false;
                 console.error(
                     '[Notifly] Error creating in web message. Web message content is either invalid or not found'
                 );
             },
             onAutoDismissed: () => {
+                removeMessageListener();
                 this._isWebMessageOpen = false;
             },
         };

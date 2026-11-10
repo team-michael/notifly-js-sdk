@@ -1,0 +1,276 @@
+import type { Campaign } from '../../src/Core/Interfaces/Campaign';
+
+let scheduler: typeof import('../../src/Core/WebMessages/Scheduler').WebMessageScheduler;
+let push: typeof import('../../src/Core/Push').NotiflyWebPushManager;
+let state: typeof import('../../src/Core/SdkState').SdkStateManager;
+let user: typeof import('../../src/Core/User/State').UserStateManager;
+let identity: typeof import('../../src/Core/User').UserIdentityManager;
+let renderer: typeof import('notifly-web-message-renderer');
+let log: jest.SpyInstance;
+let nativePermission: jest.Mock;
+let subscribe: jest.Mock;
+let notification: { permission: NotificationPermission; requestPermission: jest.Mock };
+let activation: { isActive: boolean };
+const descriptors = {
+    notification: Object.getOwnPropertyDescriptor(window, 'Notification'),
+    worker: Object.getOwnPropertyDescriptor(navigator, 'serviceWorker'),
+    activation: Object.getOwnPropertyDescriptor(navigator, 'userActivation'),
+};
+const flush = async () => {
+    for (let i = 0; i < 35; i++) await Promise.resolve();
+};
+const captureResponses = () => {
+    const popupWindow = renderer.getIframe().contentWindow;
+    if (!popupWindow) throw new Error('Missing test popup window');
+    return jest.spyOn(popupWindow, 'postMessage');
+};
+const send = (data: unknown = { type: 'web_push_consent', buttonName: 'agree' }, source?: MessageEventSource | null) =>
+    window.dispatchEvent(
+        new MessageEvent('message', {
+            source: source === undefined ? renderer.getIframe().contentWindow : source,
+            data,
+        })
+    );
+const campaign: Campaign = {
+    id: 'consent-campaign',
+    channel: 'in-web-message',
+    status: 1,
+    updated_at: '2026-11-06T00:00:00Z',
+    starts: [1],
+    segment_type: 'condition',
+    triggering_conditions: [],
+    message: {
+        html_url: 'https://cdn.example.com/consent.html',
+        modal_properties: {
+            version: 3,
+            template_name: 'consent',
+            modal_props_narrow: { position: 'fixed' },
+            modal_props_wide: { position: 'fixed' },
+        },
+    },
+};
+
+beforeEach(async () => {
+    jest.resetModules();
+    jest.useFakeTimers().setSystemTime(new Date('2026-11-06T01:02:03.000Z'));
+    ({ WebMessageScheduler: scheduler } = await import('../../src/Core/WebMessages/Scheduler'));
+    ({ NotiflyWebPushManager: push } = await import('../../src/Core/Push'));
+    ({ SdkStateManager: state } = await import('../../src/Core/SdkState'));
+    ({ UserStateManager: user } = await import('../../src/Core/User/State'));
+    ({ UserIdentityManager: identity } = await import('../../src/Core/User'));
+    renderer = await import('notifly-web-message-renderer');
+    const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
+    const { EventLogger } = await import('../../src/Core/Event');
+    jest.spyOn(storage, 'getItem').mockResolvedValue(null);
+    jest.spyOn(storage, 'setItem').mockResolvedValue();
+    log = jest.spyOn(EventLogger, 'logEvent').mockResolvedValue();
+    nativePermission = jest.fn().mockResolvedValue('granted');
+    subscribe = jest.fn().mockResolvedValue({ endpoint: 'https://push.example.com/subscription' });
+    notification = { permission: 'default', requestPermission: nativePermission };
+    activation = { isActive: true };
+    Object.defineProperty(window, 'Notification', { configurable: true, value: notification });
+    Object.defineProperty(navigator, 'userActivation', { configurable: true, value: activation });
+    Object.defineProperty(navigator, 'serviceWorker', {
+        configurable: true,
+        value: {
+            register: jest
+                .fn()
+                .mockResolvedValue({ pushManager: { getSubscription: jest.fn().mockResolvedValue(null), subscribe } }),
+            addEventListener: jest.fn(),
+        },
+    });
+    state.state = 1;
+    user.userData = { platform: 'web', sdk_type: 'js', sdk_version: '2.21.0' };
+    await push.initialize('AQID', true);
+    scheduler.scheduleInWebMessage(campaign);
+    send({ type: '__notifly_web_message_loaded' });
+    await flush();
+    log.mockClear();
+});
+
+afterEach(async () => {
+    send({ type: 'close' });
+    await flush();
+    scheduler.descheduleInWebMessage();
+    renderer.dispose();
+    jest.clearAllTimers();
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+    for (const [target, name, descriptor] of [
+        [window, 'Notification', descriptors.notification],
+        [navigator, 'serviceWorker', descriptors.worker],
+        [navigator, 'userActivation', descriptors.activation],
+    ] as const) {
+        if (descriptor) Object.defineProperty(target, name, descriptor);
+        else Reflect.deleteProperty(target, name);
+    }
+});
+
+test('records anonymous consent and requests native permission without the Notifly prompt', async () => {
+    send();
+    expect(nativePermission).toHaveBeenCalledTimes(1);
+    expect(document.querySelector('#__notifly_push_prompt_overlay')).toBeNull();
+    await flush();
+    expect(user.userData.user_properties).toMatchObject({
+        $web_push_consent: true,
+        $web_push_consented_at: '2026-11-06T01:02:03.000Z',
+    });
+    expect(log).toHaveBeenCalledWith(
+        'set_user_properties',
+        {
+            $web_push_consent: true,
+            $web_push_consented_at: '2026-11-06T01:02:03.000Z',
+        },
+        null,
+        true,
+        null
+    );
+    expect(log).toHaveBeenCalledWith(
+        'set_device_properties',
+        expect.objectContaining({ device_token: expect.any(String) }),
+        null,
+        true,
+        null
+    );
+    expect(subscribe).toHaveBeenCalledTimes(1);
+});
+
+test('does not await consent persistence before requesting browser permission', async () => {
+    let complete: () => void = () => undefined;
+    jest.spyOn(identity, 'setUserProperties').mockImplementation(
+        () =>
+            new Promise<void>((resolve) => {
+                complete = resolve;
+            })
+    );
+    send();
+    expect(nativePermission).toHaveBeenCalledTimes(1);
+    complete();
+    await flush();
+});
+
+test.each(['denied', 'default'])('preserves consent when browser permission resolves to %s', async (permission) => {
+    nativePermission.mockResolvedValue(permission);
+    send();
+    await flush();
+    expect(user.userData.user_properties?.$web_push_consent).toBe(true);
+    expect(subscribe).not.toHaveBeenCalled();
+});
+
+test('does not prompt again when browser permission is already granted', async () => {
+    notification.permission = 'granted';
+    send();
+    await flush();
+    expect(nativePermission).not.toHaveBeenCalled();
+    expect(subscribe).toHaveBeenCalledTimes(1);
+});
+
+test('records consent but does not re-prompt an already denied browser', async () => {
+    notification.permission = 'denied';
+    send();
+    await flush();
+    expect(nativePermission).not.toHaveBeenCalled();
+    expect(user.userData.user_properties?.$web_push_consent).toBe(true);
+});
+
+test('ignores duplicate clicks while the browser request is pending', async () => {
+    send();
+    send();
+    expect(nativePermission).toHaveBeenCalledTimes(1);
+    await flush();
+    expect(subscribe).toHaveBeenCalledTimes(1);
+});
+
+test('requires a recent real user interaction and the current popup source', async () => {
+    send(undefined, window);
+    send(undefined, null);
+    activation.isActive = false;
+    send();
+    await flush();
+    expect(nativePermission).not.toHaveBeenCalled();
+    expect(user.userData.user_properties?.$web_push_consent).toBeUndefined();
+});
+
+test('does not accept consent from a popup belonging to the previous user', async () => {
+    user.userData.external_user_id = 'another-user';
+    send();
+    await flush();
+    expect(nativePermission).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalled();
+});
+
+test('does not attach a subscription after the user changes during the permission dialog', async () => {
+    let complete: (permission: string) => void = () => undefined;
+    nativePermission.mockImplementation(
+        () =>
+            new Promise((resolve) => {
+                complete = resolve;
+            })
+    );
+    send();
+    await flush();
+    user.userData.external_user_id = 'another-user';
+    complete('granted');
+    await flush();
+    expect(subscribe).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalledWith('set_device_properties', expect.anything(), null, true, expect.anything());
+});
+
+test('suppresses a previously scheduled Notifly prompt after direct permission was requested', async () => {
+    nativePermission.mockResolvedValue('default');
+    send();
+    await flush();
+    jest.runOnlyPendingTimers();
+    expect(document.querySelector('#__notifly_push_prompt_overlay')).toBeNull();
+});
+
+test('reports failed subscription setup without changing the consent decision', async () => {
+    subscribe.mockRejectedValue(new Error('synthetic subscription failure'));
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    send();
+    await flush();
+    expect(user.userData.user_properties?.$web_push_consent).toBe(true);
+});
+
+test('keeps consent in an unsupported browser and reports the result', async () => {
+    Reflect.deleteProperty(window, 'Notification');
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const response = captureResponses();
+    send();
+    await flush();
+    expect(user.userData.user_properties?.$web_push_consent).toBe(true);
+    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'unsupported' }), '*');
+    expect(nativePermission).not.toHaveBeenCalled();
+});
+
+test('reports persistence failure and keeps the popup available for retry', async () => {
+    jest.spyOn(identity, 'setUserProperties').mockRejectedValue(new Error('synthetic storage failure'));
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const response = captureResponses();
+    send();
+    expect(nativePermission).toHaveBeenCalledTimes(1);
+    await flush();
+    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }), '*');
+    expect(renderer.getIframe().isConnected).toBe(true);
+});
+
+test('does not associate a subscription if the user changes while subscribing', async () => {
+    subscribe.mockImplementation(async () => {
+        user.userData.external_user_id = 'another-user';
+        return { endpoint: 'https://push.example.com/subscription' };
+    });
+    send();
+    await flush();
+    expect(log.mock.calls.some(([name]) => name === 'set_device_properties')).toBe(false);
+});
+
+test('retries with the same consent timestamp after dismissing browser permission', async () => {
+    nativePermission.mockResolvedValue('default');
+    send();
+    await flush();
+    jest.setSystemTime(new Date('2026-11-06T01:05:03.000Z'));
+    send();
+    await flush();
+    expect(nativePermission).toHaveBeenCalledTimes(2);
+    expect(user.userData.user_properties?.$web_push_consented_at).toBe('2026-11-06T01:02:03.000Z');
+});

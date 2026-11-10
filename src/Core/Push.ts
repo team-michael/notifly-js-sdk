@@ -7,6 +7,17 @@ import {
 } from './Interfaces/RequestPermissionPromptDesignParams';
 import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 import { EventLogger } from './Event';
+import { UserStateManager } from './User/State';
+import { SdkState, SdkStateManager } from './SdkState';
+
+export type WebPushPermissionResult =
+    | 'granted'
+    | 'denied'
+    | 'dismissed'
+    | 'unsupported'
+    | 'not_ready'
+    | 'identity_changed'
+    | 'failed';
 
 enum NotiflyServiceWorkerEvents {
     NAVIGATE_TO_URL = '__notifly_navigate_to_url',
@@ -66,6 +77,8 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 export class NotiflyWebPushManager {
     private static _isInitialized = false;
     private static _isRequestPermissionPromptBeingShown = false;
+    private static _hasRequestedPermissionDirectly = false;
+    private static _isDirectPermissionRequestPending = false;
 
     // fixme: null or values not 'denied' means not set (either default or granted), 'denied' means denied.
     private static _notiflyNotificationPermission: string | null = null;
@@ -139,6 +152,46 @@ export class NotiflyWebPushManager {
         this._showRequestPermissionPrompt(languageToForce);
     }
 
+    /** Called from an explicit popup click, before awaiting storage, analytics, or animations. */
+    static async requestPermissionDirectly(expectedExternalUserId: string | null): Promise<WebPushPermissionResult> {
+        if (!this._isWebPushSupported() || window.isSecureContext === false) return 'unsupported';
+        if (
+            !this._isInitialized ||
+            !this._serviceWorkerRegistration ||
+            !this._vapidPublicKey ||
+            this._isDirectPermissionRequestPending
+        )
+            return 'not_ready';
+        this._hasRequestedPermissionDirectly = true;
+        this._isDirectPermissionRequestPending = true;
+
+        try {
+            const permission =
+                Notification.permission === 'default'
+                    ? await Notification.requestPermission()
+                    : Notification.permission;
+            if (permission !== 'granted') return permission === 'denied' ? 'denied' : 'dismissed';
+            if (
+                SdkStateManager.state !== SdkState.READY ||
+                (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId
+            )
+                return 'identity_changed';
+            const subscription = await this._getSubscription();
+            if (
+                SdkStateManager.state !== SdkState.READY ||
+                (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId
+            )
+                return 'identity_changed';
+            await this._logSubscription(subscription, expectedExternalUserId);
+            return 'granted';
+        } catch (error) {
+            console.error('[Notifly] Failed to request web push permission or register the subscription.', error);
+            return 'failed';
+        } finally {
+            this._isDirectPermissionRequestPending = false;
+        }
+    }
+
     private static _isWebPushSupported(): boolean {
         if (typeof Notification === 'undefined') {
             console.warn('[Notifly] Notification is not supported in this browser.');
@@ -205,7 +258,21 @@ export class NotiflyWebPushManager {
         });
     }
 
-    private static async _logSubscription(subscription: PushSubscription): Promise<void> {
+    private static async _logSubscription(
+        subscription: PushSubscription,
+        expectedExternalUserId?: string | null
+    ): Promise<void> {
+        if (expectedExternalUserId !== undefined) {
+            return EventLogger.logEvent(
+                'set_device_properties',
+                {
+                    device_token: JSON.stringify(subscription),
+                },
+                null,
+                true,
+                expectedExternalUserId
+            );
+        }
         return await EventLogger.logEvent(
             'set_device_properties',
             {
@@ -236,9 +303,10 @@ export class NotiflyWebPushManager {
 
         const delay = this._promptDelayMillis;
         setTimeout(() => {
+            if (this._hasRequestedPermissionDirectly) return;
             if (document.readyState === 'loading') {
                 const task = () => {
-                    this._showRequestPermissionPrompt();
+                    if (!this._hasRequestedPermissionDirectly) this._showRequestPermissionPrompt();
                     window.removeEventListener('DOMContentLoaded', task);
                 };
                 window.addEventListener('DOMContentLoaded', task);
