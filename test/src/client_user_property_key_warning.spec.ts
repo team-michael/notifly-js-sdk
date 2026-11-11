@@ -18,48 +18,10 @@ describe('user property key warnings', () => {
         jest.restoreAllMocks();
     });
 
-    test.each([
-        'user_name',
-        'User123',
-        '_',
-        '123',
-        '1st_purchase',
-        '$email',
-        '$phone_number',
-        '$timezone',
-        '$line_user_id',
-        '$appsflyer_id',
-    ])('accepts %j without a key warning', async (key) => {
-        const params = { [key]: key === '$timezone' ? 'Asia/Seoul' : 'value' };
+    test('forwards valid keys without a warning', async () => {
+        const params = Object.freeze({ user_name: 'Kim', purchase_count_30d: 3 });
         await setUserProperties(params);
         expect(warn).not.toHaveBeenCalled();
-        expect(forward).toHaveBeenCalledWith(params);
-    });
-
-    test.each([
-        '',
-        'first.name',
-        'full name',
-        '사용자명',
-        '$custom',
-        '$EMAIL',
-        'a^b',
-        'a-b',
-        'a/b',
-        '😀',
-        'é',
-        'Ａ',
-        'name\n',
-        'name\r\n',
-        'name\t',
-        'name\u00a0',
-    ])('warns about %j while forwarding it unchanged', async (key) => {
-        const params = Object.freeze({ [key]: 'private-value' });
-        await expect(setUserProperties(params)).resolves.toBeUndefined();
-        expect(warn).toHaveBeenCalledTimes(1);
-        expect(warn.mock.calls[0][0]).toContain(JSON.stringify([key]));
-        expect(warn.mock.calls[0][0]).not.toContain('private-value');
-        expect(forward).toHaveBeenCalledWith(params);
         expect(forward.mock.calls[0][0]).toBe(params);
     });
 

@@ -18,7 +18,7 @@ import { SessionManager } from './Core/Session';
 import { SSEManager } from './Core/SSE/SSEManager';
 import { initializeNotiflyStorage, isValidProjectId, isValidTimezoneId, removeKeys } from './Core/Utils';
 import { BuiltInUserPropertyKey } from './Constants';
-import { getInvalidUserPropertyKeys } from './Core/User/UserPropertyKeyPolicy';
+import { KmpUserPropertyKeyPolicy } from './Core/KmpCore';
 
 let initSemaphore = false;
 
@@ -226,13 +226,9 @@ export async function setUserProperties(params: Record<string, any>): Promise<vo
         return setUserProperties(removeKeys(params, [BuiltInUserPropertyKey.TIMEZONE]));
     }
 
-    const invalidKeys = getInvalidUserPropertyKeys(Object.keys(params));
-    if (invalidKeys.length > 0) {
-        console.warn(
-            `[Notifly] Invalid custom user property key(s): ${JSON.stringify(invalidKeys)}. ` +
-                'Only English letters (A-Z, a-z), digits (0-9), and underscores (_) are supported. ' +
-                'This warning does not block the operation.'
-        );
+    const warning = KmpUserPropertyKeyPolicy.warningMessage(Object.keys(params));
+    if (warning !== null) {
+        console.warn(`[Notifly] ${warning}`);
     }
 
     try {
