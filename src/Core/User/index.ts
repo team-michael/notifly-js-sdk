@@ -56,31 +56,39 @@ export class UserIdentityManager {
         return UserStateManager.state.userData.user_properties || null;
     }
 
-    /** Confirms guarded writes before changing local state; failed writes must remain retryable. */
+    /**
+     * Confirms guarded writes before changing local state; failed writes must remain retryable.
+     * Never rejects, because the popup awaits it together with the open browser permission prompt.
+     */
     static async setUserPropertiesWithResult(
         params: Record<string, any>,
         expectedExternalUserId: string | null
     ): Promise<EventLogResult> {
-        if (
-            (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId ||
-            (await this.getUserId()) !== expectedExternalUserId
-        )
-            return 'identity_changed';
+        try {
+            if (
+                (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId ||
+                (await this.getUserId()) !== expectedExternalUserId
+            )
+                return 'identity_changed';
 
-        const result = await EventLogger.logInternalEventWithResult(
-            NotiflyInternalEvent.SET_USER_PROPERTIES,
-            params,
-            expectedExternalUserId
-        );
-        if (result !== 'sent') return result;
-        if (
-            (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId ||
-            (await this.getUserId()) !== expectedExternalUserId
-        )
-            return 'identity_changed';
+            const result = await EventLogger.logInternalEventWithResult(
+                NotiflyInternalEvent.SET_USER_PROPERTIES,
+                params,
+                expectedExternalUserId
+            );
+            if (result !== 'sent') return result;
+            if (
+                (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId ||
+                (await this.getUserId()) !== expectedExternalUserId
+            )
+                return 'identity_changed';
 
-        UserStateManager.updateUserProperties(params);
-        return 'sent';
+            UserStateManager.updateUserProperties(params);
+            return 'sent';
+        } catch (error) {
+            console.error('[Notifly] Failed to set user properties.', error);
+            return 'failed';
+        }
     }
 
     static async setUserProperties(params: Record<string, any>) {
