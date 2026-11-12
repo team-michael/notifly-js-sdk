@@ -8,7 +8,6 @@ let user: typeof import('../../src/Core/User/State').UserStateManager;
 let identity: typeof import('../../src/Core/User').UserIdentityManager;
 let renderer: typeof import('notifly-web-message-renderer');
 let log: jest.SpyInstance;
-let internalLog: jest.SpyInstance;
 let upload: jest.SpyInstance;
 let nativePermission: jest.Mock;
 let subscribe: jest.Mock;
@@ -23,7 +22,7 @@ const descriptors = {
 const flush = async () => {
     for (let i = 0; i < 60; i++) await Promise.resolve();
 };
-const uploadedEvents = (): Array<{ name: string; external_user_id?: string }> =>
+const uploadedEvents = (): Array<{ name: string; external_user_id?: string; event_params: Record<string, unknown> }> =>
     upload.mock.calls.map(([, , body]) => JSON.parse(body.records[0].data));
 const captureResponses = () => {
     const popupWindow = renderer.getIframe().contentWindow;
@@ -72,7 +71,6 @@ beforeEach(async () => {
     jest.spyOn(storage, 'setItem').mockResolvedValue();
     jest.spyOn(storage, 'getItems').mockResolvedValue(['test-project', 'test-device', null]);
     upload = jest.spyOn(NotiflyAPI, 'call').mockResolvedValue({});
-    internalLog = jest.spyOn(EventLogger, 'logInternalEventWithResult');
     log = jest.spyOn(EventLogger, 'logEvent').mockResolvedValue();
     nativePermission = jest.fn().mockResolvedValue('granted');
     subscribe = jest.fn().mockResolvedValue({ endpoint: 'https://push.example.com/subscription' });
@@ -96,7 +94,6 @@ beforeEach(async () => {
     send({ type: '__notifly_web_message_loaded' });
     await flush();
     log.mockClear();
-    internalLog.mockClear();
     upload.mockClear();
 });
 
@@ -127,18 +124,20 @@ test('records anonymous consent and requests native permission without the Notif
         $web_push_consent: true,
         $web_push_consented_at: '2026-11-06T01:02:03.000Z',
     });
-    expect(internalLog).toHaveBeenCalledWith(
-        'set_user_properties',
-        {
-            $web_push_consent: true,
-            $web_push_consented_at: '2026-11-06T01:02:03.000Z',
-        },
-        null
-    );
-    expect(internalLog).toHaveBeenCalledWith(
-        'set_device_properties',
-        expect.objectContaining({ device_token: expect.any(String) }),
-        null
+    expect(uploadedEvents()).toEqual(
+        expect.arrayContaining([
+            expect.objectContaining({
+                name: 'set_user_properties',
+                event_params: {
+                    $web_push_consent: true,
+                    $web_push_consented_at: '2026-11-06T01:02:03.000Z',
+                },
+            }),
+            expect.objectContaining({
+                name: 'set_device_properties',
+                event_params: { device_token: expect.any(String) },
+            }),
+        ])
     );
     expect(subscribe).toHaveBeenCalledTimes(1);
 });
@@ -314,7 +313,6 @@ test('repeats the compatibility acknowledgement when reused popup content finish
     const response = captureResponses();
     response.mockClear();
     log.mockClear();
-    internalLog.mockClear();
     upload.mockClear();
     send({ type: '__notifly_web_message_loaded' });
     await flush();

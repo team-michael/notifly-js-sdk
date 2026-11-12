@@ -136,8 +136,7 @@ export class WebMessageScheduler {
                                             popupExternalUserId
                                         );
                                         // Begin the browser request before any async work can expire user activation.
-                                        const requestPermission =
-                                            NotiflyWebPushManager.requestPermissionDirectly(popupExternalUserId);
+                                        const requestPermission = NotiflyWebPushManager.requestPermissionDirectly();
                                         void EventLogger.logEvent(
                                             NotiflyInternalEvent.MAIN_BUTTON_CLICK,
                                             {
@@ -148,7 +147,7 @@ export class WebMessageScheduler {
                                             },
                                             null,
                                             true,
-                                            popupExternalUserId
+                                            { expectedExternalUserId: popupExternalUserId }
                                         );
                                         const [consentResult, permissionResult] = await Promise.all([
                                             saveConsent,

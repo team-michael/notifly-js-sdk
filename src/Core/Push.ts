@@ -7,17 +7,8 @@ import {
 } from './Interfaces/RequestPermissionPromptDesignParams';
 import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 import { EventLogger } from './Event';
-import { UserStateManager } from './User/State';
-import { SdkState, SdkStateManager } from './SdkState';
 
-export type WebPushPermissionResult =
-    | 'granted'
-    | 'denied'
-    | 'dismissed'
-    | 'unsupported'
-    | 'not_ready'
-    | 'identity_changed'
-    | 'failed';
+export type WebPushPermissionResult = 'granted' | 'denied' | 'dismissed' | 'unsupported' | 'not_ready' | 'failed';
 
 enum NotiflyServiceWorkerEvents {
     NAVIGATE_TO_URL = '__notifly_navigate_to_url',
@@ -152,8 +143,12 @@ export class NotiflyWebPushManager {
         this._showRequestPermissionPrompt(languageToForce);
     }
 
-    /** Called from an explicit popup click, before awaiting storage, analytics, or animations. */
-    static async requestPermissionDirectly(expectedExternalUserId: string | null): Promise<WebPushPermissionResult> {
+    /**
+     * Called from an explicit popup click, before awaiting storage, analytics, or animations.
+     * Browser permission belongs to the origin, so a granted subscription is registered for whoever
+     * is signed in when it arrives, as page load does.
+     */
+    static async requestPermissionDirectly(): Promise<WebPushPermissionResult> {
         // Push setup finishes before the SDK becomes ready, so a missing registration here is permanent.
         if (
             !this._isWebPushSupported() ||
@@ -173,24 +168,11 @@ export class NotiflyWebPushManager {
                     ? await Notification.requestPermission()
                     : Notification.permission;
             if (permission !== 'granted') return permission === 'denied' ? 'denied' : 'dismissed';
-            if (
-                SdkStateManager.state !== SdkState.READY ||
-                (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId ||
-                (await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID)) !== expectedExternalUserId
-            )
-                return 'identity_changed';
             const subscription = await this._getSubscription();
-            if (
-                SdkStateManager.state !== SdkState.READY ||
-                (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId
-            )
-                return 'identity_changed';
-            const result = await EventLogger.logInternalEventWithResult(
-                'set_device_properties',
-                { device_token: JSON.stringify(subscription) },
-                expectedExternalUserId
-            );
-            return result === 'sent' ? 'granted' : result;
+            const result = await EventLogger.logInternalEventWithResult('set_device_properties', {
+                device_token: JSON.stringify(subscription),
+            });
+            return result === 'sent' ? 'granted' : 'failed';
         } catch (error) {
             console.error('[Notifly] Failed to request web push permission or register the subscription.', error);
             return 'failed';

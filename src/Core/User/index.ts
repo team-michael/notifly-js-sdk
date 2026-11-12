@@ -74,7 +74,9 @@ export class UserIdentityManager {
             const result = await EventLogger.logInternalEventWithResult(
                 NotiflyInternalEvent.SET_USER_PROPERTIES,
                 params,
-                expectedExternalUserId
+                {
+                    expectedExternalUserId,
+                }
             );
             if (result !== 'sent') return result;
             if (

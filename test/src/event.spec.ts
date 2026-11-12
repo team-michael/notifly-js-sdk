@@ -98,14 +98,18 @@ describe('EventLogger web-message evaluation order', () => {
     });
 
     test('does not upload guarded consent for a different stored user', async () => {
-        await EventLogger.logEvent('set_user_properties', { $web_push_consent: true }, null, true, null);
+        await EventLogger.logEvent('set_user_properties', { $web_push_consent: true }, null, true, {
+            expectedExternalUserId: null,
+        });
         expect(NotiflyAPI.call).not.toHaveBeenCalled();
         expect(scheduleSpy).not.toHaveBeenCalled();
     });
 
     test('uploads guarded anonymous consent without an external user id', async () => {
         jest.mocked(NotiflyStorage.getItems).mockResolvedValue(['test-project-id', 'test-device-id', null]);
-        await EventLogger.logEvent('set_user_properties', { $web_push_consent: true }, null, true, null);
+        await EventLogger.logEvent('set_user_properties', { $web_push_consent: true }, null, true, {
+            expectedExternalUserId: null,
+        });
         expect(NotiflyAPI.call).toHaveBeenCalledWith(
             expect.any(String),
             'POST',
@@ -122,7 +126,11 @@ describe('EventLogger web-message evaluation order', () => {
 
     test('returns sent after an acknowledged internal event upload', async () => {
         await expect(
-            EventLogger.logInternalEventWithResult('set_user_properties', {}, 'test-external-user-id')
+            EventLogger.logInternalEventWithResult(
+                'set_user_properties',
+                {},
+                { expectedExternalUserId: 'test-external-user-id' }
+            )
         ).resolves.toBe('sent');
         expect(NotiflyAPI.call).toHaveBeenCalledTimes(1);
         expect(jest.getTimerCount()).toBe(0);
@@ -132,15 +140,19 @@ describe('EventLogger web-message evaluation order', () => {
         jest.mocked(NotiflyAPI.call).mockRejectedValue(new Error('synthetic upload failure'));
         jest.spyOn(console, 'error').mockImplementation(() => undefined);
         await expect(
-            EventLogger.logInternalEventWithResult('set_user_properties', {}, 'test-external-user-id')
+            EventLogger.logInternalEventWithResult(
+                'set_user_properties',
+                {},
+                { expectedExternalUserId: 'test-external-user-id' }
+            )
         ).resolves.toBe('failed');
         await expect(EventLogger.logEvent('test_event', {})).resolves.toBeUndefined();
     });
 
     test('distinguishes an identity change from an acknowledged internal event', async () => {
-        await expect(EventLogger.logInternalEventWithResult('set_user_properties', {}, null)).resolves.toBe(
-            'identity_changed'
-        );
+        await expect(
+            EventLogger.logInternalEventWithResult('set_user_properties', {}, { expectedExternalUserId: null })
+        ).resolves.toBe('identity_changed');
         expect(NotiflyAPI.call).not.toHaveBeenCalled();
     });
 
@@ -152,7 +164,11 @@ describe('EventLogger web-message evaluation order', () => {
                     complete = () => resolve({});
                 })
         );
-        const result = EventLogger.logInternalEventWithResult('set_user_properties', {}, 'test-external-user-id');
+        const result = EventLogger.logInternalEventWithResult(
+            'set_user_properties',
+            {},
+            { expectedExternalUserId: 'test-external-user-id' }
+        );
         for (let i = 0; i < 10; i++) await Promise.resolve();
         const signal = jest.mocked(NotiflyAPI.call).mock.calls[0][4];
         expect(signal?.aborted).toBe(false);
@@ -174,7 +190,11 @@ describe('EventLogger web-message evaluation order', () => {
                     complete = () => resolve(['test-project', 'test-device', null]);
                 })
         );
-        const result = EventLogger.logInternalEventWithResult('set_user_properties', {}, null);
+        const result = EventLogger.logInternalEventWithResult(
+            'set_user_properties',
+            {},
+            { expectedExternalUserId: null }
+        );
         jest.advanceTimersByTime(10000);
         await expect(result).resolves.toBe('failed');
         complete();

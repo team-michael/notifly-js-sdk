@@ -19,6 +19,10 @@ const INTERNAL_EVENT_TIMEOUT_MS = 10000;
 
 export type EventLogResult = 'sent' | 'identity_changed' | 'failed';
 
+export interface IdentityGuard {
+    expectedExternalUserId: string | null;
+}
+
 export enum NotiflyInternalEvent {
     SESSION_START = 'session_start',
     SET_USER_PROPERTIES = 'set_user_properties',
@@ -35,15 +39,9 @@ export class EventLogger {
         eventParams: Record<string, any>,
         segmentationEventParamKeys: string[] | null = null,
         isInternalEvent = false,
-        expectedExternalUserId?: string | null
+        identityGuard?: IdentityGuard
     ): Promise<void> {
-        await this._logEvent(
-            eventName,
-            eventParams,
-            segmentationEventParamKeys,
-            isInternalEvent,
-            expectedExternalUserId
-        );
+        await this._logEvent(eventName, eventParams, segmentationEventParamKeys, isInternalEvent, identityGuard);
     }
 
     static async sessionStart(): Promise<void> {
@@ -60,13 +58,13 @@ export class EventLogger {
     static async logInternalEventWithResult(
         eventName: string,
         eventParams: Record<string, any>,
-        expectedExternalUserId: string | null
+        identityGuard?: IdentityGuard
     ): Promise<EventLogResult> {
         const controller = new AbortController();
         let timeout: ReturnType<typeof setTimeout> | undefined;
         try {
             return await Promise.race([
-                this._logEvent(eventName, eventParams, null, true, expectedExternalUserId, controller.signal),
+                this._logEvent(eventName, eventParams, null, true, identityGuard, controller.signal),
                 new Promise<EventLogResult>((resolve) => {
                     timeout = setTimeout(() => {
                         controller.abort();
@@ -84,7 +82,7 @@ export class EventLogger {
         eventParams: Record<string, any>,
         segmentationEventParamKeys: string[] | null = null,
         isInternalEvent = false,
-        expectedExternalUserId?: string | null,
+        identityGuard?: IdentityGuard,
         signal?: AbortSignal
     ): Promise<EventLogResult> {
         try {
@@ -94,8 +92,7 @@ export class EventLogger {
                 NotiflyStorageKeys.EXTERNAL_USER_ID,
             ]);
             if (signal?.aborted) return 'failed';
-            if (expectedExternalUserId !== undefined && externalUserId !== expectedExternalUserId)
-                return 'identity_changed';
+            if (identityGuard && externalUserId !== identityGuard.expectedExternalUserId) return 'identity_changed';
             if (!projectId || !notiflyDeviceId) {
                 throw new Error('Notifly storage is not initialized');
             }
