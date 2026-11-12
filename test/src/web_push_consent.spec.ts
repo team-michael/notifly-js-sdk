@@ -1,5 +1,5 @@
 import type { Campaign } from '../../src/Core/Interfaces/Campaign';
-import { SdkType } from '../../src/Core/SdkState';
+import { SdkState, SdkType } from '../../src/Core/SdkState';
 
 let scheduler: typeof import('../../src/Core/WebMessages/Scheduler').WebMessageScheduler;
 let push: typeof import('../../src/Core/Push').NotiflyWebPushManager;
@@ -87,7 +87,7 @@ beforeEach(async () => {
             addEventListener: jest.fn(),
         },
     });
-    state.state = 1;
+    state.state = SdkState.READY;
     user.userData = { platform: 'web', sdk_type: 'js', sdk_version: '2.21.0' };
     if (webPushConfigured) await push.initialize('AQID', true);
     scheduler.scheduleInWebMessage(campaign);

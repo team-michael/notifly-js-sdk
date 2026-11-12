@@ -153,18 +153,16 @@ export class WebMessageScheduler {
                                             saveConsent,
                                             requestPermission,
                                         ]);
-                                        const storedExternalUserId = await UserIdentityManager.getUserId();
+                                        const isCurrentUser = await UserIdentityManager.isCurrentUser(
+                                            popupExternalUserId
+                                        );
                                         if (
                                             !this._isWebMessageOpen ||
                                             popupGeneration !== this._webMessageGeneration ||
                                             getIframe().contentWindow !== popupWindow
                                         )
                                             return;
-                                        if (
-                                            (UserStateManager.userData.external_user_id ?? null) !==
-                                                popupExternalUserId ||
-                                            storedExternalUserId !== popupExternalUserId
-                                        ) {
+                                        if (!isCurrentUser) {
                                             respond('identity_changed');
                                             return;
                                         }

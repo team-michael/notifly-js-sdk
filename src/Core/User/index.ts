@@ -57,6 +57,15 @@ export class UserIdentityManager {
         return UserStateManager.state.userData.user_properties || null;
     }
 
+    /** Memory changes first on login in this tab; storage also changes when another tab logs in. */
+    static async isCurrentUser(externalUserId: string | null): Promise<boolean> {
+        const storedExternalUserId = await this.getUserId();
+        return (
+            storedExternalUserId === externalUserId &&
+            (UserStateManager.userData.external_user_id ?? null) === externalUserId
+        );
+    }
+
     /**
      * Confirms guarded writes before changing local state; failed writes must remain retryable.
      * Never rejects, because the popup awaits it together with the open browser permission prompt.
@@ -66,11 +75,7 @@ export class UserIdentityManager {
         expectedExternalUserId: string | null
     ): Promise<EventLogResult> {
         try {
-            if (
-                (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId ||
-                (await this.getUserId()) !== expectedExternalUserId
-            )
-                return 'identity_changed';
+            if (!(await this.isCurrentUser(expectedExternalUserId))) return 'identity_changed';
 
             const result = await EventLogger.logInternalEventWithResult(
                 NotiflyInternalEvent.SET_USER_PROPERTIES,
@@ -80,11 +85,7 @@ export class UserIdentityManager {
                 }
             );
             if (result !== 'sent') return result;
-            if (
-                (UserStateManager.userData.external_user_id ?? null) !== expectedExternalUserId ||
-                (await this.getUserId()) !== expectedExternalUserId
-            )
-                return 'identity_changed';
+            if (!(await this.isCurrentUser(expectedExternalUserId))) return 'identity_changed';
 
             UserStateManager.updateUserProperties(params);
             return 'sent';
