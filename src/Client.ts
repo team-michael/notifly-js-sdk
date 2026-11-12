@@ -18,6 +18,7 @@ import { SessionManager } from './Core/Session';
 import { SSEManager } from './Core/SSE/SSEManager';
 import { initializeNotiflyStorage, isValidProjectId, isValidTimezoneId, removeKeys } from './Core/Utils';
 import { BuiltInUserPropertyKey } from './Constants';
+import { KmpUserPropertyKeyPolicy } from './Core/KmpCore';
 
 let initSemaphore = false;
 
@@ -192,6 +193,8 @@ export async function removeUserId(options?: SetUserIdOptions): Promise<void> {
 
 /**
  * Sets user properties for the current user.
+ * Custom keys support only ASCII letters, digits, and underscores. Invalid keys
+ * produce a warning without blocking the call. Built-in and official integration keys are exempt.
  *
  * Calls are skipped if every supplied key and value matches the available local user state
  * and less than 5 seconds have elapsed since the last user-property send attempt.
@@ -221,6 +224,11 @@ export async function setUserProperties(params: Record<string, any>): Promise<vo
     if (timezone && !isValidTimezoneId(timezone)) {
         console.warn('[Notifly] Invalid timezone identifier. Ignoring timezone property.');
         return setUserProperties(removeKeys(params, [BuiltInUserPropertyKey.TIMEZONE]));
+    }
+
+    const warning = KmpUserPropertyKeyPolicy.warningMessage(Object.keys(params));
+    if (warning !== null) {
+        console.warn(`[Notifly] ${warning}`);
     }
 
     try {
