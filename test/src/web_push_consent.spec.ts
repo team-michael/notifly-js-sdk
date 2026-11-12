@@ -249,15 +249,34 @@ test('keeps consent in an unsupported browser and reports the result', async () 
     expect(nativePermission).not.toHaveBeenCalled();
 });
 
-test('reports persistence failure and keeps the popup available for retry', async () => {
-    jest.spyOn(identity, 'setUserPropertiesWithResult').mockRejectedValue(new Error('synthetic storage failure'));
+test('waits for the open browser prompt when the consent storage read fails, then allows a retry', async () => {
+    let complete: (permission: string) => void = () => undefined;
+    nativePermission.mockImplementation(
+        () =>
+            new Promise((resolve) => {
+                complete = resolve;
+            })
+    );
+    const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
+    jest.mocked(storage.getItem).mockRejectedValueOnce(new Error('synthetic storage timeout'));
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
     const response = captureResponses();
     send();
     expect(nativePermission).toHaveBeenCalledTimes(1);
     await flush();
+    expect(response).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: '__notifly_web_push_consent_result' }),
+        '*'
+    );
+    notification.permission = 'granted';
+    complete('granted');
+    await flush();
     expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }), '*');
     expect(renderer.getIframe().isConnected).toBe(true);
+    send();
+    await flush();
+    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'granted' }), '*');
+    expect(user.userData.user_properties?.$web_push_consent).toBe(true);
 });
 
 test('does not associate a subscription if the user changes while subscribing', async () => {
