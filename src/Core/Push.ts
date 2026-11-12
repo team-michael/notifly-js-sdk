@@ -154,14 +154,16 @@ export class NotiflyWebPushManager {
 
     /** Called from an explicit popup click, before awaiting storage, analytics, or animations. */
     static async requestPermissionDirectly(expectedExternalUserId: string | null): Promise<WebPushPermissionResult> {
-        if (!this._isWebPushSupported() || window.isSecureContext === false) return 'unsupported';
+        // Push setup finishes before the SDK becomes ready, so a missing registration here is permanent.
         if (
+            !this._isWebPushSupported() ||
+            window.isSecureContext === false ||
             !this._isInitialized ||
             !this._serviceWorkerRegistration ||
-            !this._vapidPublicKey ||
-            this._isDirectPermissionRequestPending
+            !this._vapidPublicKey
         )
-            return 'not_ready';
+            return 'unsupported';
+        if (this._isDirectPermissionRequestPending) return 'not_ready';
         this._hasRequestedPermissionDirectly = true;
         this._isDirectPermissionRequestPending = true;
 

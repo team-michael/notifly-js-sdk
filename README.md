@@ -27,7 +27,7 @@ An explicit click records `$web_push_consent: true` and `$web_push_consented_at`
 
 The HTML bridge uses `web_push_consent` as a button action, not an analytics event. Only the current popup and user are accepted. The SDK ignores duplicate pending clicks, reuses the same consent timestamp for retries in one popup, and prevents pending work from attaching a subscription to another user after a login change.
 
-Disable the site's automatic Notifly permission prompt when adopting this flow. Browser permission already set to `granted` or `denied` is not requested again. HTTPS and browser web push support are required; iOS/iPadOS also require a supported Home Screen web app. The browser controls whether its permission UI is shown.
+Disable the site's automatic Notifly permission prompt when adopting this flow. Browser permission already set to `granted` or `denied` is not requested again. HTTPS and browser web push support are required; iOS/iPadOS also require a supported Home Screen web app. If web push is not enabled in the SDK options or its setup failed, the popup reports the request as unsupported. The browser controls whether its permission UI is shown.
 
 ## Deployment
 
