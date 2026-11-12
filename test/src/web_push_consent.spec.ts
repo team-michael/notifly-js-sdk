@@ -23,6 +23,8 @@ const descriptors = {
 const flush = async () => {
     for (let i = 0; i < 60; i++) await Promise.resolve();
 };
+const uploadedEvents = (): Array<{ name: string; external_user_id?: string }> =>
+    upload.mock.calls.map(([, , body]) => JSON.parse(body.records[0].data));
 const captureResponses = () => {
     const popupWindow = renderer.getIframe().contentWindow;
     if (!popupWindow) throw new Error('Missing test popup window');
@@ -205,7 +207,7 @@ test('does not accept consent from a popup belonging to the previous user', asyn
     expect(log).not.toHaveBeenCalled();
 });
 
-test('does not attach a subscription after the user changes during the permission dialog', async () => {
+test('registers a granted subscription for the current user after a login during the permission dialog', async () => {
     let complete: (permission: string) => void = () => undefined;
     nativePermission.mockImplementation(
         () =>
@@ -213,13 +215,15 @@ test('does not attach a subscription after the user changes during the permissio
                 complete = resolve;
             })
     );
+    const response = captureResponses();
     send();
     await flush();
     user.userData.external_user_id = 'another-user';
     complete('granted');
     await flush();
-    expect(subscribe).not.toHaveBeenCalled();
-    expect(internalLog).not.toHaveBeenCalledWith('set_device_properties', expect.anything(), expect.anything());
+    expect(subscribe).toHaveBeenCalledTimes(1);
+    expect(uploadedEvents().some((event) => event.name === 'set_device_properties')).toBe(true);
+    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'identity_changed' }), '*');
 });
 
 test('suppresses a previously scheduled Notifly prompt after direct permission was requested', async () => {
@@ -279,14 +283,16 @@ test('waits for the open browser prompt when the consent storage read fails, the
     expect(user.userData.user_properties?.$web_push_consent).toBe(true);
 });
 
-test('does not associate a subscription if the user changes while subscribing', async () => {
+test('registers the subscription for the current user if the user changes while subscribing', async () => {
     subscribe.mockImplementation(async () => {
         user.userData.external_user_id = 'another-user';
         return { endpoint: 'https://push.example.com/subscription' };
     });
+    const response = captureResponses();
     send();
     await flush();
-    expect(internalLog.mock.calls.some(([name]) => name === 'set_device_properties')).toBe(false);
+    expect(uploadedEvents().some((event) => event.name === 'set_device_properties')).toBe(true);
+    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'identity_changed' }), '*');
 });
 
 test('retries with the same consent timestamp after dismissing browser permission', async () => {
@@ -316,18 +322,20 @@ test('repeats the compatibility acknowledgement when reused popup content finish
     expect(log).not.toHaveBeenCalled();
 });
 
-test('does not change local consent or associate a subscription after another tab changes the stored user', async () => {
+test('keeps consent off but registers the subscription for the stored user after another tab changes it', async () => {
     const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
     jest.spyOn(storage, 'getItem').mockResolvedValue('user-from-another-tab');
+    jest.spyOn(storage, 'getItems').mockResolvedValue(['test-project', 'test-device', 'user-from-another-tab']);
     const response = captureResponses();
     send();
     expect(nativePermission).toHaveBeenCalledTimes(1);
     await flush();
     expect(user.userData.user_properties?.$web_push_consent).toBeUndefined();
-    expect(subscribe).not.toHaveBeenCalled();
-    expect(
-        internalLog.mock.calls.some(([name]) => name === 'set_user_properties' || name === 'set_device_properties')
-    ).toBe(false);
+    const events = uploadedEvents();
+    expect(events.some((event) => event.name === 'set_user_properties')).toBe(false);
+    expect(events.find((event) => event.name === 'set_device_properties')?.external_user_id).toBe(
+        'user-from-another-tab'
+    );
     expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'identity_changed' }), '*');
 });
 
