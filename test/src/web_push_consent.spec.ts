@@ -14,6 +14,7 @@ let nativePermission: jest.Mock;
 let subscribe: jest.Mock;
 let notification: { permission: NotificationPermission; requestPermission: jest.Mock };
 let activation: { isActive: boolean };
+let webPushConfigured = true;
 const descriptors = {
     notification: Object.getOwnPropertyDescriptor(window, 'Notification'),
     worker: Object.getOwnPropertyDescriptor(navigator, 'serviceWorker'),
@@ -88,7 +89,7 @@ beforeEach(async () => {
     });
     state.state = 1;
     user.userData = { platform: 'web', sdk_type: 'js', sdk_version: '2.21.0' };
-    await push.initialize('AQID', true);
+    if (webPushConfigured) await push.initialize('AQID', true);
     scheduler.scheduleInWebMessage(campaign);
     send({ type: '__notifly_web_message_loaded' });
     await flush();
@@ -445,4 +446,25 @@ test('keeps the native permission dialog pending without applying the server upl
     complete();
     await flush();
     expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'granted' }), '*');
+});
+
+describe('without web push configured on the site', () => {
+    beforeAll(() => {
+        webPushConfigured = false;
+    });
+    afterAll(() => {
+        webPushConfigured = true;
+    });
+
+    test('keeps consent and reports unsupported instead of asking the visitor to retry', async () => {
+        const response = captureResponses();
+        send();
+        await flush();
+        send();
+        await flush();
+        expect(nativePermission).not.toHaveBeenCalled();
+        expect(user.userData.user_properties?.$web_push_consent).toBe(true);
+        expect(response).not.toHaveBeenCalledWith(expect.objectContaining({ status: 'not_ready' }), '*');
+        expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'unsupported' }), '*');
+    });
 });
