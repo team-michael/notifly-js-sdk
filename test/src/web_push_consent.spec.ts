@@ -473,6 +473,33 @@ test('keeps the native permission dialog pending without applying the server upl
     expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'granted' }), '*');
 });
 
+test.each([
+    ['clears the user ID with an empty string', ''],
+    ['repeats a stored user ID that has surrounding spaces', ' padded-user '],
+])('accepts consent after the site %s', async (_case, userId) => {
+    const { NotiflyStorage: storage, NotiflyStorageKeys: keys } = await import('../../src/Core/Storage');
+    const stored: Record<string, string> = {
+        [keys.PROJECT_ID]: 'test-project',
+        [keys.NOTIFLY_DEVICE_ID]: 'test-device',
+    };
+    if (userId) stored[keys.EXTERNAL_USER_ID] = userId;
+    jest.spyOn(storage, 'getItem').mockImplementation(async (key) => stored[key] ?? null);
+    jest.spyOn(storage, 'getItems').mockImplementation(async (requested) =>
+        requested.map((key) => stored[key] ?? null)
+    );
+    await user.updateExternalUserId();
+    await identity.setUserId(userId);
+    send({ type: 'close' });
+    await flush();
+    scheduler.scheduleInWebMessage(campaign);
+    send({ type: '__notifly_web_message_loaded' });
+    await flush();
+    const response = captureResponses();
+    send();
+    await flush();
+    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'granted' }), '*');
+});
+
 describe('without web push configured on the site', () => {
     beforeAll(() => {
         webPushConfigured = false;
