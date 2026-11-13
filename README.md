@@ -19,16 +19,6 @@ or
 yarn add notifly-js-sdk@latest
 ```
 
-## Web push consent buttons
-
-Choose **Web push consent** for a web popup button in the Notifly console. A compatible SDK enables the button when the popup is ready. The action runs independently of `allowUserSuppliedLogEvent` and requires no additional initialization option.
-
-An explicit click sends `$web_push_consent: true` and `$web_push_consented_at` as a UTC ISO 8601 timestamp through the existing user-property update flow, and directly requests browser notification permission without the Notifly permission prompt. Property persistence and analytics do not delay the browser request. On grant, the SDK obtains a push subscription, starts uploading it, and closes the popup without waiting for either upload. Upload errors use the SDK's existing logging behavior and do not change the popup result. Denied, dismissed, unsupported, and failed browser permission or subscription setup requests show a message in the original popup. A browser denial does not revoke the separately recorded consent.
-
-The HTML bridge uses `web_push_consent` as a button action, not an analytics event. Only the current popup and user are accepted. The SDK ignores duplicate pending clicks, records the time of each accepted click, and guards consent updates against user changes. A granted subscription is sent for the user who is signed in when it arrives, as it is on page load.
-
-Disable the site's automatic Notifly permission prompt when adopting this flow. Browser permission already set to `granted` or `denied` is not requested again. HTTPS and browser web push support are required; iOS/iPadOS also require a supported Home Screen web app. If web push is not enabled in the SDK options or its setup failed, the popup reports the request as unsupported. The browser controls whether its permission UI is shown.
-
 ## Deployment
 
 1. Update version in `package.json` file.
