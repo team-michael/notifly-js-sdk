@@ -8,6 +8,8 @@ import {
 import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 import { EventLogger } from './Event';
 
+export type WebPushPermissionResult = 'granted' | 'denied' | 'dismissed' | 'unsupported' | 'not_ready' | 'failed';
+
 enum NotiflyServiceWorkerEvents {
     NAVIGATE_TO_URL = '__notifly_navigate_to_url',
 }
@@ -66,6 +68,8 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 export class NotiflyWebPushManager {
     private static _isInitialized = false;
     private static _isRequestPermissionPromptBeingShown = false;
+    private static _hasRequestedPermissionDirectly = false;
+    private static _isDirectPermissionRequestPending = false;
 
     // fixme: null or values not 'denied' means not set (either default or granted), 'denied' means denied.
     private static _notiflyNotificationPermission: string | null = null;
@@ -137,6 +141,42 @@ export class NotiflyWebPushManager {
         }
 
         this._showRequestPermissionPrompt(languageToForce);
+    }
+
+    /**
+     * Called from an explicit popup click, before awaiting storage, analytics, or animations.
+     * Browser permission belongs to the origin, so a granted subscription is registered for whoever
+     * is signed in when it arrives, as page load does.
+     */
+    static async requestPermissionDirectly(): Promise<WebPushPermissionResult> {
+        // Push setup finishes before the SDK becomes ready, so a missing registration here is permanent.
+        if (
+            !this._isWebPushSupported() ||
+            window.isSecureContext === false ||
+            !this._isInitialized ||
+            !this._serviceWorkerRegistration ||
+            !this._vapidPublicKey
+        )
+            return 'unsupported';
+        if (this._isDirectPermissionRequestPending) return 'not_ready';
+        this._hasRequestedPermissionDirectly = true;
+        this._isDirectPermissionRequestPending = true;
+
+        try {
+            const permission =
+                Notification.permission === 'default'
+                    ? await Notification.requestPermission()
+                    : Notification.permission;
+            if (permission !== 'granted') return permission === 'denied' ? 'denied' : 'dismissed';
+            const subscription = await this._getSubscription();
+            void this._logSubscription(subscription);
+            return 'granted';
+        } catch (error) {
+            console.error('[Notifly] Failed to request web push permission or register the subscription.', error);
+            return 'failed';
+        } finally {
+            this._isDirectPermissionRequestPending = false;
+        }
     }
 
     private static _isWebPushSupported(): boolean {
@@ -236,9 +276,10 @@ export class NotiflyWebPushManager {
 
         const delay = this._promptDelayMillis;
         setTimeout(() => {
+            if (this._hasRequestedPermissionDirectly) return;
             if (document.readyState === 'loading') {
                 const task = () => {
-                    this._showRequestPermissionPrompt();
+                    if (!this._hasRequestedPermissionDirectly) this._showRequestPermissionPrompt();
                     window.removeEventListener('DOMContentLoaded', task);
                 };
                 window.addEventListener('DOMContentLoaded', task);
