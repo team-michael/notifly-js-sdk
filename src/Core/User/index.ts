@@ -3,7 +3,7 @@ import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 
 import { SyncStatePolicy, UserStateManager } from './State';
-import { EventLogger, NotiflyInternalEvent, type EventLogResult } from '../Event';
+import { EventLogger, NotiflyInternalEvent, type IdentityGuard } from '../Event';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { SetUserIdOptions } from '../Interfaces/Options';
 import { SdkStateManager, SdkType } from '../SdkState';
@@ -66,36 +66,7 @@ export class UserIdentityManager {
         );
     }
 
-    /**
-     * Confirms guarded writes before changing local state; failed writes must remain retryable.
-     * Never rejects, because the popup awaits it together with the open browser permission prompt.
-     */
-    static async setUserPropertiesWithResult(
-        params: Record<string, any>,
-        expectedExternalUserId: string | null
-    ): Promise<EventLogResult> {
-        try {
-            if (!(await this.isCurrentUser(expectedExternalUserId))) return 'identity_changed';
-
-            const result = await EventLogger.logInternalEventWithResult(
-                NotiflyInternalEvent.SET_USER_PROPERTIES,
-                params,
-                {
-                    expectedExternalUserId,
-                }
-            );
-            if (result !== 'sent') return result;
-            if (!(await this.isCurrentUser(expectedExternalUserId))) return 'identity_changed';
-
-            UserStateManager.updateUserProperties(params);
-            return 'sent';
-        } catch (error) {
-            console.error('[Notifly] Failed to set user properties.', error);
-            return 'failed';
-        }
-    }
-
-    static async setUserProperties(params: Record<string, any>) {
+    static async setUserProperties(params: Record<string, any>, identityGuard?: IdentityGuard) {
         const externalUserId = params.external_user_id?.toString();
 
         if (externalUserId) {
@@ -138,6 +109,7 @@ export class UserIdentityManager {
                 // Update local state
                 const diff: Record<string, any> = {};
                 const previousUserProperties = (await this.getUserProperties()) || {};
+                if (identityGuard && !(await this.isCurrentUser(identityGuard.expectedExternalUserId))) return;
 
                 Object.keys(params).forEach((key) => {
                     if (!isEqual(previousUserProperties[key], params[key])) {
@@ -147,12 +119,19 @@ export class UserIdentityManager {
 
                 if (!isEmpty(diff)) {
                     UserStateManager.updateUserProperties(diff);
-                    await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, diff, null, true);
+                    await EventLogger.logEvent(
+                        NotiflyInternalEvent.SET_USER_PROPERTIES,
+                        diff,
+                        null,
+                        true,
+                        identityGuard
+                    );
                 }
             } else {
+                if (identityGuard && !(await this.isCurrentUser(identityGuard.expectedExternalUserId))) return;
                 UserStateManager.updateUserProperties(params);
                 this._lastUserPropertiesSentAt = Date.now();
-                await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, params, null, true);
+                await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, params, null, true, identityGuard);
             }
         }
     }

@@ -15,9 +15,6 @@ import {
 } from './Utils';
 
 const NOTIFLY_LOG_EVENT_URL = 'https://e.notifly.tech/records';
-const INTERNAL_EVENT_TIMEOUT_MS = 10000;
-
-export type EventLogResult = 'sent' | 'identity_changed' | 'failed';
 
 export interface IdentityGuard {
     expectedExternalUserId: string | null;
@@ -55,44 +52,20 @@ export class EventLogger {
         );
     }
 
-    static async logInternalEventWithResult(
-        eventName: string,
-        eventParams: Record<string, any>,
-        identityGuard?: IdentityGuard
-    ): Promise<EventLogResult> {
-        const controller = new AbortController();
-        let timeout: ReturnType<typeof setTimeout> | undefined;
-        try {
-            return await Promise.race([
-                this._logEvent(eventName, eventParams, null, true, identityGuard, controller.signal),
-                new Promise<EventLogResult>((resolve) => {
-                    timeout = setTimeout(() => {
-                        controller.abort();
-                        resolve('failed');
-                    }, INTERNAL_EVENT_TIMEOUT_MS);
-                }),
-            ]);
-        } finally {
-            clearTimeout(timeout);
-        }
-    }
-
     private static async _logEvent(
         eventName: string,
         eventParams: Record<string, any>,
         segmentationEventParamKeys: string[] | null = null,
         isInternalEvent = false,
-        identityGuard?: IdentityGuard,
-        signal?: AbortSignal
-    ): Promise<EventLogResult> {
+        identityGuard?: IdentityGuard
+    ): Promise<void> {
         try {
             const [projectId, notiflyDeviceId, externalUserId] = await NotiflyStorage.getItems([
                 NotiflyStorageKeys.PROJECT_ID,
                 NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
                 NotiflyStorageKeys.EXTERNAL_USER_ID,
             ]);
-            if (signal?.aborted) return 'failed';
-            if (identityGuard && externalUserId !== identityGuard.expectedExternalUserId) return 'identity_changed';
+            if (identityGuard && externalUserId !== identityGuard.expectedExternalUserId) return;
             if (!projectId || !notiflyDeviceId) {
                 throw new Error('Notifly storage is not initialized');
             }
@@ -140,10 +113,8 @@ export class EventLogger {
                         },
                     ],
                 },
-                'follow',
-                signal
+                'follow'
             );
-            if (signal?.aborted) return 'failed';
 
             WebMessageManager.updateEventCountsAndMaybeTriggerWebMessages(
                 isInternalEvent ? `notifly__${eventName}` : eventName,
@@ -151,10 +122,8 @@ export class EventLogger {
                 externalUserId,
                 segmentationEventParamKeys
             );
-            return 'sent';
         } catch (err) {
             console.error('[Notifly] Error logging event', err);
-            return 'failed';
         }
     }
 

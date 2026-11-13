@@ -80,6 +80,6 @@ describe('setUserProperties', () => {
 
         await UserIdentityManager.setUserProperties(params);
 
-        expect(EventLogger.logEvent).toHaveBeenCalledWith('set_user_properties', expectedParams, null, true);
+        expect(EventLogger.logEvent).toHaveBeenCalledWith('set_user_properties', expectedParams, null, true, undefined);
     });
 });

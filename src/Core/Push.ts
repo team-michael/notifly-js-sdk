@@ -169,10 +169,8 @@ export class NotiflyWebPushManager {
                     : Notification.permission;
             if (permission !== 'granted') return permission === 'denied' ? 'denied' : 'dismissed';
             const subscription = await this._getSubscription();
-            const result = await EventLogger.logInternalEventWithResult('set_device_properties', {
-                device_token: JSON.stringify(subscription),
-            });
-            return result === 'sent' ? 'granted' : 'failed';
+            void this._logSubscription(subscription);
+            return 'granted';
         } catch (error) {
             console.error('[Notifly] Failed to request web push permission or register the subscription.', error);
             return 'failed';

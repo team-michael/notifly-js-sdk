@@ -87,7 +87,6 @@ export class WebMessageScheduler {
                 // Listen for messages from the iframe
                 const messageEventListener = (() => {
                     let handlingWebPushConsent = false;
-                    let consentedAt: string | undefined;
                     const func = async (event: MessageEvent) => {
                         try {
                             if (
@@ -127,13 +126,15 @@ export class WebMessageScheduler {
                                     }
                                     handlingWebPushConsent = true;
                                     try {
-                                        consentedAt ??= new Date().toISOString();
-                                        const saveConsent = UserIdentityManager.setUserPropertiesWithResult(
+                                        void UserIdentityManager.setUserProperties(
                                             {
                                                 [BuiltInUserPropertyKey.WEB_PUSH_CONSENT]: true,
-                                                [BuiltInUserPropertyKey.WEB_PUSH_CONSENTED_AT]: consentedAt,
+                                                [BuiltInUserPropertyKey.WEB_PUSH_CONSENTED_AT]:
+                                                    new Date().toISOString(),
                                             },
-                                            popupExternalUserId
+                                            { expectedExternalUserId: popupExternalUserId }
+                                        ).catch((error) =>
+                                            console.error('[Notifly] Failed to save web push consent.', error)
                                         );
                                         // Begin the browser request before any async work can expire user activation.
                                         const requestPermission = NotiflyWebPushManager.requestPermissionDirectly();
@@ -149,10 +150,7 @@ export class WebMessageScheduler {
                                             true,
                                             { expectedExternalUserId: popupExternalUserId }
                                         );
-                                        const [consentResult, permissionResult] = await Promise.all([
-                                            saveConsent,
-                                            requestPermission,
-                                        ]);
+                                        const status = await requestPermission;
                                         const isCurrentUser = await UserIdentityManager.isCurrentUser(
                                             popupExternalUserId
                                         );
@@ -166,7 +164,6 @@ export class WebMessageScheduler {
                                             respond('identity_changed');
                                             return;
                                         }
-                                        const status = consentResult === 'sent' ? permissionResult : consentResult;
                                         respond(status);
                                         if (status === 'granted') {
                                             this._isWebMessageOpen = false;
@@ -179,7 +176,7 @@ export class WebMessageScheduler {
                                             getIframe().contentWindow === popupWindow
                                         )
                                             respond('failed');
-                                        console.error('[Notifly] Failed to save web push consent.', error);
+                                        console.error('[Notifly] Failed to handle web push consent.', error);
                                     } finally {
                                         handlingWebPushConsent = false;
                                     }
