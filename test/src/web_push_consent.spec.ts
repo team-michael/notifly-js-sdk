@@ -5,7 +5,6 @@ let scheduler: typeof import('../../src/Core/WebMessages/Scheduler').WebMessageS
 let push: typeof import('../../src/Core/Push').NotiflyWebPushManager;
 let state: typeof import('../../src/Core/SdkState').SdkStateManager;
 let user: typeof import('../../src/Core/User/State').UserStateManager;
-let identity: typeof import('../../src/Core/User').UserIdentityManager;
 let renderer: typeof import('notifly-web-message-renderer');
 let log: jest.SpyInstance;
 let upload: jest.SpyInstance;
@@ -62,7 +61,6 @@ beforeEach(async () => {
     ({ NotiflyWebPushManager: push } = await import('../../src/Core/Push'));
     ({ SdkStateManager: state } = await import('../../src/Core/SdkState'));
     ({ UserStateManager: user } = await import('../../src/Core/User/State'));
-    ({ UserIdentityManager: identity } = await import('../../src/Core/User'));
     renderer = await import('notifly-web-message-renderer');
     const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
     const { EventLogger } = await import('../../src/Core/Event');
@@ -184,12 +182,21 @@ test('requires a recent real user interaction and the current popup source', asy
     expect(user.userData.user_properties?.$web_push_consent).toBeUndefined();
 });
 
-test('does not accept consent from a popup belonging to the previous user', async () => {
+test('records consent for the current user after a login while the popup is open', async () => {
     user.userData.external_user_id = 'another-user';
+    const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
+    jest.mocked(storage.getItem).mockResolvedValue('another-user');
+    jest.mocked(storage.getItems).mockResolvedValue(['test-project', 'test-device', 'another-user']);
+    const response = captureResponses();
     send();
+    expect(nativePermission).toHaveBeenCalledTimes(1);
     await flush();
-    expect(nativePermission).not.toHaveBeenCalled();
-    expect(log).not.toHaveBeenCalled();
+    expect(uploadedEvents().find((event) => event.name === 'set_user_properties')).toMatchObject({
+        external_user_id: 'another-user',
+        event_params: { $web_push_consent: true },
+    });
+    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'granted' }), '*');
+    expect(renderer.getIframe().isConnected).toBe(false);
 });
 
 test('registers a granted subscription for the current user after a login during the permission dialog', async () => {
@@ -213,7 +220,7 @@ test('registers a granted subscription for the current user after a login during
     expect(uploadedEvents().find((event) => event.name === 'set_device_properties')?.external_user_id).toBe(
         'another-user'
     );
-    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'identity_changed' }), '*');
+    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'granted' }), '*');
 });
 
 test('suppresses a previously scheduled Notifly prompt after direct permission was requested', async () => {
@@ -246,32 +253,6 @@ test('keeps consent in an unsupported browser and reports the result', async () 
     expect(nativePermission).not.toHaveBeenCalled();
 });
 
-test('keeps the browser result independent of a failed consent storage read', async () => {
-    let complete: (permission: string) => void = () => undefined;
-    nativePermission.mockImplementation(
-        () =>
-            new Promise((resolve) => {
-                complete = resolve;
-            })
-    );
-    const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
-    jest.mocked(storage.getItem).mockRejectedValueOnce(new Error('synthetic storage timeout'));
-    jest.spyOn(console, 'error').mockImplementation(() => undefined);
-    const response = captureResponses();
-    send();
-    expect(nativePermission).toHaveBeenCalledTimes(1);
-    await flush();
-    expect(response).not.toHaveBeenCalledWith(
-        expect.objectContaining({ type: '__notifly_web_push_consent_result' }),
-        '*'
-    );
-    notification.permission = 'granted';
-    complete('granted');
-    await flush();
-    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'granted' }), '*');
-    expect(renderer.getIframe().isConnected).toBe(false);
-});
-
 test('registers the subscription for the current user if the user changes while subscribing', async () => {
     const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
     subscribe.mockImplementation(async () => {
@@ -286,7 +267,7 @@ test('registers the subscription for the current user if the user changes while 
     expect(uploadedEvents().find((event) => event.name === 'set_device_properties')?.external_user_id).toBe(
         'another-user'
     );
-    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'identity_changed' }), '*');
+    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'granted' }), '*');
 });
 
 test('records the current click time when permission is requested again', async () => {
@@ -315,7 +296,7 @@ test('repeats the compatibility acknowledgement when reused popup content finish
     expect(log).not.toHaveBeenCalled();
 });
 
-test('keeps consent off but registers the subscription for the stored user after another tab changes it', async () => {
+test('uses the stored user for consent and subscription after another tab changes it', async () => {
     const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
     jest.spyOn(storage, 'getItem').mockResolvedValue('user-from-another-tab');
     jest.spyOn(storage, 'getItems').mockResolvedValue(['test-project', 'test-device', 'user-from-another-tab']);
@@ -323,13 +304,15 @@ test('keeps consent off but registers the subscription for the stored user after
     send();
     expect(nativePermission).toHaveBeenCalledTimes(1);
     await flush();
-    expect(user.userData.user_properties?.$web_push_consent).toBeUndefined();
+    expect(user.userData.user_properties?.$web_push_consent).toBe(true);
     const events = uploadedEvents();
-    expect(events.some((event) => event.name === 'set_user_properties')).toBe(false);
+    expect(events.find((event) => event.name === 'set_user_properties')?.external_user_id).toBe(
+        'user-from-another-tab'
+    );
     expect(events.find((event) => event.name === 'set_device_properties')?.external_user_id).toBe(
         'user-from-another-tab'
     );
-    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'identity_changed' }), '*');
+    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'granted' }), '*');
 });
 
 test.each([
@@ -416,33 +399,6 @@ test('waits for the browser permission decision', async () => {
     );
     expect(user.userData.user_properties?.$web_push_consent).toBe(true);
     complete();
-    await flush();
-    expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'granted' }), '*');
-});
-
-test.each([
-    ['clears the user ID with an empty string', ''],
-    ['repeats a stored user ID that has surrounding spaces', ' padded-user '],
-])('accepts consent after the site %s', async (_case, userId) => {
-    const { NotiflyStorage: storage, NotiflyStorageKeys: keys } = await import('../../src/Core/Storage');
-    const stored: Record<string, string> = {
-        [keys.PROJECT_ID]: 'test-project',
-        [keys.NOTIFLY_DEVICE_ID]: 'test-device',
-    };
-    if (userId) stored[keys.EXTERNAL_USER_ID] = userId;
-    jest.spyOn(storage, 'getItem').mockImplementation(async (key) => stored[key] ?? null);
-    jest.spyOn(storage, 'getItems').mockImplementation(async (requested) =>
-        requested.map((key) => stored[key] ?? null)
-    );
-    await user.updateExternalUserId();
-    await identity.setUserId(userId);
-    send({ type: 'close' });
-    await flush();
-    scheduler.scheduleInWebMessage(campaign);
-    send({ type: '__notifly_web_message_loaded' });
-    await flush();
-    const response = captureResponses();
-    send();
     await flush();
     expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'granted' }), '*');
 });

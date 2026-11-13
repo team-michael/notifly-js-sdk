@@ -16,10 +16,6 @@ import {
 
 const NOTIFLY_LOG_EVENT_URL = 'https://e.notifly.tech/records';
 
-export interface IdentityGuard {
-    expectedExternalUserId: string | null;
-}
-
 export enum NotiflyInternalEvent {
     SESSION_START = 'session_start',
     SET_USER_PROPERTIES = 'set_user_properties',
@@ -35,10 +31,9 @@ export class EventLogger {
         eventName: string,
         eventParams: Record<string, any>,
         segmentationEventParamKeys: string[] | null = null,
-        isInternalEvent = false,
-        identityGuard?: IdentityGuard
+        isInternalEvent = false
     ): Promise<void> {
-        await this._logEvent(eventName, eventParams, segmentationEventParamKeys, isInternalEvent, identityGuard);
+        await this._logEvent(eventName, eventParams, segmentationEventParamKeys, isInternalEvent);
     }
 
     static async sessionStart(): Promise<void> {
@@ -56,8 +51,7 @@ export class EventLogger {
         eventName: string,
         eventParams: Record<string, any>,
         segmentationEventParamKeys: string[] | null = null,
-        isInternalEvent = false,
-        identityGuard?: IdentityGuard
+        isInternalEvent = false
     ): Promise<void> {
         try {
             const [projectId, notiflyDeviceId, externalUserId] = await NotiflyStorage.getItems([
@@ -65,7 +59,6 @@ export class EventLogger {
                 NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
                 NotiflyStorageKeys.EXTERNAL_USER_ID,
             ]);
-            if (identityGuard && externalUserId !== identityGuard.expectedExternalUserId) return;
             if (!projectId || !notiflyDeviceId) {
                 throw new Error('Notifly storage is not initialized');
             }

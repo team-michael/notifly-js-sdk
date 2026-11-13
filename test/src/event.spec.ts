@@ -96,30 +96,4 @@ describe('EventLogger web-message evaluation order', () => {
         expect(scheduleSpy).not.toHaveBeenCalled();
         expect(UserStateManager.eventIntermediateCounts).toEqual([]);
     });
-
-    test('does not upload guarded consent for a different stored user', async () => {
-        await EventLogger.logEvent('set_user_properties', { $web_push_consent: true }, null, true, {
-            expectedExternalUserId: null,
-        });
-        expect(NotiflyAPI.call).not.toHaveBeenCalled();
-        expect(scheduleSpy).not.toHaveBeenCalled();
-    });
-
-    test('uploads guarded anonymous consent without an external user id', async () => {
-        jest.mocked(NotiflyStorage.getItems).mockResolvedValue(['test-project-id', 'test-device-id', null]);
-        await EventLogger.logEvent('set_user_properties', { $web_push_consent: true }, null, true, {
-            expectedExternalUserId: null,
-        });
-        expect(NotiflyAPI.call).toHaveBeenCalledWith(
-            expect.any(String),
-            'POST',
-            {
-                records: [expect.objectContaining({ data: expect.any(String) })],
-            },
-            'follow'
-        );
-        const payload = JSON.parse(jest.mocked(NotiflyAPI.call).mock.calls[0][2].records[0].data);
-        expect(payload).not.toHaveProperty('external_user_id');
-        expect(payload.event_params.$web_push_consent).toBe(true);
-    });
 });

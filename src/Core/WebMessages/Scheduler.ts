@@ -62,7 +62,6 @@ export class WebMessageScheduler {
         const message = campaign.message;
         const modalProperties = message.modal_properties;
         const templateName = modalProperties.template_name;
-        const popupExternalUserId = UserStateManager.userData.external_user_id ?? null;
         const popupGeneration = ++this._webMessageGeneration;
         let activeMessageListener: ((event: MessageEvent) => void) | undefined;
         const removeMessageListener = () => {
@@ -112,10 +111,6 @@ export class WebMessageScheduler {
                                             { type: '__notifly_web_push_consent_result', status, buttonName },
                                             '*'
                                         );
-                                    if ((UserStateManager.userData.external_user_id ?? null) !== popupExternalUserId) {
-                                        respond('identity_changed');
-                                        return;
-                                    }
                                     if (SdkStateManager.state !== SdkState.READY) {
                                         respond('not_ready');
                                         return;
@@ -126,14 +121,10 @@ export class WebMessageScheduler {
                                     }
                                     handlingWebPushConsent = true;
                                     try {
-                                        void UserIdentityManager.setUserProperties(
-                                            {
-                                                [BuiltInUserPropertyKey.WEB_PUSH_CONSENT]: true,
-                                                [BuiltInUserPropertyKey.WEB_PUSH_CONSENTED_AT]:
-                                                    new Date().toISOString(),
-                                            },
-                                            { expectedExternalUserId: popupExternalUserId }
-                                        ).catch((error) =>
+                                        void UserIdentityManager.setUserProperties({
+                                            [BuiltInUserPropertyKey.WEB_PUSH_CONSENT]: true,
+                                            [BuiltInUserPropertyKey.WEB_PUSH_CONSENTED_AT]: new Date().toISOString(),
+                                        }).catch((error) =>
                                             console.error('[Notifly] Failed to save web push consent.', error)
                                         );
                                         // Begin the browser request before any async work can expire user activation.
@@ -147,23 +138,15 @@ export class WebMessageScheduler {
                                                 campaign_id: campaign.id,
                                             },
                                             null,
-                                            true,
-                                            { expectedExternalUserId: popupExternalUserId }
+                                            true
                                         );
                                         const status = await requestPermission;
-                                        const isCurrentUser = await UserIdentityManager.isCurrentUser(
-                                            popupExternalUserId
-                                        );
                                         if (
                                             !this._isWebMessageOpen ||
                                             popupGeneration !== this._webMessageGeneration ||
                                             getIframe().contentWindow !== popupWindow
                                         )
                                             return;
-                                        if (!isCurrentUser) {
-                                            respond('identity_changed');
-                                            return;
-                                        }
                                         respond(status);
                                         if (status === 'granted') {
                                             this._isWebMessageOpen = false;

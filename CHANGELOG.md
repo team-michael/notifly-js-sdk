@@ -4,7 +4,7 @@
 
 ### Added
 
--   Handle web popup consent buttons with reserved consent properties and direct browser permission requests, subscription registration, duplicate prevention, and user-identity checks.
+-   Handle web popup consent buttons with reserved consent properties, direct browser permission requests, subscription registration, and duplicate prevention.
 
 ## [2.21.1]
 

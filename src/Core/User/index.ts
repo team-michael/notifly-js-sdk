@@ -3,7 +3,7 @@ import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 
 import { SyncStatePolicy, UserStateManager } from './State';
-import { EventLogger, NotiflyInternalEvent, type IdentityGuard } from '../Event';
+import { EventLogger, NotiflyInternalEvent } from '../Event';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { SetUserIdOptions } from '../Interfaces/Options';
 import { SdkStateManager, SdkType } from '../SdkState';
@@ -30,8 +30,7 @@ export class UserIdentityManager {
     };
 
     static async setUserId(userId?: string | null | undefined, options?: SetUserIdOptions): Promise<void> {
-        // Keep the exact value that storage and the server receive; identity checks compare the two.
-        UserStateManager.userData.external_user_id = userId?.trim() ? userId : null;
+        UserStateManager.userData.external_user_id = userId?.trim();
 
         const onlyIfChanged = options?.onlyIfChanged ?? this.DEFAULT_SET_USER_ID_OPTIONS.onlyIfChanged;
         if (onlyIfChanged) {
@@ -57,16 +56,7 @@ export class UserIdentityManager {
         return UserStateManager.state.userData.user_properties || null;
     }
 
-    /** Memory changes first on login in this tab; storage also changes when another tab logs in. */
-    static async isCurrentUser(externalUserId: string | null): Promise<boolean> {
-        const storedExternalUserId = await this.getUserId();
-        return (
-            storedExternalUserId === externalUserId &&
-            (UserStateManager.userData.external_user_id ?? null) === externalUserId
-        );
-    }
-
-    static async setUserProperties(params: Record<string, any>, identityGuard?: IdentityGuard) {
+    static async setUserProperties(params: Record<string, any>) {
         const externalUserId = params.external_user_id?.toString();
 
         if (externalUserId) {
@@ -109,7 +99,6 @@ export class UserIdentityManager {
                 // Update local state
                 const diff: Record<string, any> = {};
                 const previousUserProperties = (await this.getUserProperties()) || {};
-                if (identityGuard && !(await this.isCurrentUser(identityGuard.expectedExternalUserId))) return;
 
                 Object.keys(params).forEach((key) => {
                     if (!isEqual(previousUserProperties[key], params[key])) {
@@ -119,19 +108,12 @@ export class UserIdentityManager {
 
                 if (!isEmpty(diff)) {
                     UserStateManager.updateUserProperties(diff);
-                    await EventLogger.logEvent(
-                        NotiflyInternalEvent.SET_USER_PROPERTIES,
-                        diff,
-                        null,
-                        true,
-                        identityGuard
-                    );
+                    await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, diff, null, true);
                 }
             } else {
-                if (identityGuard && !(await this.isCurrentUser(identityGuard.expectedExternalUserId))) return;
                 UserStateManager.updateUserProperties(params);
                 this._lastUserPropertiesSentAt = Date.now();
-                await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, params, null, true, identityGuard);
+                await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, params, null, true);
             }
         }
     }
