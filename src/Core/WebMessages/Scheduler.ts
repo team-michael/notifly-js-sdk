@@ -13,6 +13,18 @@ import { renderPopup } from './Renderer';
 import { BuiltInUserPropertyKey } from '../../Constants';
 import { NotiflyWebPushManager } from '../Push';
 
+export type PopupActionEvent = {
+    campaignId: string;
+    buttonName?: string;
+} & (
+    | { type: 'click'; url?: string }
+    | { type: 'close' }
+    | { type: 'hide'; hideUntil: number } // Unix timestamp in seconds.
+    | { type: 'web_push_consent' }
+);
+
+export type PopupActionHandler = (event: PopupActionEvent) => void | Promise<void>;
+
 interface ScheduledWebMessage {
     timerId?: ReturnType<typeof setTimeout>;
     campaignId: string;
@@ -40,6 +52,19 @@ export class WebMessageScheduler {
     private static _scheduledWebMessages: ScheduledWebMessage[] = [];
     private static _renderingWebMessage: ScheduledWebMessage | null = null;
     private static _webMessageGeneration = 0;
+    private static _popupActionHandler: PopupActionHandler | null = null;
+
+    static setPopupActionHandler(handler: PopupActionHandler | null): void {
+        this._popupActionHandler = handler;
+    }
+
+    private static async _notifyPopupAction(event: PopupActionEvent): Promise<void> {
+        try {
+            await this._popupActionHandler?.(event);
+        } catch {
+            console.error('[Notifly] Popup action handler failed.');
+        }
+    }
 
     static initialize() {
         SdkStateManager.registerObserver(new SdkStateObserverForWebMessageScheduler());
@@ -102,8 +127,15 @@ export class WebMessageScheduler {
                                     );
                                     return;
                                 }
+                                const actionContext = {
+                                    campaignId: campaign.id,
+                                    ...(typeof message.buttonName === 'string'
+                                        ? { buttonName: message.buttonName }
+                                        : {}),
+                                };
                                 if (message.type === 'web_push_consent') {
                                     if (handlingWebPushConsent) return;
+                                    const action: PopupActionEvent = { ...actionContext, type: 'web_push_consent' };
                                     const popupWindow = getIframe().contentWindow;
                                     const buttonName = typeof message.buttonName === 'string' ? message.buttonName : '';
                                     const respond = (status: string) =>
@@ -113,10 +145,12 @@ export class WebMessageScheduler {
                                         );
                                     if (SdkStateManager.state !== SdkState.READY) {
                                         respond('not_ready');
+                                        void this._notifyPopupAction(action);
                                         return;
                                     }
                                     if (navigator.userActivation && !navigator.userActivation.isActive) {
                                         respond('interaction_required');
+                                        void this._notifyPopupAction(action);
                                         return;
                                     }
                                     handlingWebPushConsent = true;
@@ -140,6 +174,7 @@ export class WebMessageScheduler {
                                             null,
                                             true
                                         );
+                                        void this._notifyPopupAction(action);
                                         const status = await requestPermission;
                                         if (
                                             !this._isWebMessageOpen ||
@@ -185,6 +220,12 @@ export class WebMessageScheduler {
                                     } finally {
                                         window.removeEventListener('message', messageEventListener);
                                     }
+                                    const hideUntil = message.extraData?.data?.hideUntil;
+                                    void this._notifyPopupAction(
+                                        typeof hideUntil === 'number' && Number.isFinite(hideUntil) && hideUntil > 0
+                                            ? { ...actionContext, type: 'hide', hideUntil }
+                                            : { ...actionContext, type: 'close' }
+                                    );
                                     const extraData = message.extraData;
                                     if (extraData) {
                                         const data = extraData.data;
@@ -217,6 +258,11 @@ export class WebMessageScheduler {
                                     } finally {
                                         window.removeEventListener('message', messageEventListener);
                                     }
+                                    void this._notifyPopupAction({
+                                        ...actionContext,
+                                        type: 'click',
+                                        ...(typeof message.link === 'string' ? { url: message.link } : {}),
+                                    });
                                     await EventLogger.logEvent(
                                         NotiflyInternalEvent.MAIN_BUTTON_CLICK,
                                         {

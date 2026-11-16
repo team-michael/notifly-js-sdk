@@ -423,3 +423,194 @@ describe('without web push configured on the site', () => {
         expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'unsupported' }), '*');
     });
 });
+
+describe('popup action handler', () => {
+    let notifly: typeof import('../../src').default;
+
+    beforeEach(async () => {
+        notifly = (await import('../../src')).default;
+    });
+
+    afterEach(() => {
+        notifly.setPopupActionHandler(null);
+    });
+
+    test('registers before initialization, replaces the handler, and clears it with null', async () => {
+        state.state = SdkState.NOT_INITIALIZED;
+        const first = jest.fn();
+        const second = jest.fn();
+        notifly.setPopupActionHandler(first);
+        notifly.setPopupActionHandler(second);
+        state.state = SdkState.READY;
+        notification.permission = 'denied';
+        send();
+        expect(first).not.toHaveBeenCalled();
+        expect(second).toHaveBeenCalledWith({
+            type: 'web_push_consent',
+            campaignId: 'consent-campaign',
+            buttonName: 'agree',
+        });
+        await flush();
+        notifly.setPopupActionHandler(null);
+        send();
+        await flush();
+        expect(second).toHaveBeenCalledTimes(1);
+        expect(user.userData.user_properties?.$web_push_consent).toBe(true);
+    });
+
+    test.each([
+        [
+            { type: 'main_button', buttonName: 'visit', link: 'https://example.com/page' },
+            { type: 'click', buttonName: 'visit', url: 'https://example.com/page' },
+        ],
+        [
+            { type: 'main_button', link: 'myapp://page' },
+            { type: 'click', url: 'myapp://page' },
+        ],
+        [{ type: 'main_button', buttonName: 42, link: null }, { type: 'click' }],
+        [
+            { type: 'close', buttonName: 'close' },
+            { type: 'close', buttonName: 'close' },
+        ],
+        [
+            { type: 'close', extraData: { data: { hideUntil: 2000000000 } } },
+            { type: 'hide', hideUntil: 2000000000 },
+        ],
+        [{ type: 'close', extraData: { data: { hideUntil: 'tomorrow' } } }, { type: 'close' }],
+        [{ type: 'close', extraData: { data: { hideUntil: 0 } } }, { type: 'close' }],
+        [{ type: 'close', extraData: { data: { hideUntil: Infinity } } }, { type: 'close' }],
+    ])('reports the action and preserves the default close: %j', async (message, expected) => {
+        jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+        const handler = jest.fn();
+        notifly.setPopupActionHandler(handler);
+        send({ ...message, unrelated: { privateValue: 'not-for-callback' } });
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(handler).toHaveBeenCalledWith({ campaignId: 'consent-campaign', ...expected });
+        expect(renderer.getIframe().isConnected).toBe(false);
+        await flush();
+        expect(log).toHaveBeenCalledWith(
+            message.type === 'main_button' ? 'main_button_click' : 'close_button_click',
+            expect.objectContaining({ campaign_id: 'consent-campaign' }),
+            null,
+            true
+        );
+        if (expected.type === 'hide') {
+            expect(user.userData.user_properties?.hide_in_web_message_consent).toBe(2000000000);
+        }
+    });
+
+    test.each(['blank', 'self'] as const)(
+        'preserves %s navigation order without awaiting the callback',
+        async (mode) => {
+            send({ type: 'close' });
+            await flush();
+            scheduler.scheduleInWebMessage({
+                ...campaign,
+                message: {
+                    ...campaign.message,
+                    modal_properties: { ...campaign.message.modal_properties, link_open_mode: mode },
+                },
+            });
+            send({ type: '__notifly_web_message_loaded' });
+            await flush();
+            const order: string[] = [];
+            jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+                expect(this.href).toBe('https://example.com/page');
+                order.push('navigate');
+            });
+            notifly.setPopupActionHandler(() => {
+                order.push('handler');
+                return new Promise<void>(() => undefined);
+            });
+            send({ type: 'main_button', link: 'https://example.com/page' });
+            expect(order).toEqual(mode === 'blank' ? ['navigate', 'handler'] : ['handler']);
+            await flush();
+            expect(order).toEqual(mode === 'blank' ? ['navigate', 'handler'] : ['handler', 'navigate']);
+        }
+    );
+
+    test.each(['throw', 'reject'])('keeps navigation and logging when the handler fails: %s', async (failure) => {
+        const errors = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+        const navigate = jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+        notifly.setPopupActionHandler(() => {
+            if (failure === 'throw') throw new Error('customer callback failed');
+            return Promise.reject(new Error('customer callback failed'));
+        });
+        send({ type: 'main_button', link: 'https://example.com/page' });
+        await flush();
+        expect(renderer.getIframe().isConnected).toBe(false);
+        expect(navigate).toHaveBeenCalledTimes(1);
+        expect(log).toHaveBeenCalledWith('main_button_click', expect.any(Object), null, true);
+        expect(errors).toHaveBeenCalledTimes(1);
+    });
+
+    test('starts permission before notifying once and does not wait for the handler', async () => {
+        const response = captureResponses();
+        const observations: Array<{ permissionCalls: number; responseCalls: number }> = [];
+        const handler = jest.fn(() => {
+            observations.push({
+                permissionCalls: nativePermission.mock.calls.length,
+                responseCalls: response.mock.calls.length,
+            });
+            return new Promise<void>(() => undefined);
+        });
+        notifly.setPopupActionHandler(handler);
+        send();
+        send();
+        expect(handler).toHaveBeenCalledTimes(1);
+        expect(observations).toEqual([{ permissionCalls: 1, responseCalls: 0 }]);
+        await flush();
+        expect(response).toHaveBeenCalledWith(expect.objectContaining({ status: 'granted' }), '*');
+        expect(renderer.getIframe().isConnected).toBe(false);
+        expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    test.each(['not_ready', 'interaction_required'])(
+        'reports the action even if permission cannot start: %s',
+        (status) => {
+            if (status === 'not_ready') state.state = SdkState.REFRESHING;
+            else activation.isActive = false;
+            const handler = jest.fn();
+            notifly.setPopupActionHandler(handler);
+            send();
+            expect(handler).toHaveBeenCalledWith({
+                type: 'web_push_consent',
+                campaignId: 'consent-campaign',
+                buttonName: 'agree',
+            });
+            expect(nativePermission).not.toHaveBeenCalled();
+        }
+    );
+
+    test('ignores control, malformed, custom, and foreign-frame messages', () => {
+        const handler = jest.fn();
+        notifly.setPopupActionHandler(handler);
+        for (const data of [
+            null,
+            'close',
+            [],
+            { type: '__notifly_web_message_loaded' },
+            { type: '__notifly_web_push_consent_result', status: 'granted' },
+            { type: 'custom' },
+        ])
+            send(data);
+        send({ type: 'main_button' }, window);
+        send({ type: 'close' }, null);
+        expect(handler).not.toHaveBeenCalled();
+    });
+
+    test('retains the handler for the next popup', async () => {
+        const handler = jest.fn();
+        notifly.setPopupActionHandler(handler);
+        send({ type: 'close' });
+        await flush();
+        scheduler.scheduleInWebMessage({ ...campaign, id: 'next-campaign' });
+        send({ type: '__notifly_web_message_loaded' });
+        await flush();
+        send({ type: 'main_button' });
+        expect(handler.mock.calls).toEqual([
+            [{ type: 'close', campaignId: 'consent-campaign' }],
+            [{ type: 'click', campaignId: 'next-campaign' }],
+        ]);
+    });
+});
