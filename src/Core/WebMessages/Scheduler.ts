@@ -110,7 +110,6 @@ export class WebMessageScheduler {
 
                 // Listen for messages from the iframe
                 const messageEventListener = (() => {
-                    let handlingWebPushConsent = false;
                     const func = async (event: MessageEvent) => {
                         try {
                             if (
@@ -134,70 +133,39 @@ export class WebMessageScheduler {
                                         : {}),
                                 };
                                 if (message.type === 'web_push_consent') {
-                                    if (handlingWebPushConsent) return;
-                                    const action: PopupActionEvent = { ...actionContext, type: 'web_push_consent' };
-                                    const popupWindow = getIframe().contentWindow;
-                                    const buttonName = typeof message.buttonName === 'string' ? message.buttonName : '';
-                                    const respond = (status: string) =>
-                                        popupWindow?.postMessage(
-                                            { type: '__notifly_web_push_consent_result', status, buttonName },
-                                            '*'
-                                        );
-                                    if (SdkStateManager.state !== SdkState.READY) {
-                                        respond('not_ready');
-                                        void this._notifyPopupAction(action);
-                                        return;
-                                    }
-                                    if (navigator.userActivation && !navigator.userActivation.isActive) {
-                                        respond('interaction_required');
-                                        void this._notifyPopupAction(action);
-                                        return;
-                                    }
-                                    handlingWebPushConsent = true;
-                                    try {
+                                    if (
+                                        SdkStateManager.state === SdkState.READY &&
+                                        (!navigator.userActivation || navigator.userActivation.isActive)
+                                    ) {
                                         void UserIdentityManager.setUserProperties({
                                             [BuiltInUserPropertyKey.WEB_PUSH_CONSENT]: true,
                                             [BuiltInUserPropertyKey.WEB_PUSH_CONSENTED_AT]: new Date().toISOString(),
                                         }).catch((error) =>
                                             console.error('[Notifly] Failed to save web push consent.', error)
                                         );
-                                        // Begin the browser request before any async work can expire user activation.
-                                        const requestPermission = NotiflyWebPushManager.requestPermissionDirectly();
+                                        // Begin the browser request before closing the popup or running customer code.
+                                        void NotiflyWebPushManager.requestPermissionDirectly();
                                         void EventLogger.logEvent(
                                             NotiflyInternalEvent.MAIN_BUTTON_CLICK,
                                             {
                                                 type: 'message_event',
                                                 channel: 'in-web-message',
-                                                button_name: buttonName,
+                                                button_name: actionContext.buttonName ?? '',
                                                 campaign_id: campaign.id,
                                             },
                                             null,
                                             true
                                         );
-                                        void this._notifyPopupAction(action);
-                                        const status = await requestPermission;
-                                        if (
-                                            !this._isWebMessageOpen ||
-                                            popupGeneration !== this._webMessageGeneration ||
-                                            getIframe().contentWindow !== popupWindow
-                                        )
-                                            return;
-                                        respond(status);
-                                        if (status === 'granted') {
-                                            this._isWebMessageOpen = false;
-                                            close();
-                                            window.removeEventListener('message', messageEventListener);
-                                        }
-                                    } catch (error) {
-                                        if (
-                                            popupGeneration === this._webMessageGeneration &&
-                                            getIframe().contentWindow === popupWindow
-                                        )
-                                            respond('failed');
-                                        console.error('[Notifly] Failed to handle web push consent.', error);
-                                    } finally {
-                                        handlingWebPushConsent = false;
                                     }
+                                    this._isWebMessageOpen = false;
+                                    try {
+                                        close();
+                                    } catch (error) {
+                                        /* empty */
+                                    } finally {
+                                        window.removeEventListener('message', messageEventListener);
+                                    }
+                                    void this._notifyPopupAction({ ...actionContext, type: 'web_push_consent' });
                                     return;
                                 }
                                 // Open blank-mode links synchronously to preserve user activation (popups are blocked after await)

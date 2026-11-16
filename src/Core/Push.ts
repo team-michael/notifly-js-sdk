@@ -8,8 +8,6 @@ import {
 import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
 import { EventLogger } from './Event';
 
-export type WebPushPermissionResult = 'granted' | 'denied' | 'dismissed' | 'unsupported' | 'not_ready' | 'failed';
-
 enum NotiflyServiceWorkerEvents {
     NAVIGATE_TO_URL = '__notifly_navigate_to_url',
 }
@@ -148,7 +146,7 @@ export class NotiflyWebPushManager {
      * Browser permission belongs to the origin, so a granted subscription is registered for whoever
      * is signed in when it arrives, as page load does.
      */
-    static async requestPermissionDirectly(): Promise<WebPushPermissionResult> {
+    static async requestPermissionDirectly(): Promise<void> {
         // Push setup finishes before the SDK becomes ready, so a missing registration here is permanent.
         if (
             !this._isWebPushSupported() ||
@@ -157,8 +155,8 @@ export class NotiflyWebPushManager {
             !this._serviceWorkerRegistration ||
             !this._vapidPublicKey
         )
-            return 'unsupported';
-        if (this._isDirectPermissionRequestPending) return 'not_ready';
+            return;
+        if (this._isDirectPermissionRequestPending) return;
         this._hasRequestedPermissionDirectly = true;
         this._isDirectPermissionRequestPending = true;
 
@@ -167,13 +165,11 @@ export class NotiflyWebPushManager {
                 Notification.permission === 'default'
                     ? await Notification.requestPermission()
                     : Notification.permission;
-            if (permission !== 'granted') return permission === 'denied' ? 'denied' : 'dismissed';
+            if (permission !== 'granted') return;
             const subscription = await this._getSubscription();
             void this._logSubscription(subscription);
-            return 'granted';
         } catch (error) {
             console.error('[Notifly] Failed to request web push permission or register the subscription.', error);
-            return 'failed';
         } finally {
             this._isDirectPermissionRequestPending = false;
         }
