@@ -10,6 +10,7 @@ import {
     getUserId,
     getUserProperties,
     requestPermission,
+    setPopupActionHandler,
     setSdkType,
     setSdkVersion,
     setSource,
@@ -28,10 +29,13 @@ const notifly = {
     getUserId,
     getUserProperties,
     requestPermission,
+    setPopupActionHandler,
     setSdkType,
     setSdkVersion,
     setSource,
     getSdkVersion,
 };
+
+export type { PopupActionEvent, PopupActionHandler } from './Core/WebMessages/Scheduler';
 
 export default notifly;

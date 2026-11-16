@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.22.0]
+
+### Added
+
+-   Handle web popup consent buttons by recording reserved consent properties and requesting browser notification permission. Close the web popup immediately without waiting for the permission response or subscription registration.
+-   Add `setPopupActionHandler(handler | null)` to observe popup clicks, close, hide, and web push consent actions while preserving the SDK's default behavior.
+
 ## [2.21.1]
 
 ### Added

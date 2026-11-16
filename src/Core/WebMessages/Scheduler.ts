@@ -10,6 +10,20 @@ import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { generateNotiflyUserId } from '../Utils';
 import { KmpPopupRenderTask } from '../KmpCore';
 import { renderPopup } from './Renderer';
+import { BuiltInUserPropertyKey } from '../../Constants';
+import { NotiflyWebPushManager } from '../Push';
+
+export type PopupActionEvent = {
+    campaignId: string;
+    buttonName?: string;
+} & (
+    | { type: 'click'; url?: string }
+    | { type: 'close' }
+    | { type: 'hide'; hideUntil: number } // Unix timestamp in seconds.
+    | { type: 'web_push_consent' }
+);
+
+export type PopupActionHandler = (event: PopupActionEvent) => void | Promise<void>;
 
 interface ScheduledWebMessage {
     timerId?: ReturnType<typeof setTimeout>;
@@ -37,6 +51,20 @@ export class WebMessageScheduler {
     private static _isWebMessageOpen = false;
     private static _scheduledWebMessages: ScheduledWebMessage[] = [];
     private static _renderingWebMessage: ScheduledWebMessage | null = null;
+    private static _webMessageGeneration = 0;
+    private static _popupActionHandler: PopupActionHandler | null = null;
+
+    static setPopupActionHandler(handler: PopupActionHandler | null): void {
+        this._popupActionHandler = handler;
+    }
+
+    private static async _notifyPopupAction(event: PopupActionEvent): Promise<void> {
+        try {
+            await this._popupActionHandler?.(event);
+        } catch {
+            console.error('[Notifly] Popup action handler failed.');
+        }
+    }
 
     static initialize() {
         SdkStateManager.registerObserver(new SdkStateObserverForWebMessageScheduler());
@@ -59,6 +87,11 @@ export class WebMessageScheduler {
         const message = campaign.message;
         const modalProperties = message.modal_properties;
         const templateName = modalProperties.template_name;
+        const popupGeneration = ++this._webMessageGeneration;
+        let activeMessageListener: ((event: MessageEvent) => void) | undefined;
+        const removeMessageListener = () => {
+            if (activeMessageListener) window.removeEventListener('message', activeMessageListener);
+        };
 
         const callbacks: RendererCallbacks = {
             onRenderCompleted: () => {
@@ -79,8 +112,62 @@ export class WebMessageScheduler {
                 const messageEventListener = (() => {
                     const func = async (event: MessageEvent) => {
                         try {
-                            if (event.source === getIframe().contentWindow) {
+                            if (
+                                popupGeneration === this._webMessageGeneration &&
+                                event.source === getIframe().contentWindow
+                            ) {
                                 const message = event.data;
+                                if (!message || typeof message !== 'object' || Array.isArray(message)) return;
+                                if (message.type === '__notifly_web_message_loaded') {
+                                    // A reused iframe may reload after onRenderCompleted has already fired.
+                                    getIframe().contentWindow?.postMessage(
+                                        { type: '__notifly_web_push_consent_ready' },
+                                        '*'
+                                    );
+                                    return;
+                                }
+                                const actionContext = {
+                                    campaignId: campaign.id,
+                                    ...(typeof message.buttonName === 'string'
+                                        ? { buttonName: message.buttonName }
+                                        : {}),
+                                };
+                                if (message.type === 'web_push_consent') {
+                                    if (
+                                        SdkStateManager.state === SdkState.READY &&
+                                        (!navigator.userActivation || navigator.userActivation.isActive)
+                                    ) {
+                                        void UserIdentityManager.setUserProperties({
+                                            [BuiltInUserPropertyKey.WEB_PUSH_CONSENT]: true,
+                                            [BuiltInUserPropertyKey.WEB_PUSH_CONSENTED_AT]: new Date().toISOString(),
+                                        }).catch((error) =>
+                                            console.error('[Notifly] Failed to save web push consent.', error)
+                                        );
+                                        // Begin the browser request before closing the popup or running customer code.
+                                        void NotiflyWebPushManager.requestPermissionDirectly();
+                                        void EventLogger.logEvent(
+                                            NotiflyInternalEvent.MAIN_BUTTON_CLICK,
+                                            {
+                                                type: 'message_event',
+                                                channel: 'in-web-message',
+                                                button_name: actionContext.buttonName ?? '',
+                                                campaign_id: campaign.id,
+                                            },
+                                            null,
+                                            true
+                                        );
+                                    }
+                                    this._isWebMessageOpen = false;
+                                    try {
+                                        close();
+                                    } catch (error) {
+                                        /* empty */
+                                    } finally {
+                                        window.removeEventListener('message', messageEventListener);
+                                    }
+                                    void this._notifyPopupAction({ ...actionContext, type: 'web_push_consent' });
+                                    return;
+                                }
                                 // Open blank-mode links synchronously to preserve user activation (popups are blocked after await)
                                 if (message.link && modalProperties?.link_open_mode === 'blank') {
                                     const a = document.createElement('a');
@@ -101,6 +188,12 @@ export class WebMessageScheduler {
                                     } finally {
                                         window.removeEventListener('message', messageEventListener);
                                     }
+                                    const hideUntil = message.extraData?.data?.hideUntil;
+                                    void this._notifyPopupAction(
+                                        typeof hideUntil === 'number' && Number.isFinite(hideUntil) && hideUntil > 0
+                                            ? { ...actionContext, type: 'hide', hideUntil }
+                                            : { ...actionContext, type: 'close' }
+                                    );
                                     const extraData = message.extraData;
                                     if (extraData) {
                                         const data = extraData.data;
@@ -133,6 +226,11 @@ export class WebMessageScheduler {
                                     } finally {
                                         window.removeEventListener('message', messageEventListener);
                                     }
+                                    void this._notifyPopupAction({
+                                        ...actionContext,
+                                        type: 'click',
+                                        ...(typeof message.link === 'string' ? { url: message.link } : {}),
+                                    });
                                     await EventLogger.logEvent(
                                         NotiflyInternalEvent.MAIN_BUTTON_CLICK,
                                         {
@@ -171,14 +269,18 @@ export class WebMessageScheduler {
                 })();
 
                 window.addEventListener('message', messageEventListener);
+                activeMessageListener = messageEventListener;
+                getIframe().contentWindow?.postMessage({ type: '__notifly_web_push_consent_ready' }, '*');
             },
             onRenderFailed: () => {
+                removeMessageListener();
                 this._isWebMessageOpen = false;
                 console.error(
                     '[Notifly] Error creating in web message. Web message content is either invalid or not found'
                 );
             },
             onAutoDismissed: () => {
+                removeMessageListener();
                 this._isWebMessageOpen = false;
             },
         };

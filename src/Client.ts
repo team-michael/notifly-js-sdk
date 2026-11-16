@@ -19,6 +19,7 @@ import { SSEManager } from './Core/SSE/SSEManager';
 import { initializeNotiflyStorage, isValidProjectId, isValidTimezoneId, removeKeys } from './Core/Utils';
 import { BuiltInUserPropertyKey } from './Constants';
 import { KmpUserPropertyKeyPolicy } from './Core/KmpCore';
+import { WebMessageScheduler, type PopupActionHandler } from './Core/WebMessages/Scheduler';
 
 let initSemaphore = false;
 
@@ -366,6 +367,15 @@ export async function requestPermission(languageToForce?: Language): Promise<voi
         const logger = SdkStateManager.halted ? console.warn : console.error;
         logger('[Notifly] Failed to request permission', error);
     }
+}
+
+/**
+ * Observes popup actions without changing or waiting for their default behavior.
+ * Can be called before initialize. Replaces the previous handler; null removes it.
+ * Web push consent reports the action, not the permission or upload result.
+ */
+export function setPopupActionHandler(handler: PopupActionHandler | null): void {
+    WebMessageScheduler.setPopupActionHandler(handler);
 }
 
 export function setSdkType(sdkType: SdkType) {

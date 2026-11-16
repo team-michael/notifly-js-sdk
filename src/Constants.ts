@@ -9,6 +9,8 @@ export enum BuiltInUserPropertyKey {
     PHONE_NUMBER = '$phone_number',
     EMAIL = '$email',
     TIMEZONE = '$timezone',
+    WEB_PUSH_CONSENT = '$web_push_consent',
+    WEB_PUSH_CONSENTED_AT = '$web_push_consented_at',
 }
 
 export const LAST_SESSION_TIME_LOGGING_INTERVAL = 5000; // 5 seconds
