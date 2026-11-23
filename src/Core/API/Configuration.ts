@@ -20,8 +20,8 @@ export interface SdkConfiguration {
     };
 }
 
-export async function getSdkConfiguration(): Promise<SdkConfiguration> {
-    const projectId = await NotiflyStorage.getItem(NotiflyStorageKeys.PROJECT_ID);
+export async function getSdkConfiguration(initialProjectId?: string): Promise<SdkConfiguration> {
+    const projectId = initialProjectId ?? (await NotiflyStorage.getItem(NotiflyStorageKeys.PROJECT_ID));
     if (!projectId) {
         throw new Error('Project ID not found. Did you forget to call Notifly.initialize()?');
     }

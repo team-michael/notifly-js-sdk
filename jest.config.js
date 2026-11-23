@@ -7,5 +7,5 @@ module.exports = {
     collectCoverage: false,
     setupFiles: ['<rootDir>/test/jest.setup.js'],
     modulePathIgnorePatterns: ['<rootDir>/notifly-kmp-sdk/'],
-    testPathIgnorePatterns: ['node_modules/', 'dist/', 'lib/', 'examples/'],
+    testPathIgnorePatterns: ['node_modules/', 'dist/', 'lib/', 'examples/', '<rootDir>/test/browser/'],
 };

@@ -15,6 +15,7 @@ export interface SetUserPropertiesCommandParams {
 }
 
 export interface TrackEventCommandParams {
+    occurredAtMicros?: number;
     eventName: string;
     eventParams: Record<string, any>;
     segmentationEventParamKeys: string[] | null;

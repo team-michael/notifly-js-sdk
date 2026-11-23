@@ -4,6 +4,9 @@ import type { EventIntermediateCounts, UserData } from '../Interfaces/User';
 
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { NotiflyAPI } from '../API';
+import { generateNotiflyUserId } from '../Utils';
+import { beginPerformance } from '../Diagnostics';
+import { ProtectedSnapshot, ProtectedStorageError } from '../Storage/ProtectedStorageTypes';
 import {
     getCurrentDefaultUserData,
     mergeEventCounts,
@@ -12,19 +15,17 @@ import {
     sanitizeRandomBucketNumber,
 } from './Utils';
 
-import {
-    getKSTCalendarDateString,
-    isValidCampaignData,
-    isValidEventIntermediateCounts,
-    isValidUserState,
-} from './Utils';
+import { getKSTCalendarDateString, isValidCampaignData, isValidEventIntermediateCounts } from './Utils';
 
 export enum SyncStatePolicy {
     OVERWRITE,
     MERGE,
 }
 
+export type SyncReason = 'initial' | 'session' | 'identity' | 'sse' | 'refresh';
 type SyncStateOptions = {
+    reason?: SyncReason;
+    transition?: { from: number; to: number };
     policy?: SyncStatePolicy;
     useStorageIfAvailable?: boolean;
     handleExternalUserIdMismatch?: boolean;
@@ -43,23 +44,34 @@ export class UserStateManager {
         };
     }
 
-    static async saveState() {
-        try {
-            await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_STATE, JSON.stringify(this.state));
-        } catch (e) {
-            console.warn(
-                '[Notifly] Failed to save state to IndexedDB. This is mostly due to the sudden browser shutdown.',
-                e
-            );
-        }
-    }
+    private static syncQueue: Promise<void> = Promise.resolve();
+    static identityRevision: number | null = null;
 
     static async sync(options: SyncStateOptions): Promise<void> {
-        await this._syncState(options);
+        const operation = this.syncQueue.catch(() => undefined).then(() => this._syncState(options));
+        this.syncQueue = operation;
+        return operation;
     }
 
-    static async refresh(policy: SyncStatePolicy = SyncStatePolicy.OVERWRITE) {
-        return this._syncState({
+    static async ensureCurrentIdentity(): Promise<ProtectedSnapshot> {
+        let snapshot = await NotiflyStorage.getIdentitySnapshot();
+        if (this.identityRevision !== snapshot.revision) {
+            this.invalidateIdentity();
+            await this.refresh(SyncStatePolicy.OVERWRITE, 'identity');
+            snapshot = await NotiflyStorage.getIdentitySnapshot();
+            if (snapshot.revision !== this.identityRevision) throw new Error('[Notifly] Identity is changing.');
+        }
+        return snapshot;
+    }
+
+    static async refresh(
+        policy: SyncStatePolicy = SyncStatePolicy.OVERWRITE,
+        reason: SyncReason = 'refresh',
+        transition?: { from: number; to: number }
+    ) {
+        return this.sync({
+            transition,
+            reason,
             policy,
             useStorageIfAvailable: false,
         });
@@ -95,9 +107,13 @@ export class UserStateManager {
     static updateEventCounts(
         eventName: string,
         eventParams: Record<string, any>,
-        segmentationEventParamKeys?: string[] | null
+        segmentationEventParamKeys?: string[] | null,
+        occurredAtMicros?: number
     ) {
-        const formattedDate = getKSTCalendarDateString();
+        const formattedDate = getKSTCalendarDateString(
+            0,
+            occurredAtMicros === undefined ? Date.now() : occurredAtMicros / 1000
+        );
         const keyField = segmentationEventParamKeys ? segmentationEventParamKeys[0] : null;
         const valueField = keyField ? eventParams[keyField] || null : null;
 
@@ -121,8 +137,6 @@ export class UserStateManager {
                 event_params: eventParams || {},
             });
         }
-
-        this.saveState();
     }
 
     private static _clearEventCounts() {
@@ -136,8 +150,6 @@ export class UserStateManager {
         Object.keys(params).forEach((key) => {
             this.userData.user_properties && (this.userData.user_properties[key] = params[key]);
         });
-
-        this.saveState();
     }
 
     private static _clearUserProperties() {
@@ -152,91 +164,79 @@ export class UserStateManager {
             ...this.userData.campaign_hidden_until,
             ...campaignHiddenUntilData,
         };
-
-        this.saveState();
     }
 
     private static _clearCampaignHiddenUntilData() {
         this.userData.campaign_hidden_until = {};
     }
 
+    static invalidateIdentity() {
+        this.inWebMessageCampaigns = [];
+        this.identityRevision = null;
+        this.clearAll();
+    }
+
     static clearAll() {
         this._clearEventCounts();
         this._clearUserProperties();
         this._clearCampaignHiddenUntilData();
-
-        this.saveState();
     }
 
-    private static async _syncState(options: SyncStateOptions): Promise<void> {
-        await this.updateExternalUserId();
-
-        const useStorageIfAvailable = options.useStorageIfAvailable ?? true;
-        const policy = options.policy ?? SyncStatePolicy.OVERWRITE;
-
-        if (useStorageIfAvailable) {
-            // Get state from storage, if available
-            const storedState = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_STATE);
+    private static async _syncState(options: SyncStateOptions, attempt = 0): Promise<void> {
+        if (attempt >= 3) throw new Error('[Notifly] Identity changed repeatedly during synchronization.');
+        const snapshot = await NotiflyStorage.getIdentitySnapshot();
+        const { projectId, deviceId, externalUserId } = snapshot.values;
+        const notiflyUserId = generateNotiflyUserId(projectId, externalUserId, deviceId);
+        const end = beginPerformance('user-state.' + (attempt ? 'correction' : options.reason ?? 'refresh'));
+        let data: any;
+        try {
+            data = await NotiflyAPI.call(
+                'https://api.notifly.tech/user-state/' +
+                    projectId +
+                    '/' +
+                    notiflyUserId +
+                    '?channel=in-web-message&deviceId=' +
+                    encodeURIComponent(deviceId),
+                'GET'
+            );
+            end(true);
+        } catch (error) {
+            end(false);
+            throw error;
+        }
+        const current = await NotiflyStorage.getIdentitySnapshot();
+        if (current.revision !== snapshot.revision) {
+            this.invalidateIdentity();
+            return this._syncState(
+                { ...options, policy: SyncStatePolicy.OVERWRITE, handleExternalUserIdMismatch: false },
+                attempt + 1
+            );
+        }
+        const deviceExternalUserId = data.userData?.device_external_user_id;
+        if (
+            options.handleExternalUserIdMismatch &&
+            this.shouldHandleExternalUserIdMismatch(externalUserId, deviceExternalUserId)
+        ) {
             try {
-                const parsedStateJson = storedState ? JSON.parse(storedState) : null;
-                if (parsedStateJson && isValidUserState(parsedStateJson)) {
-                    const parsedState = parsedStateJson as {
-                        eventIntermediateCounts: EventIntermediateCounts[];
-                        inWebMessageCampaigns: Campaign[];
-                        userData: UserData;
-                    };
-
-                    this.eventIntermediateCounts = parsedState.eventIntermediateCounts;
-                    this.inWebMessageCampaigns = parsedState.inWebMessageCampaigns;
-                    this._overwriteUserData(parsedState.userData);
-
-                    await this.saveState();
-                    return;
-                }
-                console.warn('[Notifly] State from storage might have been corrupted. Ignoring state from storage.');
+                await NotiflyStorage.compareAndSetExternalUserId(deviceExternalUserId, snapshot.revision);
             } catch (error) {
-                console.warn('[Notifly] State from storage might have been corrupted. Ignoring state from storage.');
+                if (!(error instanceof ProtectedStorageError) || error.code !== 'REVISION_CONFLICT') throw error;
+                this.invalidateIdentity();
             }
+            return this._syncState(
+                { ...options, policy: SyncStatePolicy.OVERWRITE, handleExternalUserIdMismatch: false },
+                attempt + 1
+            );
         }
-
-        const [projectId, notiflyDeviceId] = await NotiflyStorage.getItems([
-            NotiflyStorageKeys.PROJECT_ID,
-            NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
-        ]);
-        const notiflyUserId = await NotiflyStorage.getNotiflyUserId();
-
-        if (!projectId || !notiflyDeviceId || !notiflyUserId) {
-            throw new Error('Project ID, device ID, Notifly User ID should be set before logging an event.');
-        }
-
-        const data = await NotiflyAPI.call(
-            `https://api.notifly.tech/user-state/${projectId}/${notiflyUserId}?channel=in-web-message${
-                notiflyDeviceId ? `&deviceId=${notiflyDeviceId}` : ''
-            }`,
-            'GET'
+        this.userData.external_user_id = externalUserId;
+        const transitionChanged =
+            options.transition &&
+            (options.transition.to !== snapshot.revision || options.transition.from !== this.identityRevision);
+        this._updateStatesBasedOnPolicy(
+            data,
+            transitionChanged ? SyncStatePolicy.OVERWRITE : options.policy ?? SyncStatePolicy.OVERWRITE
         );
-
-        // DB의 디바이스-유저 매핑 정보와 SDK에 저장된 유저 정보가 다른 경우
-        // DB를 Source of Truth로 하여 SDK의 external_user_id를 DB 값으로 변경
-        if (options.handleExternalUserIdMismatch) {
-            const userData = data.userData || {};
-            const deviceExternalUserId = userData['device_external_user_id'];
-            const sdkExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
-
-            if (this.shouldHandleExternalUserIdMismatch(sdkExternalUserId, deviceExternalUserId)) {
-                // SDK의 external_user_id를 DB 값으로 변경
-                await NotiflyStorage.setItem(NotiflyStorageKeys.EXTERNAL_USER_ID, deviceExternalUserId);
-                await this._syncState({
-                    ...options,
-                    policy: SyncStatePolicy.OVERWRITE,
-                    handleExternalUserIdMismatch: false,
-                });
-                return;
-            }
-        }
-
-        this._updateStatesBasedOnPolicy(data, policy);
-        await this.saveState();
+        this.identityRevision = snapshot.revision;
     }
 
     private static shouldHandleExternalUserIdMismatch(

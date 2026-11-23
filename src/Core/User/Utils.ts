@@ -7,8 +7,8 @@ import { getPlatform } from '../Utils';
 import { SdkStateManager } from '../SdkState';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export function getKSTCalendarDateString(daysOffset = 0) {
-    const kstDate = new Date(Date.now() + 9 * 60 * 60 * 1000);
+export function getKSTCalendarDateString(daysOffset = 0, timestampMillis = Date.now()) {
+    const kstDate = new Date(timestampMillis + 9 * 60 * 60 * 1000);
     kstDate.setDate(kstDate.getDate() + daysOffset);
     return kstDate.toISOString().split('T')[0];
 }

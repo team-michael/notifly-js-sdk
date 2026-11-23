@@ -13,15 +13,17 @@ import {
 } from '../Interfaces/Campaign';
 import type { UserData, DeviceProperties, UserMetadataProperties } from '../Interfaces/User';
 
+import { NotiflyStorage } from '../Storage';
 import { UserStateManager } from '../User/State';
 import { WebMessageScheduler } from './Scheduler';
 
 import { ValueComparator, getKSTCalendarDateString, isValueNotPresent, matchRegex } from './Utils';
 
 export class WebMessageManager {
-    static async initialize(hard = false) {
+    static async initialize(_hard = false) {
         await UserStateManager.sync({
-            useStorageIfAvailable: !hard,
+            reason: 'initial',
+            useStorageIfAvailable: false,
             handleExternalUserIdMismatch: true,
         });
         WebMessageScheduler.initialize();
@@ -31,19 +33,21 @@ export class WebMessageManager {
         eventName: string,
         eventParams: Record<string, any>,
         externalUserID: string | null,
-        segmentationEventParamKeys?: string[] | null
+        segmentationEventParamKeys?: string[] | null,
+        occurredAtMicros?: number
     ) {
         this._checkCancellationConditionsAndTriggerWebMessages(eventName, eventParams, externalUserID);
-        UserStateManager.updateEventCounts(eventName, eventParams, segmentationEventParamKeys);
+        UserStateManager.updateEventCounts(eventName, eventParams, segmentationEventParamKeys, occurredAtMicros);
     }
 
     static updateEventCountsAndMaybeTriggerWebMessages(
         eventName: string,
         eventParams: Record<string, any>,
         externalUserID: string | null,
-        segmentationEventParamKeys?: string[] | null
+        segmentationEventParamKeys?: string[] | null,
+        occurredAtMicros?: number
     ) {
-        UserStateManager.updateEventCounts(eventName, eventParams, segmentationEventParamKeys);
+        UserStateManager.updateEventCounts(eventName, eventParams, segmentationEventParamKeys, occurredAtMicros);
         this._checkCancellationConditionsAndTriggerWebMessages(eventName, eventParams, externalUserID, true);
     }
 
@@ -55,7 +59,12 @@ export class WebMessageManager {
     ) {
         this._checkCancellationConditions(eventName, eventParams);
         const campaignsToSchedule = evaluateCampaignsImmediately
-            ? this._getCampaignsToSchedule(UserStateManager.inWebMessageCampaigns, eventName, eventParams, externalUserID)
+            ? this._getCampaignsToSchedule(
+                  UserStateManager.inWebMessageCampaigns,
+                  eventName,
+                  eventParams,
+                  externalUserID
+              )
             : undefined;
         this._triggerWebMessages(eventName, eventParams, externalUserID, campaignsToSchedule);
     }
@@ -66,6 +75,7 @@ export class WebMessageManager {
         externalUserID: string | null,
         campaignsToSchedule?: Campaign[]
     ) {
+        const revision = UserStateManager.identityRevision;
         const schedule = () =>
             (
                 campaignsToSchedule ??
@@ -80,9 +90,15 @@ export class WebMessageManager {
             );
 
         if (document.readyState === 'loading') {
-            const task = () => {
-                schedule();
+            const task = async () => {
                 window.removeEventListener('DOMContentLoaded', task);
+                if (revision === null || UserStateManager.identityRevision !== revision) return;
+                try {
+                    const current = await NotiflyStorage.getIdentitySnapshot();
+                    if (current.revision === revision && UserStateManager.identityRevision === revision) schedule();
+                } catch {
+                    /* Identity cannot be verified; discard this deferred trigger. */
+                }
             };
             window.addEventListener('DOMContentLoaded', task);
         } else {

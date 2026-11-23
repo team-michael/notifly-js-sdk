@@ -9,6 +9,7 @@ jest.mock('../../src/Core/Storage', () => ({
     ...jest.requireActual('../../src/Core/Storage'),
     NotiflyStorage: {
         ensureInitialized: jest.fn(),
+        getIdentitySnapshot: jest.fn().mockResolvedValue({ revision: 1 }),
         getItems: jest.fn(),
         getItem: jest.fn(),
         setItems: jest.fn(),
@@ -123,6 +124,7 @@ describe('updateEventIntermediateCounts', () => {
 
 describe('local event count evaluation order', () => {
     beforeEach(() => {
+        UserStateManager.identityRevision = 1;
         UserStateManager.eventIntermediateCounts = [];
         UserStateManager.inWebMessageCampaigns = [];
     });
@@ -148,7 +150,7 @@ describe('local event count evaluation order', () => {
         ]);
     });
 
-    test('should count one local event before deferred evaluation while the document is loading', () => {
+    test('should count one local event before deferred evaluation while the document is loading', async () => {
         jest.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
         const scheduleSpy = jest.spyOn(WebMessageScheduler, 'scheduleInWebMessage').mockImplementation(() => undefined);
         const campaign = makeEventCountCampaign(1);
@@ -161,12 +163,14 @@ describe('local event count evaluation order', () => {
         expect(scheduleSpy).not.toHaveBeenCalled();
 
         window.dispatchEvent(new Event('DOMContentLoaded'));
+        await Promise.resolve();
+        await Promise.resolve();
 
         expect(scheduleSpy).toHaveBeenCalledTimes(1);
         expect(scheduleSpy.mock.calls[0][0]).toBe(campaign);
     });
 
-    test('should preserve each event count while DOM scheduling is deferred', () => {
+    test('should preserve each event count while DOM scheduling is deferred', async () => {
         jest.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
         const scheduleSpy = jest.spyOn(WebMessageScheduler, 'scheduleInWebMessage').mockImplementation(() => undefined);
         const countOneCampaign = makeEventCountCampaign(1);
@@ -178,6 +182,8 @@ describe('local event count evaluation order', () => {
 
         expect(scheduleSpy).not.toHaveBeenCalled();
         window.dispatchEvent(new Event('DOMContentLoaded'));
+        await Promise.resolve();
+        await Promise.resolve();
 
         expect(scheduleSpy).toHaveBeenCalledTimes(2);
         expect(scheduleSpy.mock.calls[0][0]).toBe(countOneCampaign);
@@ -197,7 +203,7 @@ describe('local event count evaluation order', () => {
         ]);
     });
 
-    test('should defer existing entry point evaluation while the document is loading', () => {
+    test('should defer existing entry point evaluation while the document is loading', async () => {
         jest.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
         const scheduleSpy = jest.spyOn(WebMessageScheduler, 'scheduleInWebMessage').mockImplementation(() => undefined);
         const campaign = makeEventCountCampaign(1);
@@ -207,6 +213,8 @@ describe('local event count evaluation order', () => {
 
         expect(scheduleSpy).not.toHaveBeenCalled();
         window.dispatchEvent(new Event('DOMContentLoaded'));
+        await Promise.resolve();
+        await Promise.resolve();
 
         expect(scheduleSpy).toHaveBeenCalledTimes(1);
         expect(scheduleSpy.mock.calls[0][0]).toBe(campaign);
@@ -2138,4 +2146,18 @@ describe('triggering event filter with NOT_INCLUDE and null handling', () => {
         const result = WebMessageManager.isEventApplicableForCampaign(campaign, 'test-event', {});
         expect(result).toBe(true);
     });
+});
+
+test('a campaign deferred until DOM ready is discarded after identity changes', async () => {
+    jest.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+    const schedule = jest.spyOn(WebMessageScheduler, 'scheduleInWebMessage').mockImplementation(() => undefined);
+    UserStateManager.identityRevision = 1;
+    UserStateManager.inWebMessageCampaigns = [makeEventCountCampaign(1)];
+    WebMessageManager.updateEventCountsAndMaybeTriggerWebMessages('test_event', {}, null);
+    UserStateManager.identityRevision = 2;
+    window.dispatchEvent(new Event('DOMContentLoaded'));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(schedule).not.toHaveBeenCalled();
+    jest.restoreAllMocks();
 });

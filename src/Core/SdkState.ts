@@ -19,6 +19,7 @@ export interface SdkStateObserver {
     onRefreshStarted?: () => void;
     onRefreshCompleted?: () => void;
     onTerminated?: () => void;
+    onFailed?: () => void;
 }
 
 export class SdkStateManager {
@@ -45,6 +46,10 @@ export class SdkStateManager {
         const previousState = this._state;
         this._state = state;
 
+        if (state === SdkState.FAILED) {
+            this._observers.forEach((observer) => observer.onFailed?.());
+            return;
+        }
         if (state === SdkState.TERMINATED) {
             this._observers.forEach((observer) => observer.onTerminated?.());
             return;

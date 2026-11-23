@@ -63,6 +63,10 @@ export class CommandManager implements SdkStateObserver {
         this._flush();
     }
 
+    onFailed() {
+        this._abortAll();
+    }
+
     onTerminated() {
         this._abortAll();
     }
@@ -117,7 +121,7 @@ export class CommandManager implements SdkStateObserver {
                         this._isFlushing = false;
                         return;
                     }
-                    return;
+                    continue;
                 } finally {
                     this._removeCommand(commandWrapper);
                 }
@@ -184,6 +188,7 @@ export class CommandManager implements SdkStateObserver {
         }
         this._activeCommands = [];
         this._pendingCommandsQueue.clear();
+        this._isFlushing = false;
     }
 
     private _handleCommandError(commandWrapper: CommandWrapper<any>, error: any): boolean {

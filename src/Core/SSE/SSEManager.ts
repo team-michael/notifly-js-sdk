@@ -1,3 +1,5 @@
+import { ProtectedSnapshot } from '../Storage/ProtectedStorageTypes';
+import { generateNotiflyUserId } from '../Utils';
 import { SdkStateManager } from '../SdkState';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { UserStateManager, SyncStatePolicy } from '../User/State';
@@ -35,6 +37,7 @@ function clearLastEventIdFromSession(): void {
 
 interface ActiveController {
     controller: SSEController;
+    revision: number;
     projectId: string;
     notiflyUserId: string;
     deviceId: string | null;
@@ -73,10 +76,8 @@ export class SSEManager {
         if (this.initializing) return;
         this.initializing = true;
         try {
-            const [projectId, deviceId] = await NotiflyStorage.getItems([
-                NotiflyStorageKeys.PROJECT_ID,
-                NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
-            ]);
+            const identity = await NotiflyStorage.getIdentitySnapshot();
+            const { projectId, deviceId, externalUserId } = identity.values;
             if (!projectId || !deviceId) {
                 this.stop();
                 return;
@@ -84,7 +85,7 @@ export class SSEManager {
 
             let notiflyUserId: string;
             try {
-                notiflyUserId = await NotiflyStorage.getNotiflyUserId();
+                notiflyUserId = generateNotiflyUserId(projectId, externalUserId, deviceId);
             } catch {
                 this.stop();
                 return;
@@ -93,6 +94,7 @@ export class SSEManager {
             const current = this.active;
             if (
                 current &&
+                current.revision === identity.revision &&
                 current.projectId === projectId &&
                 current.notiflyUserId === notiflyUserId &&
                 current.deviceId === deviceId
@@ -120,13 +122,13 @@ export class SSEManager {
             const controller = new SSEController({
                 sseClient: client,
                 onSyncRequested: (completion) => {
-                    this.runSync(completion).catch(() => undefined);
+                    this.runSync(completion, identity).catch(() => undefined);
                 },
                 onServerEventTriggered: (name, eventParams) => {
-                    this.dispatchServerEvent(name, eventParams).catch(() => undefined);
+                    this.dispatchServerEvent(name, eventParams, identity).catch(() => undefined);
                 },
             });
-            this.active = { controller, projectId, notiflyUserId, deviceId };
+            this.active = { controller, revision: identity.revision, projectId, notiflyUserId, deviceId };
             controller.start();
         } catch (e) {
             console.warn('[Notifly] SSEManager.ensureController failed', e);
@@ -148,16 +150,35 @@ export class SSEManager {
         return issued;
     }
 
-    private static async runSync(completion: () => void): Promise<void> {
+    private static async runSync(completion: () => void, source: ProtectedSnapshot): Promise<void> {
         try {
-            await UserStateManager.refresh(SyncStatePolicy.OVERWRITE);
+            if (!(await this.isCurrentSource(source))) return;
+            await UserStateManager.refresh(SyncStatePolicy.OVERWRITE, 'sse');
         } finally {
             completion();
         }
     }
 
-    private static async dispatchServerEvent(name: string, eventParams: Record<string, unknown> | null): Promise<void> {
-        const externalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
+    private static async isCurrentSource(source: ProtectedSnapshot): Promise<boolean> {
+        const current = await NotiflyStorage.getIdentitySnapshot();
+        if (source.revision === current.revision) return true;
+        this.stop();
+        await this.start();
+        return false;
+    }
+
+    private static async dispatchServerEvent(
+        name: string,
+        eventParams: Record<string, unknown> | null,
+        source: ProtectedSnapshot
+    ): Promise<void> {
+        if (!(await this.isCurrentSource(source))) return;
+        const current = await UserStateManager.ensureCurrentIdentity();
+        if (current.revision !== source.revision) {
+            await this.start();
+            return;
+        }
+        const { externalUserId } = current.values;
         WebMessageManager.maybeTriggerWebMessagesAndUpdateEventCounts(
             name,
             (eventParams ?? {}) as Record<string, unknown>,

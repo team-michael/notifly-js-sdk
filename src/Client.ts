@@ -13,13 +13,17 @@ import { Language } from './Core/Interfaces/RequestPermissionPromptDesignParams'
 
 import { CommandManager } from './Core/Command';
 import { NotiflyAPI } from './Core/API';
+import { getSdkConfiguration } from './Core/API/Configuration';
 import { SdkStateManager, SdkState, type SdkType } from './Core/SdkState';
 import { SessionManager } from './Core/Session';
 import { SSEManager } from './Core/SSE/SSEManager';
 import { initializeNotiflyStorage, isValidProjectId, isValidTimezoneId, removeKeys } from './Core/Utils';
 import { BuiltInUserPropertyKey } from './Constants';
+import { getTimestampMicroseconds } from './Core/Utils';
 import { KmpUserPropertyKeyPolicy } from './Core/KmpCore';
 import { WebMessageScheduler, type PopupActionHandler } from './Core/WebMessages/Scheduler';
+
+import { beginPerformance } from './Core/Diagnostics';
 
 let initSemaphore = false;
 
@@ -44,15 +48,18 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
     }
 
     initSemaphore = true; // Acquire
+    const endInitialization = beginPerformance('initialize');
 
     const onInitializationFailed = () => {
         initSemaphore = false;
         SdkStateManager.state = SdkState.FAILED;
+        endInitialization(false);
         return false;
     };
     const onInitializationSuccess = () => {
         initSemaphore = false;
         SdkStateManager.state = SdkState.READY;
+        endInitialization(true);
         return true;
     };
 
@@ -77,19 +84,17 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
 
     SdkStateManager.setAllowUserSuppliedLogEvent(allowUserSuppliedLogEvent);
 
-    window.addEventListener('beforeunload', () => {
-        SdkStateManager.state = SdkState.TERMINATED;
-    });
     window.addEventListener('pagehide', (event) => {
-        if (event.persisted) {
+        if (!event.persisted) {
             SdkStateManager.state = SdkState.TERMINATED;
         }
     });
 
     try {
-        await initializeNotiflyStorage(projectId, username, password);
+        const configuration = await getSdkConfiguration(projectId);
+        await initializeNotiflyStorage(projectId, username, password, configuration.webPushOptions?.serviceWorkerPath);
         await NotiflyAPI.initialize();
-        await SessionManager.initialize();
+        await SessionManager.initialize(configuration);
         SSEManager.start().catch((error) => {
             console.warn('[Notifly] SSEManager.start failed', error);
         });
@@ -121,8 +126,9 @@ export async function trackEvent(
         await CommandManager.getInstance().dispatch(
             new TrackEventCommand({
                 eventName,
-                eventParams,
-                segmentationEventParamKeys,
+                eventParams: JSON.parse(JSON.stringify(eventParams)),
+                segmentationEventParamKeys: segmentationEventParamKeys ? [...segmentationEventParamKeys] : null,
+                occurredAtMicros: getTimestampMicroseconds(),
             })
         );
     } catch (error) {

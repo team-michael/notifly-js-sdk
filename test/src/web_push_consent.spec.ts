@@ -68,6 +68,20 @@ beforeEach(async () => {
     jest.spyOn(storage, 'getItem').mockResolvedValue(null);
     jest.spyOn(storage, 'setItem').mockResolvedValue();
     jest.spyOn(storage, 'getItems').mockResolvedValue(['test-project', 'test-device', null]);
+    jest.spyOn(storage, 'getIdentitySnapshot').mockImplementation(async () => {
+        const [projectId, deviceId, externalUserId] = await storage.getItems([]);
+        return {
+            revision: 1,
+            values: {
+                projectId: projectId!,
+                deviceId: deviceId!,
+                externalUserId,
+                username: 'user',
+                password: 'password',
+            },
+        };
+    });
+    user.identityRevision = 1;
     upload = jest.spyOn(NotiflyAPI, 'call').mockResolvedValue({});
     log = jest.spyOn(EventLogger, 'logEvent');
     nativePermission = jest.fn().mockResolvedValue('granted');

@@ -304,6 +304,7 @@ export class WebMessageScheduler {
         externalUserId: string | null = UserStateManager.userData.external_user_id ?? null
     ) {
         const delayInSeconds = campaign.delay ?? 0;
+        const revision = UserStateManager.identityRevision;
         if (campaign.message.template_rendering_mode === 'ssr') {
             this.descheduleInWebMessage(campaign.id);
             const scheduled: ScheduledWebMessage = { campaignId: campaign.id };
@@ -323,8 +324,18 @@ export class WebMessageScheduler {
             // iOS/Android SDK 와 동일하게 기존 타이머를 cancel-and-replace 한다.
             this.descheduleInWebMessage(campaign.id);
 
-            const timerId = setTimeout(() => {
+            const timerId = setTimeout(async () => {
                 try {
+                    if (revision === null || UserStateManager.identityRevision !== revision) return;
+                    const current = await NotiflyStorage.getIdentitySnapshot();
+                    if (
+                        current.revision !== revision ||
+                        UserStateManager.identityRevision !== revision ||
+                        !this._scheduledWebMessages.some((item) => item.timerId === timerId) ||
+                        SdkStateManager.halted ||
+                        SdkStateManager.state === SdkState.REFRESHING
+                    )
+                        return;
                     this._showInWebMessage(campaign);
                 } catch (error) {
                     console.error('[Notifly] Error showing web message: ', error);

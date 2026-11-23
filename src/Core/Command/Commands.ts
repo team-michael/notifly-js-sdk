@@ -79,8 +79,15 @@ export class TrackEventCommand implements CommandBase<void> {
     }
 
     execute(): Promise<void> {
-        const { eventName, eventParams, segmentationEventParamKeys } = this._params;
-        return EventLogger.logEvent.call(EventLogger, eventName, eventParams, segmentationEventParamKeys);
+        const { eventName, eventParams, segmentationEventParamKeys, occurredAtMicros } = this._params;
+        return EventLogger.logEvent.call(
+            EventLogger,
+            eventName,
+            eventParams,
+            segmentationEventParamKeys,
+            false,
+            occurredAtMicros
+        );
     }
 }
 

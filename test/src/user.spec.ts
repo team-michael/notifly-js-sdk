@@ -8,9 +8,31 @@ jest.mock('../../src/Core/Storage', () => ({
     ...jest.requireActual('../../src/Core/Storage'),
     NotiflyStorage: {
         ensureInitialized: jest.fn(),
+        getIdentitySnapshot: jest.fn().mockResolvedValue({
+            revision: 1,
+            values: {
+                projectId: 'test',
+                deviceId: 'test',
+                externalUserId: null,
+                username: 'user',
+                password: 'password',
+            },
+        }),
         getItems: jest.fn(),
         getItem: jest.fn(),
         getNotiflyUserId: jest.fn().mockResolvedValue('previous_notifly_user_id'),
+        compareAndSetExternalUserId: jest
+            .fn()
+            .mockImplementation(async (value: string | null, revision: number) => ({
+                revision: revision + 1,
+                values: {
+                    projectId: 'test',
+                    deviceId: 'test',
+                    externalUserId: value,
+                    username: 'user',
+                    password: 'password',
+                },
+            })),
         setItems: jest.fn(),
         setItem: jest.fn(),
         removeItems: jest.fn(),
@@ -57,15 +79,22 @@ describe('setUserProperties', () => {
         const expectedParams = {
             external_user_id: '1234567890',
             previous_external_user_id: null,
-            previous_notifly_user_id: 'previous_notifly_user_id',
+            previous_notifly_user_id: expect.stringMatching(/^[a-f0-9]{32}$/),
         };
 
         // Assume sdk is initialized
         SdkStateManager.state = SdkState.READY;
         await UserIdentityManager.setUserProperties(params);
 
-        expect(NotiflyStorage.setItem).toHaveBeenCalledWith('__notiflyExternalUserID', '1234567890');
-        expect(EventLogger.logEvent).toHaveBeenCalledWith('set_user_properties', expectedParams, null, true);
+        expect(NotiflyStorage.compareAndSetExternalUserId).toHaveBeenCalledWith('1234567890', 1);
+        expect(EventLogger.logEvent).toHaveBeenCalledWith(
+            'set_user_properties',
+            expectedParams,
+            null,
+            true,
+            undefined,
+            expect.objectContaining({ revision: expect.any(Number) })
+        );
     });
 
     test('does not set external_user_id in storage and logs the event when params do not include external_user_id', async () => {
@@ -80,6 +109,13 @@ describe('setUserProperties', () => {
 
         await UserIdentityManager.setUserProperties(params);
 
-        expect(EventLogger.logEvent).toHaveBeenCalledWith('set_user_properties', expectedParams, null, true);
+        expect(EventLogger.logEvent).toHaveBeenCalledWith(
+            'set_user_properties',
+            expectedParams,
+            null,
+            true,
+            undefined,
+            expect.objectContaining({ revision: expect.any(Number) })
+        );
     });
 });

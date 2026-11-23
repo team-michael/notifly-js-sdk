@@ -3,7 +3,7 @@ import { getSdkConfiguration, type SdkConfiguration } from './API/Configuration'
 import { LAST_SESSION_TIME_LOGGING_INTERVAL } from '../Constants';
 
 import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
-import { UserStateManager } from './User/State';
+import { SyncStatePolicy, UserStateManager } from './User/State';
 import { EventLogger } from './Event';
 import { WebMessageManager } from './WebMessages/Manager';
 import { NotiflyWebPushManager } from './Push';
@@ -13,7 +13,7 @@ export class SessionManager {
     private static _sdkConfiguration: SdkConfiguration | undefined;
     private static _storageSaverIntervalId: ReturnType<typeof setInterval> | null = null;
 
-    static async initialize() {
+    static async initialize(configuration?: SdkConfiguration) {
         const parsedLastSessionTime = parseInt(
             (await NotiflyStorage.getItem(NotiflyStorageKeys.LAST_SESSION_TIME)) || '0',
             10
@@ -25,9 +25,9 @@ export class SessionManager {
             this._lastSessionTime = parsedLastSessionTime;
         }
 
-        this._sdkConfiguration = await getSdkConfiguration();
+        this._sdkConfiguration = configuration ?? (await getSdkConfiguration());
 
-        await WebMessageManager.initialize(this._isSessionExpired());
+        await WebMessageManager.initialize(true);
         await this._initializePushManager();
         await this._maybeStartSession();
         await this._initializeInternal();
@@ -55,6 +55,7 @@ export class SessionManager {
             LAST_SESSION_TIME_LOGGING_INTERVAL
         );
 
+        UserStateManager.ensureCurrentIdentity().catch((e) => console.warn('[Notifly] Identity refresh failed', e));
         this._maybeRefreshSession().catch((e) => {
             console.error('[Notifly] Failed to refresh session', e);
         });
@@ -91,7 +92,7 @@ export class SessionManager {
         if (this._isSessionExpired()) {
             await this.saveLastSessionTime();
             await EventLogger.sessionStart();
-            await UserStateManager.refresh();
+            await UserStateManager.refresh(SyncStatePolicy.OVERWRITE, 'session');
         }
     }
 
@@ -132,6 +133,9 @@ export class SessionManager {
         // Register listeners
         window.addEventListener('focus', this.onWindowFocus.bind(this));
         window.addEventListener('blur', this.onWindowUnfocus.bind(this));
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) this.onWindowFocus();
+        });
         window.addEventListener('beforeunload', this.onWindowUnfocus.bind(this));
         window.addEventListener('pagehide', (event) => {
             if (event.persisted) {

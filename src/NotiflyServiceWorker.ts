@@ -3,16 +3,30 @@
 /// <reference lib="es2015" />
 /// <reference lib="webworker" />
 
-const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.4.0';
+import { ProtectedIdentityStore } from './Core/Storage/ProtectedIdentityStore';
+import { PROTECTED_KEYS } from './Core/Storage/ProtectedStorageTypes';
+const workerStorage = new ProtectedIdentityStore();
+
+const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.5.0';
 const NOTIFLY_SERVICE_WORKER_SEMVER = NOTIFLY_SERVICE_WORKER_VERSION.replace('v', '');
 const NOTIFLY_LOG_EVENT_URL = 'https://e.notifly.tech/records';
-const NOTIFLY_OBJECT_STORE_NAME = 'notiflyconfig';
 
 // Constants for user ID generation
 const HASH_NAMESPACE_REGISTERED_USERID = 'ce7c62f9-e8ae-4009-8fd6-468e9581fa21';
 const HASH_NAMESPACE_UNREGISTERED_USERID = 'a6446dcf-c057-4de7-a360-56af8659d52f';
 
 const sw: ServiceWorkerGlobalScope & typeof globalThis = self as any;
+
+sw.addEventListener('message', (event) => {
+    if (event.data?.type === '__notifly_storage_capability') {
+        event.ports[0]?.postMessage({
+            type: '__notifly_storage_capability',
+            protocolVersion: 1,
+            schemaVersions: [1],
+            cryptoVersions: [1],
+        });
+    }
+});
 
 sw.addEventListener('install', () => {
     sw.skipWaiting();
@@ -125,60 +139,17 @@ async function swActivate() {
     }
 }
 
-async function getItemFromIndexedDB(dbName: string, key: IDBValidKey) {
-    try {
-        const db = await openDB(dbName);
-        const transaction = db.transaction(NOTIFLY_OBJECT_STORE_NAME);
-        const store = transaction.objectStore(NOTIFLY_OBJECT_STORE_NAME);
-        const value = await getValue(store, key);
-        return value !== undefined ? value : null; // localForage returns null if key is not found
-    } catch (error) {
-        console.warn('[Notifly Service Worker] Failed to get item from IndexedDB: ', error);
-        return null;
+async function getItemFromIndexedDB(_dbName: string, key: string): Promise<string | null> {
+    const field = PROTECTED_KEYS[key as keyof typeof PROTECTED_KEYS];
+    if (field) {
+        const identity = await workerStorage.read();
+        if (identity) return identity.values[field];
     }
+    return (await workerStorage.configuration([key]))[0];
 }
 
-function openDB(name: string): Promise<IDBDatabase> {
-    return new Promise((resolve, reject) => {
-        const openReq = indexedDB.open(name);
-        openReq.onerror = () => reject(openReq.error);
-        openReq.onsuccess = () => resolve(openReq.result);
-        openReq.onupgradeneeded = (event) => {
-            if (!event.target) return;
-            const request: IDBOpenDBRequest = event.target as IDBOpenDBRequest;
-            const db = request.result;
-            if (!db.objectStoreNames.contains(NOTIFLY_OBJECT_STORE_NAME)) {
-                db.createObjectStore(NOTIFLY_OBJECT_STORE_NAME);
-            }
-        };
-    });
-}
-
-function getValue(store: IDBObjectStore, key: IDBValidKey): Promise<any> {
-    return new Promise((resolve, reject) => {
-        const getReq = store.get(key);
-        getReq.onerror = () => reject(getReq.error);
-        getReq.onsuccess = () => resolve(getReq.result);
-    });
-}
-
-async function setItemToIndexedDB(dbName: string, key: IDBValidKey, value: any) {
-    try {
-        const db = await openDB(dbName);
-        const transaction = db.transaction(NOTIFLY_OBJECT_STORE_NAME, 'readwrite');
-        const store = transaction.objectStore(NOTIFLY_OBJECT_STORE_NAME);
-        await setValue(store, key, value);
-    } catch (error) {
-        console.warn('[Notifly Service Worker] Failed to set item to IndexedDB: ', error);
-    }
-}
-
-function setValue(store: IDBObjectStore, key: IDBValidKey, value: any) {
-    return new Promise<void>((resolve, reject) => {
-        const putReq = store.put(value, key);
-        putReq.onerror = () => reject(putReq.error);
-        putReq.onsuccess = () => resolve();
-    });
+async function setItemToIndexedDB(_dbName: string, key: string, value: string): Promise<void> {
+    await workerStorage.writeConfiguration([[key, value]]);
 }
 
 async function getCognitoIdTokenInSw(): Promise<string | null> {
@@ -219,12 +190,14 @@ async function logNotiflyInternalEvent(
     segmentationEventParamKeys: Array<string> | null = null
 ) {
     try {
-        const [cognitoToken, externalUserID, projectID, notiflyDeviceID] = await Promise.all([
-            getItemFromIndexedDB('notifly', '__notiflyCognitoIDToken'),
-            getItemFromIndexedDB('notifly', '__notiflyExternalUserID'),
-            getItemFromIndexedDB('notifly', '__notiflyProjectID'),
-            getItemFromIndexedDB('notifly', '__notiflyDeviceID'),
-        ]);
+        const snapshot = await workerStorage.read();
+        const [cognitoToken] = await workerStorage.configuration(['__notiflyCognitoIDToken']);
+        const legacy = snapshot
+            ? null
+            : await workerStorage.configuration(['__notiflyExternalUserID', '__notiflyProjectID', '__notiflyDeviceID']);
+        const externalUserID = snapshot ? snapshot.values.externalUserId : legacy![0];
+        const projectID = snapshot ? snapshot.values.projectId : legacy![1];
+        const notiflyDeviceID = snapshot ? snapshot.values.deviceId : legacy![2];
         if (!(projectID && notiflyDeviceID)) {
             console.warn('[Notifly Service Worker]: Fail to trackEvent because of invalid LocalForage setup.');
             return;
@@ -290,7 +263,7 @@ function _getBodyForLogEvent(
     segmentationEventParamKeys: Array<string> | null,
     projectID: string,
     notiflyUserID: string,
-    externalUserID: string,
+    externalUserID: string | null,
     notiflyDeviceID: string,
     isInternalEvent: boolean
 ) {
@@ -353,30 +326,30 @@ function generateNotiflyUserId(projectId: string, externalUserId: string | null,
 function uuidv5(name: string, namespace: string): string {
     // Convert namespace UUID to bytes
     const namespaceBytes = uuidStringToBytes(namespace);
-    
+
     // Create hash input
     const input = new TextEncoder().encode(name);
     const hashInput = new Uint8Array(namespaceBytes.length + input.length);
     hashInput.set(namespaceBytes);
     hashInput.set(input, namespaceBytes.length);
-    
+
     // Simple hash (not SHA-1, but sufficient for our needs)
     let hash = 0;
     for (let i = 0; i < hashInput.length; i++) {
         hash = ((hash << 5) - hash + hashInput[i]) & 0xffffffff;
     }
-    
+
     // Generate deterministic UUID-like string from hash
     const bytes = new Uint8Array(16);
     for (let i = 0; i < 16; i++) {
         bytes[i] = (hash >> (i * 2)) & 0xff;
-        hash = ((hash * 1103515245) + 12345) & 0xffffffff; // LCG for additional randomness
+        hash = (hash * 1103515245 + 12345) & 0xffffffff; // LCG for additional randomness
     }
-    
+
     // Set version (5) and variant bits
     bytes[6] = (bytes[6] & 0x0f) | 0x50; // Version 5
     bytes[8] = (bytes[8] & 0x3f) | 0x80; // Variant 10
-    
+
     return bytesToUuidString(bytes);
 }
 
@@ -391,13 +364,13 @@ function uuidStringToBytes(uuid: string): Uint8Array {
 
 function bytesToUuidString(bytes: Uint8Array): string {
     const hex = Array.from(bytes)
-        .map(b => b.toString(16).padStart(2, '0'))
+        .map((b) => b.toString(16).padStart(2, '0'))
         .join('');
     return [
         hex.substring(0, 8),
         hex.substring(8, 12),
         hex.substring(12, 16),
         hex.substring(16, 20),
-        hex.substring(20, 32)
+        hex.substring(20, 32),
     ].join('-');
 }

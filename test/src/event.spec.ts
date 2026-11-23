@@ -15,6 +15,18 @@ jest.mock('../../src/Core/Storage', () => ({
     ...jest.requireActual('../../src/Core/Storage'),
     NotiflyStorage: {
         getItems: jest.fn(),
+        getIdentitySnapshot: jest
+            .fn()
+            .mockResolvedValue({
+                revision: 1,
+                values: {
+                    projectId: 'test-project-id',
+                    deviceId: 'test-device-id',
+                    externalUserId: 'test-external-user-id',
+                    username: 'user',
+                    password: 'password',
+                },
+            }),
         setItem: jest.fn(),
     },
 }));
@@ -67,6 +79,7 @@ describe('EventLogger web-message evaluation order', () => {
         ]);
         jest.mocked(NotiflyAPI.call).mockResolvedValue({});
         UserStateManager.eventIntermediateCounts = [];
+        UserStateManager.identityRevision = 1;
         UserStateManager.inWebMessageCampaigns = [eventCountCampaign];
     });
 
@@ -85,6 +98,14 @@ describe('EventLogger web-message evaluation order', () => {
         expect(UserStateManager.eventIntermediateCounts).toEqual([
             expect.objectContaining({ name: 'test_event', count: 1 }),
         ]);
+    });
+
+    test('preserves occurrence time across a KST midnight while the command waits', async () => {
+        const occurredAt = new Date('2023-05-30T14:59:59Z').getTime() * 1000;
+        await (EventLogger.logEvent as any)('test_event', {}, null, false, occurredAt);
+        const payload = jest.mocked(NotiflyAPI.call).mock.calls[0][2];
+        expect(JSON.parse(payload.records[0].data).time).toBe(occurredAt);
+        expect(UserStateManager.eventIntermediateCounts[0].dt).toBe('2023-05-30');
     });
 
     test('does not count or evaluate a local event when upload fails', async () => {

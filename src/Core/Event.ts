@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { v4 } from 'uuid';
 
-import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
+import { NotiflyStorage } from './Storage';
 
 import { SdkStateManager } from './SdkState';
 import { NotiflyAPI } from './API';
 import { WebMessageManager } from './WebMessages/Manager';
+import { ProtectedSnapshot } from './Storage/ProtectedStorageTypes';
+import { UserStateManager } from './User/State';
 import {
     generateNotiflyUserId,
     getCurrentTimezoneId,
@@ -31,9 +33,18 @@ export class EventLogger {
         eventName: string,
         eventParams: Record<string, any>,
         segmentationEventParamKeys: string[] | null = null,
-        isInternalEvent = false
+        isInternalEvent = false,
+        occurredAtMicros?: number,
+        identity?: ProtectedSnapshot
     ): Promise<void> {
-        await this._logEvent(eventName, eventParams, segmentationEventParamKeys, isInternalEvent);
+        await this._logEvent(
+            eventName,
+            eventParams,
+            segmentationEventParamKeys,
+            isInternalEvent,
+            occurredAtMicros,
+            identity
+        );
     }
 
     static async sessionStart(): Promise<void> {
@@ -51,14 +62,17 @@ export class EventLogger {
         eventName: string,
         eventParams: Record<string, any>,
         segmentationEventParamKeys: string[] | null = null,
-        isInternalEvent = false
+        isInternalEvent = false,
+        occurredAtMicros?: number,
+        identity?: ProtectedSnapshot
     ): Promise<void> {
         try {
-            const [projectId, notiflyDeviceId, externalUserId] = await NotiflyStorage.getItems([
-                NotiflyStorageKeys.PROJECT_ID,
-                NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
-                NotiflyStorageKeys.EXTERNAL_USER_ID,
-            ]);
+            const snapshot =
+                identity ??
+                (isInternalEvent
+                    ? await NotiflyStorage.getIdentitySnapshot()
+                    : await UserStateManager.ensureCurrentIdentity());
+            const { projectId, deviceId: notiflyDeviceId, externalUserId } = snapshot.values;
             if (!projectId || !notiflyDeviceId) {
                 throw new Error('Notifly storage is not initialized');
             }
@@ -77,7 +91,7 @@ export class EventLogger {
                 segmentation_event_param_keys: segmentationEventParamKeys,
                 sdk_version: SdkStateManager.version,
                 sdk_type: SdkStateManager.type,
-                time: getTimestampMicroseconds(),
+                time: occurredAtMicros ?? getTimestampMicroseconds(),
                 platform: getPlatform(),
             };
             if (notiflyUserId) {
@@ -109,11 +123,15 @@ export class EventLogger {
                 'follow'
             );
 
+            const current = await NotiflyStorage.getIdentitySnapshot();
+            if (current.revision !== snapshot.revision || UserStateManager.identityRevision !== snapshot.revision)
+                return;
             WebMessageManager.updateEventCountsAndMaybeTriggerWebMessages(
                 isInternalEvent ? `notifly__${eventName}` : eventName,
                 eventParams,
                 externalUserId,
-                segmentationEventParamKeys
+                segmentationEventParamKeys,
+                occurredAtMicros
             );
         } catch (err) {
             console.error('[Notifly] Error logging event', err);
