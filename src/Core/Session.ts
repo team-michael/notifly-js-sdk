@@ -27,7 +27,7 @@ export class SessionManager {
 
         this._sdkConfiguration = configuration ?? (await getSdkConfiguration());
 
-        await WebMessageManager.initialize(true);
+        await WebMessageManager.initialize();
         await this._initializePushManager();
         await this._maybeStartSession();
         await this._initializeInternal();
@@ -92,7 +92,7 @@ export class SessionManager {
         if (this._isSessionExpired()) {
             await this.saveLastSessionTime();
             await EventLogger.sessionStart();
-            await UserStateManager.refresh(SyncStatePolicy.OVERWRITE, 'session');
+            await UserStateManager.refresh(SyncStatePolicy.OVERWRITE);
         }
     }
 

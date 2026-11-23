@@ -23,8 +23,6 @@ import { getTimestampMicroseconds } from './Core/Utils';
 import { KmpUserPropertyKeyPolicy } from './Core/KmpCore';
 import { WebMessageScheduler, type PopupActionHandler } from './Core/WebMessages/Scheduler';
 
-import { beginPerformance } from './Core/Diagnostics';
-
 let initSemaphore = false;
 
 /**
@@ -48,18 +46,15 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
     }
 
     initSemaphore = true; // Acquire
-    const endInitialization = beginPerformance('initialize');
 
     const onInitializationFailed = () => {
         initSemaphore = false;
         SdkStateManager.state = SdkState.FAILED;
-        endInitialization(false);
         return false;
     };
     const onInitializationSuccess = () => {
         initSemaphore = false;
         SdkStateManager.state = SdkState.READY;
-        endInitialization(true);
         return true;
     };
 

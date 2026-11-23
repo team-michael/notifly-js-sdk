@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { beginPerformance } from '../Diagnostics';
 import { SdkStateManager } from '../SdkState';
 import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 import { saveAndGetCognitoIdToken } from './Auth';
@@ -60,15 +59,7 @@ export class NotiflyAPI {
             request.redirect = redirect;
         }
 
-        const end = url.includes('/user-state/') ? beginPerformance('user-state.request') : () => undefined;
-        let response: Response;
-        try {
-            response = await fetch(url, request);
-            end(response.ok);
-        } catch (error) {
-            end(false);
-            throw error;
-        }
+        const response = await fetch(url, request);
         if (response.ok) {
             return await response.json();
         } else {

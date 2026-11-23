@@ -33,7 +33,7 @@ beforeEach(() => {
     });
 });
 test('sync and local updates never persist user state', async () => {
-    await UserStateManager.sync({ useStorageIfAvailable: false });
+    await UserStateManager.sync({});
     UserStateManager.updateUserProperties({ private: 'value' });
     UserStateManager.updateEventCounts('purchase', { amount: 1 });
     UserStateManager.updateCampaignHiddenUntilData({ campaign: 123 });
@@ -49,7 +49,7 @@ test('even a valid legacy cache cannot suppress the initial server request', asy
               })
             : null
     );
-    await UserStateManager.sync({ useStorageIfAvailable: true });
+    await UserStateManager.sync({});
     expect(NotiflyAPI.call).toHaveBeenCalledTimes(1);
     expect(UserStateManager.userData.user_properties).toEqual({ name: 'fresh' });
 });
@@ -62,7 +62,7 @@ test('a stale user-state response is discarded and the current user is fetched',
                 release = resolve;
             })
     );
-    const syncing = UserStateManager.sync({ useStorageIfAvailable: false });
+    const syncing = UserStateManager.sync({});
     await Promise.resolve();
     await Promise.resolve();
     await Promise.resolve();

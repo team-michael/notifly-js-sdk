@@ -3,7 +3,6 @@ import { getCognitoIdToken } from '../../src/Core/API/Auth';
 jest.mock('../../src/Core/Storage', () => ({
     ...jest.requireActual('../../src/Core/Storage'),
     NotiflyStorage: {
-        ensureInitialized: jest.fn(),
         getItems: jest.fn(),
         getItem: jest.fn(),
         setItems: jest.fn(),

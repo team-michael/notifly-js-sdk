@@ -7,7 +7,6 @@ jest.mock('../../src/Core/Event');
 jest.mock('../../src/Core/Storage', () => ({
     ...jest.requireActual('../../src/Core/Storage'),
     NotiflyStorage: {
-        ensureInitialized: jest.fn(),
         getIdentitySnapshot: jest.fn().mockResolvedValue({
             revision: 1,
             values: {

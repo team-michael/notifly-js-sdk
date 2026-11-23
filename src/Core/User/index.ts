@@ -52,11 +52,10 @@ export class UserIdentityManager {
                 undefined,
                 updated
             );
-            await UserStateManager.refresh(
-                previousExternalUserId ? SyncStatePolicy.OVERWRITE : SyncStatePolicy.MERGE,
-                'identity',
-                { from: previous.revision, to: updated.revision }
-            );
+            await UserStateManager.refresh(previousExternalUserId ? SyncStatePolicy.OVERWRITE : SyncStatePolicy.MERGE, {
+                from: previous.revision,
+                to: updated.revision,
+            });
             return;
         }
 
@@ -111,7 +110,7 @@ export class UserIdentityManager {
             : previous;
         this._lastUserPropertiesSentAt = -Infinity;
         if (previous.values.externalUserId) {
-            await UserStateManager.refresh(SyncStatePolicy.OVERWRITE, 'identity', {
+            await UserStateManager.refresh(SyncStatePolicy.OVERWRITE, {
                 from: previous.revision,
                 to: updated.revision,
             });

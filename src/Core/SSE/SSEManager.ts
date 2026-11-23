@@ -153,7 +153,7 @@ export class SSEManager {
     private static async runSync(completion: () => void, source: ProtectedSnapshot): Promise<void> {
         try {
             if (!(await this.isCurrentSource(source))) return;
-            await UserStateManager.refresh(SyncStatePolicy.OVERWRITE, 'sse');
+            await UserStateManager.refresh(SyncStatePolicy.OVERWRITE);
         } finally {
             completion();
         }

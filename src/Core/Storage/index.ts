@@ -42,10 +42,6 @@ export class NotiflyStorage {
             createId
         ).initialize(input);
     }
-    static async ensureInitialized(): Promise<void> {
-        // No initialization without credentials: callers may only probe the existing storage.
-        await this.store.configuration([]);
-    }
     static async getIdentitySnapshot(): Promise<ProtectedSnapshot> {
         const result = await this.store.read();
         if (!result) throw new ProtectedStorageError('INVALID_IDENTITY');

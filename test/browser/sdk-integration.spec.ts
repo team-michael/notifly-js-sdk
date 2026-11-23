@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import type { BrowserContext, Page } from '@playwright/test';
 import { chromium, firefox, webkit } from '@playwright/test';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 const projectId = '0123456789abcdef0123456789abcdef';
@@ -117,18 +117,17 @@ async function snapshot(page: Page) {
 test('fresh init queues events, reload restores identity, SPA does not refetch', async ({ page, context }) => {
     const calls = await setup(context, 150);
     await load(page);
-    const results = await page.evaluate(async (opts) => {
+    const initialized = await page.evaluate(async (opts) => {
         const sdk = (window as any).notifly;
-        const started = performance.now();
         const initializing = sdk.initialize(opts);
         const params = { page: '/checkout' };
         const event = sdk.trackEvent('page_view', params);
         params.page = '/mutated';
         const initialized = await initializing;
         await event;
-        return { initialized, duration: performance.now() - started };
+        return initialized;
     }, options);
-    expect(results.initialized).toBe(true);
+    expect(initialized).toBe(true);
     expect(calls.states).toBe(1);
     expect(calls.events.filter((e) => e.name === 'page_view')).toHaveLength(1);
     expect(calls.events.find((e) => e.name === 'page_view').event_params).toEqual({ page: '/checkout' });
@@ -144,9 +143,6 @@ test('fresh init queues events, reload restores identity, SPA does not refetch',
     expect(await init(page)).toBe(true);
     expect(calls.states).toBe(2);
     expect((await snapshot(page)).identity.deviceId).toBe(first.identity.deviceId);
-    await test
-        .info()
-        .attach('initialization-timing', { body: JSON.stringify(results), contentType: 'application/json' });
 });
 test('concurrent fresh tabs retain the same device ID', async ({ page, context }) => {
     await setup(context);
@@ -305,24 +301,6 @@ test('a different tab identity is refreshed before evaluating a new event', asyn
     expect((await snapshot(page)).identity.externalUserId).toBe('member-B');
 });
 
-test('local performance entries separate initialization, storage and initial user-state', async ({ page, context }) => {
-    await setup(context, 50);
-    await load(page);
-    expect(await init(page)).toBe(true);
-    const entries = await page.evaluate(() =>
-        performance.getEntriesByType('measure').map((e) => ({ name: e.name, duration: e.duration }))
-    );
-    expect(entries).toEqual(
-        expect.arrayContaining([
-            expect.objectContaining({ name: 'notifly.initialize.success' }),
-            expect.objectContaining({ name: 'notifly.storage.migrate.success' }),
-            expect.objectContaining({ name: 'notifly.user-state.initial.success' }),
-        ])
-    );
-    expect(entries.every((e) => e.duration >= 0)).toBe(true);
-    expect(JSON.stringify(entries)).not.toContain(options.password);
-});
-
 test('a browser process restart restores the persisted CryptoKey and identity', async ({ browserName }, info) => {
     const profile = await mkdtemp(path.join(os.tmpdir(), 'notifly-profile-'));
     const engine = { chromium, firefox, webkit }[browserName];
@@ -355,51 +333,4 @@ test('a browser process restart restores the persisted CryptoKey and identity', 
         await context?.close();
         await rm(profile, { recursive: true, force: true });
     }
-});
-
-test('initialization timing compares the baseline cache with memory-only reloads', async ({ browser }, info) => {
-    test.skip(info.project.name !== 'chrome', 'Local benchmark uses one fixed engine.');
-    const report: Record<string, any> = { fixtureUserStateDelayMs: 50, samplesPerGroup: 10, groups: {} };
-    for (const [version, bundle] of [
-        ['baseline', '/build/secure-storage-fixtures/legacy-sdk.js'],
-        ['secure', '/dist/index.global.js'],
-    ]) {
-        const first: number[] = [],
-            reload: number[] = [];
-        let requests = 0;
-        for (let i = 0; i < 10; i++) {
-            const context = await browser.newContext();
-            try {
-                const calls = await setup(context, 50);
-                const page = await context.newPage();
-                for (const samples of [first, reload]) {
-                    await page.goto('http://127.0.0.1:8765/test/browser/index.html');
-                    await page.addScriptTag({ url: bundle });
-                    const value = await page.evaluate(async (opts) => {
-                        const start = performance.now();
-                        const initialized = await (window as any).notifly.initialize(opts);
-                        return { initialized, elapsed: performance.now() - start };
-                    }, options);
-                    expect(value.initialized).toBe(true);
-                    samples.push(value.elapsed);
-                }
-                requests += calls.states;
-            } finally {
-                await context.close();
-            }
-        }
-        const stats = (values: number[]) => {
-            const s = [...values].sort((a, b) => a - b);
-            return {
-                p50Ms: s[Math.ceil(s.length * 0.5) - 1],
-                p95Ms: s[Math.ceil(s.length * 0.95) - 1],
-                samples: values,
-            };
-        };
-        report.groups[version] = { first: stats(first), reload: stats(reload), requests };
-    }
-    expect(report.groups.secure.requests).toBe(20);
-    expect(report.groups.baseline.requests).toBe(10);
-    await writeFile(info.outputPath('initialization-timing.json'), JSON.stringify(report, null, 2));
-    await info.attach('initialization-timing', { body: JSON.stringify(report), contentType: 'application/json' });
 });

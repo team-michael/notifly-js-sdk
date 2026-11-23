@@ -2,10 +2,9 @@
 import type { Campaign, ReEligibleCondition } from '../Interfaces/Campaign';
 import type { EventIntermediateCounts, UserData } from '../Interfaces/User';
 
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
+import { NotiflyStorage } from '../Storage';
 import { NotiflyAPI } from '../API';
 import { generateNotiflyUserId } from '../Utils';
-import { beginPerformance } from '../Diagnostics';
 import { ProtectedSnapshot, ProtectedStorageError } from '../Storage/ProtectedStorageTypes';
 import {
     getCurrentDefaultUserData,
@@ -22,12 +21,9 @@ export enum SyncStatePolicy {
     MERGE,
 }
 
-export type SyncReason = 'initial' | 'session' | 'identity' | 'sse' | 'refresh';
 type SyncStateOptions = {
-    reason?: SyncReason;
     transition?: { from: number; to: number };
     policy?: SyncStatePolicy;
-    useStorageIfAvailable?: boolean;
     handleExternalUserIdMismatch?: boolean;
 };
 
@@ -57,7 +53,7 @@ export class UserStateManager {
         let snapshot = await NotiflyStorage.getIdentitySnapshot();
         if (this.identityRevision !== snapshot.revision) {
             this.invalidateIdentity();
-            await this.refresh(SyncStatePolicy.OVERWRITE, 'identity');
+            await this.refresh(SyncStatePolicy.OVERWRITE);
             snapshot = await NotiflyStorage.getIdentitySnapshot();
             if (snapshot.revision !== this.identityRevision) throw new Error('[Notifly] Identity is changing.');
         }
@@ -66,19 +62,12 @@ export class UserStateManager {
 
     static async refresh(
         policy: SyncStatePolicy = SyncStatePolicy.OVERWRITE,
-        reason: SyncReason = 'refresh',
         transition?: { from: number; to: number }
     ) {
         return this.sync({
             transition,
-            reason,
             policy,
-            useStorageIfAvailable: false,
         });
-    }
-
-    static async updateExternalUserId() {
-        this.userData.external_user_id = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
     }
 
     static updateAndGetCampaignHiddenUntilDataAccordingToReEligibleCondition(
@@ -187,23 +176,15 @@ export class UserStateManager {
         const snapshot = await NotiflyStorage.getIdentitySnapshot();
         const { projectId, deviceId, externalUserId } = snapshot.values;
         const notiflyUserId = generateNotiflyUserId(projectId, externalUserId, deviceId);
-        const end = beginPerformance('user-state.' + (attempt ? 'correction' : options.reason ?? 'refresh'));
-        let data: any;
-        try {
-            data = await NotiflyAPI.call(
-                'https://api.notifly.tech/user-state/' +
-                    projectId +
-                    '/' +
-                    notiflyUserId +
-                    '?channel=in-web-message&deviceId=' +
-                    encodeURIComponent(deviceId),
-                'GET'
-            );
-            end(true);
-        } catch (error) {
-            end(false);
-            throw error;
-        }
+        const data = await NotiflyAPI.call(
+            'https://api.notifly.tech/user-state/' +
+                projectId +
+                '/' +
+                notiflyUserId +
+                '?channel=in-web-message&deviceId=' +
+                encodeURIComponent(deviceId),
+            'GET'
+        );
         const current = await NotiflyStorage.getIdentitySnapshot();
         if (current.revision !== snapshot.revision) {
             this.invalidateIdentity();

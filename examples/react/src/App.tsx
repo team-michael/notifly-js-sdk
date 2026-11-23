@@ -6,10 +6,6 @@ import logo from './logo.svg';
 import './App.css';
 import Playground from './Playground';
 import MyPage from './MyPage';
-import NotiflyIndexedDBStore from './lib/notifly/Core/Storage/IDB';
-
-const storage = new NotiflyIndexedDBStore('notifly', 'notiflyconfig');
-
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function App() {
