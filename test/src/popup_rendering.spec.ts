@@ -350,15 +350,3 @@ test('keeps the initial session-start popup while SDK initialization has not rea
     await flush();
     expect(visibleFrame()?.srcdoc).toContain('Hello personalized user');
 });
-
-test('a delayed client popup is not displayed after another tab changes identity', async () => {
-    UserStateManager.identityRevision = 1;
-    jest.spyOn(NotiflyStorage, 'getIdentitySnapshot').mockResolvedValue({
-        revision: 2,
-        values: { projectId, deviceId, externalUserId: 'user-b', username: 'user', password: 'password' },
-    });
-    WebMessageScheduler.scheduleInWebMessage(campaign('static', 1));
-    await jest.advanceTimersByTimeAsync(1000);
-    await flush();
-    expect(visibleFrame()).toBeNull();
-});

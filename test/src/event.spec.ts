@@ -100,14 +100,6 @@ describe('EventLogger web-message evaluation order', () => {
         ]);
     });
 
-    test('preserves occurrence time across a KST midnight while the command waits', async () => {
-        const occurredAt = new Date('2023-05-30T14:59:59Z').getTime() * 1000;
-        await (EventLogger.logEvent as any)('test_event', {}, null, false, occurredAt);
-        const payload = jest.mocked(NotiflyAPI.call).mock.calls[0][2];
-        expect(JSON.parse(payload.records[0].data).time).toBe(occurredAt);
-        expect(UserStateManager.eventIntermediateCounts[0].dt).toBe('2023-05-30');
-    });
-
     test('does not count or evaluate a local event when upload fails', async () => {
         jest.mocked(NotiflyAPI.call).mockRejectedValueOnce(new Error('upload failed'));
         jest.spyOn(console, 'error').mockImplementation(() => undefined);

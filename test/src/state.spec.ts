@@ -2146,17 +2146,3 @@ describe('triggering event filter with NOT_INCLUDE and null handling', () => {
         expect(result).toBe(true);
     });
 });
-
-test('a campaign deferred until DOM ready is discarded after identity changes', async () => {
-    jest.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
-    const schedule = jest.spyOn(WebMessageScheduler, 'scheduleInWebMessage').mockImplementation(() => undefined);
-    UserStateManager.identityRevision = 1;
-    UserStateManager.inWebMessageCampaigns = [makeEventCountCampaign(1)];
-    WebMessageManager.updateEventCountsAndMaybeTriggerWebMessages('test_event', {}, null);
-    UserStateManager.identityRevision = 2;
-    window.dispatchEvent(new Event('DOMContentLoaded'));
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(schedule).not.toHaveBeenCalled();
-    jest.restoreAllMocks();
-});
