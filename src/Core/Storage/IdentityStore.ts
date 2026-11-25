@@ -117,12 +117,15 @@ export default class IdentityStore {
 
     /** Retries partial changes against the latest identity; encrypted records never return to plaintext. */
     async updateIdentity(
-        update: (current: NotiflyIdentity | null) => NotiflyIdentity | null,
+        update: (current: Partial<NotiflyIdentity> | null) => Partial<NotiflyIdentity> | null,
         encrypt = true
     ): Promise<void> {
         for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
             const snapshot = await this._read();
-            const next = update(await this._decode(snapshot));
+            // Initialization fills missing legacy fields; encrypted records must already be complete.
+            const current =
+                snapshot.record === undefined ? this._decodeLegacy(snapshot.legacy) : await this._decode(snapshot);
+            const next = update(current);
             if (!next) return;
             const identity = validateIdentity(next);
             const record =
@@ -156,12 +159,22 @@ export default class IdentityStore {
             const plaintext = await decryptIdentity(snapshot.record, snapshot.record.key);
             return validateIdentity(JSON.parse(plaintext));
         }
-        if (snapshot.legacy.every((value) => value === undefined)) return null;
-        const identity: Record<string, unknown> = {};
+        const identity = this._decodeLegacy(snapshot.legacy);
+        return identity ? validateIdentity(identity) : null;
+    }
+
+    private _decodeLegacy(legacy: unknown[]): Partial<NotiflyIdentity> | null {
+        if (legacy.every((value) => value === undefined)) return null;
+        const identity: Partial<NotiflyIdentity> = { externalUserId: null };
         LEGACY_FIELDS.forEach(([field], index) => {
-            identity[field] = snapshot.legacy[index] ?? null;
+            const value = legacy[index];
+            if (value == null) return;
+            if (typeof value !== 'string' || value.length === 0) {
+                throw new Error(`[IdentityStore] Invalid identity field: ${field}.`);
+            }
+            identity[field] = value;
         });
-        return validateIdentity(identity);
+        return identity;
     }
 
     private async _encrypt(identity: NotiflyIdentity, key: CryptoKey): Promise<IdentityRecord> {
