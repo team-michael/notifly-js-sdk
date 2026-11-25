@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { SdkStateManager } from '../SdkState';
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
+import { NotiflyStore, NotiflyStorageKeys } from '../Storage';
 import { saveAndGetCognitoIdToken } from './Auth';
 
 export class NotiflyAPI {
@@ -10,7 +10,7 @@ export class NotiflyAPI {
     private static _cognitoIdToken: string | null = null;
 
     static async initialize() {
-        [this._username, this._password] = await NotiflyStorage.getItems([
+        [this._username, this._password] = await NotiflyStore.getItems([
             NotiflyStorageKeys.USERNAME,
             NotiflyStorageKeys.PASSWORD,
         ]);
@@ -19,7 +19,7 @@ export class NotiflyAPI {
             throw new Error('Username or password not found. Call Notifly.initialize() first.');
         }
 
-        this._cognitoIdToken = await NotiflyStorage.getItem(NotiflyStorageKeys.COGNITO_ID_TOKEN);
+        this._cognitoIdToken = await NotiflyStore.getItem(NotiflyStorageKeys.COGNITO_ID_TOKEN);
         if (!this._cognitoIdToken) {
             this._cognitoIdToken = await saveAndGetCognitoIdToken(this._username, this._password);
             if (!this._cognitoIdToken) {

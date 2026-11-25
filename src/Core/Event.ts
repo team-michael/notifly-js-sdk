@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { v4 } from 'uuid';
 
-import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
+import { NotiflyStore, NotiflyStorageKeys } from './Storage';
 
 import { SdkStateManager } from './SdkState';
 import { NotiflyAPI } from './API';
@@ -54,7 +54,7 @@ export class EventLogger {
         isInternalEvent = false
     ): Promise<void> {
         try {
-            const [projectId, notiflyDeviceId, externalUserId] = await NotiflyStorage.getItems([
+            const [projectId, notiflyDeviceId, externalUserId] = await NotiflyStore.getItems([
                 NotiflyStorageKeys.PROJECT_ID,
                 NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
                 NotiflyStorageKeys.EXTERNAL_USER_ID,

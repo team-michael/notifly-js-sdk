@@ -19,9 +19,8 @@ import { WebMessageScheduler } from './Scheduler';
 import { ValueComparator, getKSTCalendarDateString, isValueNotPresent, matchRegex } from './Utils';
 
 export class WebMessageManager {
-    static async initialize(hard = false) {
+    static async initialize() {
         await UserStateManager.sync({
-            useStorageIfAvailable: !hard,
             handleExternalUserIdMismatch: true,
         });
         WebMessageScheduler.initialize();

@@ -13,18 +13,6 @@ export function getKSTCalendarDateString(daysOffset = 0) {
     return kstDate.toISOString().split('T')[0];
 }
 
-export function isValidUserState(state: any): boolean {
-    if (!state) {
-        return false;
-    }
-
-    return (
-        isValidCampaignData(state.inWebMessageCampaigns) &&
-        isValidUserData(state.userData) &&
-        isValidEventIntermediateCounts(state.eventIntermediateCounts)
-    );
-}
-
 export function isValidEventIntermediateCounts(eics: any): boolean {
     if (!eics || !Array.isArray(eics)) {
         return false;
@@ -36,11 +24,6 @@ export function isValidEventIntermediateCounts(eics: any): boolean {
 export function isValidCampaignData(campaignData: any): boolean {
     // TODO: extra validation
     return campaignData && Array.isArray(campaignData);
-}
-
-export function isValidUserData(userData: any): boolean {
-    // TODO: extra validation
-    return userData && typeof userData === 'object';
 }
 
 export function sanitizeRandomBucketNumber(randomBucketNumber: unknown): number {

@@ -2,7 +2,8 @@ import { getSdkConfiguration, type SdkConfiguration } from './API/Configuration'
 
 import { LAST_SESSION_TIME_LOGGING_INTERVAL } from '../Constants';
 
-import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
+import { NotiflyStore, NotiflyStorageKeys } from './Storage';
+import { isIdentityCryptoSupported } from './Storage/IdentityCrypto';
 import { UserStateManager } from './User/State';
 import { EventLogger } from './Event';
 import { WebMessageManager } from './WebMessages/Manager';
@@ -15,7 +16,7 @@ export class SessionManager {
 
     static async initialize() {
         const parsedLastSessionTime = parseInt(
-            (await NotiflyStorage.getItem(NotiflyStorageKeys.LAST_SESSION_TIME)) || '0',
+            (await NotiflyStore.getItem(NotiflyStorageKeys.LAST_SESSION_TIME)) || '0',
             10
         );
 
@@ -27,8 +28,25 @@ export class SessionManager {
 
         this._sdkConfiguration = await getSdkConfiguration();
 
-        await WebMessageManager.initialize(this._isSessionExpired());
+        await WebMessageManager.initialize();
         await this._initializePushManager();
+        try {
+            if (
+                isIdentityCryptoSupported() &&
+                (await NotiflyWebPushManager.canEncryptIdentity(
+                    this._sdkConfiguration.webPushOptions?.serviceWorkerPath
+                ))
+            ) {
+                await NotiflyStore.enableIdentityEncryption();
+            }
+        } catch (error) {
+            console.warn(
+                '[Notifly] Identity encryption could not be completed. It will be retried on the next initialization.',
+                error
+            );
+            // Continue only if the stored identity is still readable after the failed migration.
+            await NotiflyStore.getNotiflyUserId();
+        }
         await this._maybeStartSession();
         await this._initializeInternal();
     }
@@ -37,7 +55,7 @@ export class SessionManager {
         try {
             const now = Math.floor(Date.now() / 1000);
             this._lastSessionTime = now;
-            await NotiflyStorage.setItem(NotiflyStorageKeys.LAST_SESSION_TIME, now.toString());
+            await NotiflyStore.setItem(NotiflyStorageKeys.LAST_SESSION_TIME, now.toString());
         } catch (e) {
             /* Do nothing */
         }

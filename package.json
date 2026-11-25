@@ -1,6 +1,6 @@
 {
   "name": "notifly-js-sdk",
-  "version": "2.22.0",
+  "version": "2.23.0",
   "description": "Notifly JS SDK for browser.",
   "main": "lib/cjs/index.js",
   "module": "lib/esm/index.js",
@@ -22,7 +22,7 @@
     "build:umd:min": "cross-env NODE_ENV=production rollup -c -o dist/index.min.js",
     "build:global": "cross-env NODE_ENV=development rollup -c rollup.global.config.js -o dist/index.global.js",
     "build:global:min": "cross-env NODE_ENV=production rollup -c rollup.global.config.js -o dist/index.global.min.js",
-    "build:sw": "tsc -p ./tsconfig.sw.json",
+    "build:sw": "tsc -p ./tsconfig.sw.json --noEmit && rollup -c rollup.sw.config.js",
     "deploy:sw": "aws s3 cp --content-type \"application/javascript\" dist/NotiflyServiceWorker.js s3://notifly-content/notifly-js-sdk/dist/NotiflyServiceWorker.js && aws cloudfront create-invalidation --distribution-id E2M7VD2WC9S1MI --paths \"/notifly-js-sdk/dist/NotiflyServiceWorker.js\"",
     "write-version": "node ./scripts/write_version.js",
     "type-check": "tsc -p ./tsconfig.json",
@@ -34,7 +34,7 @@
   "repository": "https://github.com/team-michael/notifly-js-sdk",
   "dependencies": {
     "lodash": "^4.17.21",
-    "notifly-core-sdk": "2.22.0",
+    "notifly-core-sdk": "2.23.0",
     "notifly-web-message-renderer": "^2.5.0",
     "uuid": "^9.0.0"
   },

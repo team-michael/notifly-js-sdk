@@ -1,5 +1,5 @@
 import { SdkStateManager } from '../SdkState';
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
+import { NotiflyStore, NotiflyStorageKeys } from '../Storage';
 
 /**
  * Fetches a Cognito ID token for the given user name and password.
@@ -49,6 +49,6 @@ export async function saveAndGetCognitoIdToken(userName: string, password: strin
     if (!cognitoIdToken) {
         return null;
     }
-    await NotiflyStorage.setItem(NotiflyStorageKeys.COGNITO_ID_TOKEN, cognitoIdToken);
+    await NotiflyStore.setItem(NotiflyStorageKeys.COGNITO_ID_TOKEN, cognitoIdToken);
     return cognitoIdToken;
 }

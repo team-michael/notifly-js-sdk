@@ -3,7 +3,10 @@
 /// <reference lib="es2015" />
 /// <reference lib="webworker" />
 
-const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.4.0';
+import IdentityStore, { type NotiflyIdentity } from './Core/Storage/IdentityStore';
+import { isIdentityCryptoSupported } from './Core/Storage/IdentityCrypto';
+
+const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.5.0';
 const NOTIFLY_SERVICE_WORKER_SEMVER = NOTIFLY_SERVICE_WORKER_VERSION.replace('v', '');
 const NOTIFLY_LOG_EVENT_URL = 'https://e.notifly.tech/records';
 const NOTIFLY_OBJECT_STORE_NAME = 'notiflyconfig';
@@ -13,6 +16,7 @@ const HASH_NAMESPACE_REGISTERED_USERID = 'ce7c62f9-e8ae-4009-8fd6-468e9581fa21';
 const HASH_NAMESPACE_UNREGISTERED_USERID = 'a6446dcf-c057-4de7-a360-56af8659d52f';
 
 const sw: ServiceWorkerGlobalScope & typeof globalThis = self as any;
+const identityStore = new IdentityStore();
 
 sw.addEventListener('install', () => {
     sw.skipWaiting();
@@ -20,6 +24,14 @@ sw.addEventListener('install', () => {
 
 sw.addEventListener('activate', (event) => {
     event.waitUntil(swActivate());
+});
+
+sw.addEventListener('message', (event) => {
+    const port = event.ports[0];
+    if (event.data?.action !== '__notifly_is_crypto_service_worker' || !port) return;
+
+    port.postMessage(isIdentityCryptoSupported());
+    port.close();
 });
 
 sw.addEventListener('push', (event) => {
@@ -181,11 +193,8 @@ function setValue(store: IDBObjectStore, key: IDBValidKey, value: any) {
     });
 }
 
-async function getCognitoIdTokenInSw(): Promise<string | null> {
-    const [userName, password] = [
-        await getItemFromIndexedDB('notifly', '__notiflyUserName'),
-        await getItemFromIndexedDB('notifly', '__notiflyPassword'),
-    ];
+async function getCognitoIdTokenInSw(identity: NotiflyIdentity): Promise<string | null> {
+    const { username: userName, password } = identity;
     if (!userName || !password) {
         return null;
     }
@@ -219,22 +228,21 @@ async function logNotiflyInternalEvent(
     segmentationEventParamKeys: Array<string> | null = null
 ) {
     try {
-        const [cognitoToken, externalUserID, projectID, notiflyDeviceID] = await Promise.all([
+        const [cognitoToken, identity] = await Promise.all([
             getItemFromIndexedDB('notifly', '__notiflyCognitoIDToken'),
-            getItemFromIndexedDB('notifly', '__notiflyExternalUserID'),
-            getItemFromIndexedDB('notifly', '__notiflyProjectID'),
-            getItemFromIndexedDB('notifly', '__notiflyDeviceID'),
+            identityStore.getIdentity(),
         ]);
-        if (!(projectID && notiflyDeviceID)) {
-            console.warn('[Notifly Service Worker]: Fail to trackEvent because of invalid LocalForage setup.');
+        if (!identity) {
+            console.warn('[Notifly Service Worker]: Fail to trackEvent because identity is missing.');
             return;
         }
+        const { projectId: projectID, deviceId: notiflyDeviceID, externalUserId: externalUserID } = identity;
 
         const notiflyUserID = generateNotiflyUserId(projectID, externalUserID, notiflyDeviceID);
 
         let token: string | null = cognitoToken;
         if (!token) {
-            token = await getCognitoIdTokenInSw();
+            token = await getCognitoIdTokenInSw(identity);
             if (!token) {
                 console.warn('[Notifly Service Worker]: Fail to trackEvent');
                 return;
@@ -257,7 +265,7 @@ async function logNotiflyInternalEvent(
 
         // If the token is expired, get a new token and retry the logEvent.
         if (response.status === 401) {
-            token = await getCognitoIdTokenInSw();
+            token = await getCognitoIdTokenInSw(identity);
             if (!token) {
                 console.warn('[Notifly Service Worker] Failed to get authentication token.');
                 return;
@@ -290,7 +298,7 @@ function _getBodyForLogEvent(
     segmentationEventParamKeys: Array<string> | null,
     projectID: string,
     notiflyUserID: string,
-    externalUserID: string,
+    externalUserID: string | null,
     notiflyDeviceID: string,
     isInternalEvent: boolean
 ) {

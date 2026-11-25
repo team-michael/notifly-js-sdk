@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.23.0]
+
+### Changed
+
+-   Keep user properties, campaigns, and event counts in memory and fetch user state from the server on each SDK initialization.
+-   Encrypt persisted SDK username/password and identifiers with AES-256-GCM. Verify migrated data before removing legacy plaintext identifiers and cached user state.
+-   Defer identity migration when required WebCrypto APIs or a compatible active service worker are unavailable. Service Worker `v1.5.0` supports both legacy and encrypted identities.
+
+### Migration
+
+-   Update existing Notifly service workers to the crypto-compatible version before migrating identities.
+-   After migration, downgrading to SDK `2.22.0` or earlier can generate a new device ID and recreate plaintext credentials because those versions cannot read encrypted identities. Rollback versions of both the SDK and service worker must retain encrypted-identity support.
+
 ## [2.22.0]
 
 ### Added
