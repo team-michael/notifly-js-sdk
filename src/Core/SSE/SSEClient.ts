@@ -16,7 +16,7 @@ export interface SSEClientOptions {
     notiflyUserId: string;
     deviceId: string | null;
     baseUrl: string;
-    tokenProvider: () => Promise<string>;
+    tokenProvider?: () => Promise<string | null>;
     sdkVersionHeader: string;
     backoffScheduleMs?: number[];
     heartbeatTimeoutMs?: number;
@@ -91,7 +91,7 @@ export class SSEClient {
             notiflyUserId: opts.notiflyUserId,
             deviceId: opts.deviceId,
             baseUrl: opts.baseUrl,
-            tokenProvider: opts.tokenProvider,
+            tokenProvider: opts.tokenProvider ?? (async () => null),
             sdkVersionHeader: opts.sdkVersionHeader,
             backoffScheduleMs: opts.backoffScheduleMs ?? DEFAULT_BACKOFF_SCHEDULE_MS,
             heartbeatTimeoutMs: opts.heartbeatTimeoutMs ?? DEFAULT_HEARTBEAT_TIMEOUT_MS,
@@ -304,12 +304,14 @@ export class SSEClient {
         return `${base}${path}${query}`;
     }
 
-    private buildHeaders(token: string, lastEventId: string | null): Record<string, string> {
+    private buildHeaders(token: string | null, lastEventId: string | null): Record<string, string> {
         const headers: Record<string, string> = {
-            Authorization: `Bearer ${token}`,
             'x-notifly-sdk-version': this.opts.sdkVersionHeader,
             Accept: 'text/event-stream',
         };
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
         if (lastEventId && lastEventId.length > 0) {
             headers['Last-Event-ID'] = lastEventId;
         }

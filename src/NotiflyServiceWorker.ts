@@ -3,7 +3,7 @@
 /// <reference lib="es2015" />
 /// <reference lib="webworker" />
 
-import IdentityStore, { type NotiflyIdentity } from './Core/Storage/IdentityStore';
+import IdentityStore from './Core/Storage/IdentityStore';
 import { isIdentityCryptoSupported } from './Core/Storage/IdentityCrypto';
 
 const NOTIFLY_SERVICE_WORKER_VERSION = 'v1.5.0';
@@ -137,19 +137,6 @@ async function swActivate() {
     }
 }
 
-async function getItemFromIndexedDB(dbName: string, key: IDBValidKey) {
-    try {
-        const db = await openDB(dbName);
-        const transaction = db.transaction(NOTIFLY_OBJECT_STORE_NAME);
-        const store = transaction.objectStore(NOTIFLY_OBJECT_STORE_NAME);
-        const value = await getValue(store, key);
-        return value !== undefined ? value : null; // localForage returns null if key is not found
-    } catch (error) {
-        console.warn('[Notifly Service Worker] Failed to get item from IndexedDB: ', error);
-        return null;
-    }
-}
-
 function openDB(name: string): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
         const openReq = indexedDB.open(name);
@@ -163,14 +150,6 @@ function openDB(name: string): Promise<IDBDatabase> {
                 db.createObjectStore(NOTIFLY_OBJECT_STORE_NAME);
             }
         };
-    });
-}
-
-function getValue(store: IDBObjectStore, key: IDBValidKey): Promise<any> {
-    return new Promise((resolve, reject) => {
-        const getReq = store.get(key);
-        getReq.onerror = () => reject(getReq.error);
-        getReq.onsuccess = () => resolve(getReq.result);
     });
 }
 
@@ -193,45 +172,13 @@ function setValue(store: IDBObjectStore, key: IDBValidKey, value: any) {
     });
 }
 
-async function getCognitoIdTokenInSw(identity: NotiflyIdentity): Promise<string | null> {
-    const { username: userName, password } = identity;
-    if (!userName || !password) {
-        return null;
-    }
-
-    try {
-        const response = await fetch('https://api.notifly.tech/authorize', {
-            method: 'POST',
-            body: JSON.stringify({
-                userName,
-                password,
-            }),
-            headers: {
-                'X-Notifly-SDK-Version': `notifly/js-sw/${NOTIFLY_SERVICE_WORKER_SEMVER}`,
-            },
-        });
-        const result = await response.json();
-        return result.AuthenticationResult?.IdToken || null;
-    } catch (error) {
-        console.warn('[Notifly Service Worker]: Failed to get authentication token ', error);
-        return null;
-    }
-}
-
-async function saveCognitoIdTokenInSW(cognitoIdToken: string): Promise<void> {
-    await setItemToIndexedDB('notifly', '__notiflyCognitoIDToken', cognitoIdToken);
-}
-
 async function logNotiflyInternalEvent(
     eventName: string,
     eventParams: Record<string, any> | null = null,
     segmentationEventParamKeys: Array<string> | null = null
 ) {
     try {
-        const [cognitoToken, identity] = await Promise.all([
-            getItemFromIndexedDB('notifly', '__notiflyCognitoIDToken'),
-            identityStore.getIdentity(),
-        ]);
+        const identity = await identityStore.getIdentity();
         if (!identity) {
             console.warn('[Notifly Service Worker]: Fail to trackEvent because identity is missing.');
             return;
@@ -239,16 +186,6 @@ async function logNotiflyInternalEvent(
         const { projectId: projectID, deviceId: notiflyDeviceID, externalUserId: externalUserID } = identity;
 
         const notiflyUserID = generateNotiflyUserId(projectID, externalUserID, notiflyDeviceID);
-
-        let token: string | null = cognitoToken;
-        if (!token) {
-            token = await getCognitoIdTokenInSw(identity);
-            if (!token) {
-                console.warn('[Notifly Service Worker]: Fail to trackEvent');
-                return;
-            }
-            await saveCognitoIdTokenInSW(token);
-        }
 
         const body = _getBodyForLogEvent(
             eventName,
@@ -260,28 +197,11 @@ async function logNotiflyInternalEvent(
             notiflyDeviceID,
             true
         );
-        const requestOptions = _getRequestOptionsForLogEvent(token, body);
+        const requestOptions = _getRequestOptionsForLogEvent(body);
         const response = await fetch(NOTIFLY_LOG_EVENT_URL, requestOptions);
-
-        // If the token is expired, get a new token and retry the logEvent.
-        if (response.status === 401) {
-            token = await getCognitoIdTokenInSw(identity);
-            if (!token) {
-                console.warn('[Notifly Service Worker] Failed to get authentication token.');
-                return;
-            }
-            await Promise.all([retryLogEvent(token, body), saveCognitoIdTokenInSW(token)]);
-        }
+        if (!response.ok) throw new Error('Failed to log event.');
     } catch (err) {
         console.warn('[Notifly Service Worker] Failed logging the event. ', err);
-    }
-}
-
-async function retryLogEvent(token: string, body: string) {
-    const requestOptions = _getRequestOptionsForLogEvent(token, body);
-    const response = await fetch(NOTIFLY_LOG_EVENT_URL, requestOptions);
-    if (!response.ok) {
-        throw new Error('Retry failed.');
     }
 }
 
@@ -326,9 +246,8 @@ function _getBodyForLogEvent(
     return body;
 }
 
-function _getRequestOptionsForLogEvent(token: string, body: string) {
+function _getRequestOptionsForLogEvent(body: string) {
     const headers = new Headers();
-    headers.append('Authorization', token);
     headers.append('Content-Type', 'application/json');
     headers.append('X-Notifly-SDK-Version', `notifly/js-sw/${NOTIFLY_SERVICE_WORKER_SEMVER}`);
 

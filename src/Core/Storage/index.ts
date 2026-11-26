@@ -37,13 +37,13 @@ export class NotiflyStore {
     private static readonly identityStore = new IdentityStore();
     private static encryptIdentity = false;
 
-    static async initialize(projectId: string, username: string, password: string): Promise<void> {
+    static async initialize(projectId: string, username?: string, password?: string): Promise<void> {
         await this.ensureInitialized();
         await this.identityStore.updateIdentity(
             (current) => ({
                 projectId,
-                username,
-                password,
+                username: username ?? current?.username,
+                password: password ?? current?.password,
                 deviceId: current?.deviceId ?? v4(),
                 externalUserId: current?.externalUserId ?? null,
             }),

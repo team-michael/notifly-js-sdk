@@ -2,8 +2,8 @@ import { decryptIdentity, encryptIdentity, EncryptedIdentity, generateIdentityKe
 
 export interface NotiflyIdentity {
     projectId: string;
-    username: string;
-    password: string;
+    username?: string;
+    password?: string;
     deviceId: string;
     externalUserId: string | null;
 }
@@ -38,6 +38,8 @@ function validateIdentity(value: unknown): NotiflyIdentity {
     }
     const identity = value as NotiflyIdentity;
     for (const [field] of LEGACY_FIELDS) {
+        if ((field === 'username' || field === 'password') && (identity[field] == null || identity[field] === ''))
+            continue;
         if (field === 'externalUserId' && identity[field] === null) continue;
         if (typeof identity[field] !== 'string' || identity[field]?.length === 0) {
             throw new Error(`[IdentityStore] Invalid identity field: ${field}.`);
@@ -46,8 +48,8 @@ function validateIdentity(value: unknown): NotiflyIdentity {
     // Only identity fields belong in this encrypted payload.
     return {
         projectId: identity.projectId,
-        username: identity.username,
-        password: identity.password,
+        ...(identity.username ? { username: identity.username } : {}),
+        ...(identity.password ? { password: identity.password } : {}),
         deviceId: identity.deviceId,
         externalUserId: identity.externalUserId,
     };
@@ -139,7 +141,7 @@ export default class IdentityStore {
                         store.put(record, IDENTITY_KEY);
                     } else {
                         LEGACY_FIELDS.forEach(([field, key]) => {
-                            if (identity[field] === null) store.delete(key);
+                            if (identity[field] == null) store.delete(key);
                             else store.put(identity[field], key);
                         });
                     }
@@ -169,7 +171,7 @@ export default class IdentityStore {
         const identity: Partial<NotiflyIdentity> = { externalUserId: null };
         LEGACY_FIELDS.forEach(([field], index) => {
             const value = legacy[index];
-            if (value == null) return;
+            if (value == null || ((field === 'username' || field === 'password') && value === '')) return;
             if (typeof value !== 'string' || value.length === 0) {
                 throw new Error(`[IdentityStore] Invalid identity field: ${field}.`);
             }

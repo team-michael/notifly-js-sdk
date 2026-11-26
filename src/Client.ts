@@ -12,7 +12,6 @@ import {
 import { Language } from './Core/Interfaces/RequestPermissionPromptDesignParams';
 
 import { CommandManager } from './Core/Command';
-import { NotiflyAPI } from './Core/API';
 import { SdkStateManager, SdkState, type SdkType } from './Core/SdkState';
 import { SessionManager } from './Core/Session';
 import { SSEManager } from './Core/SSE/SSEManager';
@@ -71,11 +70,6 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
         return onInitializationFailed();
     }
 
-    if (!username || !password) {
-        console.error('[Notifly] username and password must not be empty');
-        return onInitializationFailed();
-    }
-
     SdkStateManager.setAllowUserSuppliedLogEvent(allowUserSuppliedLogEvent);
 
     window.addEventListener('beforeunload', () => {
@@ -89,7 +83,6 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
 
     try {
         await NotiflyStore.initialize(projectId, username, password);
-        await NotiflyAPI.initialize();
         await SessionManager.initialize();
         SSEManager.start().catch((error) => {
             console.warn('[Notifly] SSEManager.start failed', error);
