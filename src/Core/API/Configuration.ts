@@ -1,6 +1,6 @@
 import { Language, RequestPermissionPromptDesignParams } from '../Interfaces/RequestPermissionPromptDesignParams';
 import { SdkStateManager } from '../SdkState';
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
+import { NotiflyStore, NotiflyStorageKeys } from '../Storage';
 
 const DEFAULTS = {
     sessionDuration: 1800,
@@ -21,7 +21,7 @@ export interface SdkConfiguration {
 }
 
 export async function getSdkConfiguration(): Promise<SdkConfiguration> {
-    const projectId = await NotiflyStorage.getItem(NotiflyStorageKeys.PROJECT_ID);
+    const projectId = await NotiflyStore.getItem(NotiflyStorageKeys.PROJECT_ID);
     if (!projectId) {
         throw new Error('Project ID not found. Did you forget to call Notifly.initialize()?');
     }

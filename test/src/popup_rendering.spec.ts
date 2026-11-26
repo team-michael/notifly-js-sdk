@@ -1,7 +1,7 @@
 import { tech } from 'notifly-core-sdk';
 import { dispose, getIframe } from 'notifly-web-message-renderer';
 import { Campaign, CampaignStatus } from '../../src/Core/Interfaces/Campaign';
-import { NotiflyStorage, NotiflyStorageKeys } from '../../src/Core/Storage';
+import { NotiflyStore, NotiflyStorageKeys } from '../../src/Core/Storage';
 import { SdkState, SdkStateManager } from '../../src/Core/SdkState';
 import { WebMessageScheduler } from '../../src/Core/WebMessages/Scheduler';
 import { WebMessageManager } from '../../src/Core/WebMessages/Manager';
@@ -67,9 +67,9 @@ beforeEach(() => {
     };
     requests = [];
     configs = [];
-    jest.spyOn(NotiflyStorage, 'getItems').mockImplementation(async (keys) => keys.map((key) => identity[key] ?? null));
-    jest.spyOn(NotiflyStorage, 'getItem').mockImplementation(async (key) => identity[key] ?? null);
-    jest.spyOn(NotiflyStorage, 'setItem').mockResolvedValue();
+    jest.spyOn(NotiflyStore, 'getItems').mockImplementation(async (keys) => keys.map((key) => identity[key] ?? null));
+    jest.spyOn(NotiflyStore, 'getItem').mockImplementation(async (key) => identity[key] ?? null);
+    jest.spyOn(NotiflyStore, 'setItem').mockResolvedValue();
     log = jest.spyOn(EventLogger, 'logEvent').mockResolvedValue();
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
     jest.spyOn(console, 'warn').mockImplementation(() => undefined);

@@ -1,4 +1,4 @@
-import { NotiflyStorage } from '../../src/Core/Storage';
+import { NotiflyStore } from '../../src/Core/Storage';
 import { SdkState, SdkStateManager } from '../../src/Core/SdkState';
 import { EventLogger } from '../../src/Core/Event';
 import { UserIdentityManager } from '../../src/Core/User';
@@ -6,7 +6,7 @@ import { UserIdentityManager } from '../../src/Core/User';
 jest.mock('../../src/Core/Event');
 jest.mock('../../src/Core/Storage', () => ({
     ...jest.requireActual('../../src/Core/Storage'),
-    NotiflyStorage: {
+    NotiflyStore: {
         ensureInitialized: jest.fn(),
         getItems: jest.fn(),
         getItem: jest.fn(),
@@ -44,10 +44,10 @@ describe('setUserProperties', () => {
             __notiflyProjectID: 'test',
             __notiflyDeviceID: 'test',
         };
-        jest.spyOn(NotiflyStorage, 'getItem').mockImplementation((key: string) => {
+        jest.spyOn(NotiflyStore, 'getItem').mockImplementation((key: string) => {
             return Promise.resolve(_mockStorage[key] || null);
         });
-        jest.spyOn(NotiflyStorage, 'getItems').mockImplementation((keys: string[]) => {
+        jest.spyOn(NotiflyStore, 'getItems').mockImplementation((keys: string[]) => {
             return Promise.resolve(keys.map((key) => _mockStorage[key] || null));
         });
 
@@ -64,7 +64,7 @@ describe('setUserProperties', () => {
         SdkStateManager.state = SdkState.READY;
         await UserIdentityManager.setUserProperties(params);
 
-        expect(NotiflyStorage.setItem).toHaveBeenCalledWith('__notiflyExternalUserID', '1234567890');
+        expect(NotiflyStore.setItem).toHaveBeenCalledWith('__notiflyExternalUserID', '1234567890');
         expect(EventLogger.logEvent).toHaveBeenCalledWith('set_user_properties', expectedParams, null, true);
     });
 

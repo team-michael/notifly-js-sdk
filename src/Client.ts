@@ -12,11 +12,11 @@ import {
 import { Language } from './Core/Interfaces/RequestPermissionPromptDesignParams';
 
 import { CommandManager } from './Core/Command';
-import { NotiflyAPI } from './Core/API';
 import { SdkStateManager, SdkState, type SdkType } from './Core/SdkState';
 import { SessionManager } from './Core/Session';
 import { SSEManager } from './Core/SSE/SSEManager';
-import { initializeNotiflyStorage, isValidProjectId, isValidTimezoneId, removeKeys } from './Core/Utils';
+import { isValidProjectId, isValidTimezoneId, removeKeys } from './Core/Utils';
+import { NotiflyStore } from './Core/Storage';
 import { BuiltInUserPropertyKey } from './Constants';
 import { KmpUserPropertyKeyPolicy } from './Core/KmpCore';
 import { WebMessageScheduler, type PopupActionHandler } from './Core/WebMessages/Scheduler';
@@ -70,11 +70,6 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
         return onInitializationFailed();
     }
 
-    if (!username || !password) {
-        console.error('[Notifly] username and password must not be empty');
-        return onInitializationFailed();
-    }
-
     SdkStateManager.setAllowUserSuppliedLogEvent(allowUserSuppliedLogEvent);
 
     window.addEventListener('beforeunload', () => {
@@ -87,8 +82,7 @@ export async function initialize(options: NotiflyInitializeOptions): Promise<boo
     });
 
     try {
-        await initializeNotiflyStorage(projectId, username, password);
-        await NotiflyAPI.initialize();
+        await NotiflyStore.initialize(projectId, username, password);
         await SessionManager.initialize();
         SSEManager.start().catch((error) => {
             console.warn('[Notifly] SSEManager.start failed', error);

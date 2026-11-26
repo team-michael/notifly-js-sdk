@@ -1,8 +1,7 @@
 import { SdkStateManager } from '../SdkState';
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
+import { NotiflyStore, NotiflyStorageKeys } from '../Storage';
 import { UserStateManager, SyncStatePolicy } from '../User/State';
 import { WebMessageManager } from '../WebMessages/Manager';
-import { saveAndGetCognitoIdToken } from '../API/Auth';
 import { SSEClient } from './SSEClient';
 import { SSEController } from './SSEController';
 
@@ -73,7 +72,7 @@ export class SSEManager {
         if (this.initializing) return;
         this.initializing = true;
         try {
-            const [projectId, deviceId] = await NotiflyStorage.getItems([
+            const [projectId, deviceId] = await NotiflyStore.getItems([
                 NotiflyStorageKeys.PROJECT_ID,
                 NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
             ]);
@@ -84,7 +83,7 @@ export class SSEManager {
 
             let notiflyUserId: string;
             try {
-                notiflyUserId = await NotiflyStorage.getNotiflyUserId();
+                notiflyUserId = await NotiflyStore.getNotiflyUserId();
             } catch {
                 this.stop();
                 return;
@@ -113,7 +112,6 @@ export class SSEManager {
                 deviceId,
                 baseUrl: SSE_BASE_URL,
                 sdkVersionHeader: `notifly/js/${SdkStateManager.getSdkVersion()}`,
-                tokenProvider: () => this.resolveToken(),
                 initialLastEventId: readLastEventIdFromSession(),
                 onLastEventIdChange: writeLastEventIdToSession,
             });
@@ -135,19 +133,6 @@ export class SSEManager {
         }
     }
 
-    private static async resolveToken(): Promise<string> {
-        const cached = await NotiflyStorage.getItem(NotiflyStorageKeys.COGNITO_ID_TOKEN);
-        if (cached) return cached;
-        const [username, password] = await NotiflyStorage.getItems([
-            NotiflyStorageKeys.USERNAME,
-            NotiflyStorageKeys.PASSWORD,
-        ]);
-        if (!username || !password) throw new Error('SSE: credentials missing');
-        const issued = await saveAndGetCognitoIdToken(username, password);
-        if (!issued) throw new Error('SSE: token issue failed');
-        return issued;
-    }
-
     private static async runSync(completion: () => void): Promise<void> {
         try {
             await UserStateManager.refresh(SyncStatePolicy.OVERWRITE);
@@ -157,7 +142,7 @@ export class SSEManager {
     }
 
     private static async dispatchServerEvent(name: string, eventParams: Record<string, unknown> | null): Promise<void> {
-        const externalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
+        const externalUserId = await NotiflyStore.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
         WebMessageManager.maybeTriggerWebMessagesAndUpdateEventCounts(
             name,
             (eventParams ?? {}) as Record<string, unknown>,

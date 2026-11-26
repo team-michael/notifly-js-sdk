@@ -1,13 +1,13 @@
 /**
  * @typedef {Object} NotiflyInitializeOptions
  * @property {string} projectId - The project ID of the Notifly project.
- * @property {string} username - Username to authorize Notifly project.
- * @property {string} password - Password to authorize Notifly project.
+ * @property {string} [username] - Legacy username, accepted for compatibility.
+ * @property {string} [password] - Legacy password, accepted for compatibility.
  */
 export type NotiflyInitializeOptions = {
     projectId: string;
-    username: string;
-    password: string;
+    username?: string;
+    password?: string;
     allowUserSuppliedLogEvent?: boolean;
 };
 

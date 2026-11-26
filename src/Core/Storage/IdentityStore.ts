@@ -1,0 +1,291 @@
+import { decryptIdentity, encryptIdentity, EncryptedIdentity, generateIdentityKey } from './IdentityCrypto';
+
+export interface NotiflyIdentity {
+    projectId: string;
+    username?: string;
+    password?: string;
+    deviceId: string;
+    externalUserId: string | null;
+}
+
+interface IdentityRecord extends EncryptedIdentity {
+    version: 1;
+    key: CryptoKey;
+}
+
+interface Snapshot {
+    record: IdentityRecord | undefined;
+    legacy: unknown[];
+}
+
+const DATABASE = 'notifly';
+const OBJECT_STORE = 'notiflyconfig';
+const IDENTITY_KEY = '__notiflyIdentity';
+const STATE_KEY = '__notiflyState';
+const MAX_ATTEMPTS = 5;
+const TRANSACTION_TIMEOUT = 1000;
+const LEGACY_FIELDS: [keyof NotiflyIdentity, string][] = [
+    ['projectId', '__notiflyProjectID'],
+    ['username', '__notiflyUserName'],
+    ['password', '__notiflyPassword'],
+    ['deviceId', '__notiflyDeviceID'],
+    ['externalUserId', '__notiflyExternalUserID'],
+];
+
+function validateIdentity(value: unknown): NotiflyIdentity {
+    if (!value || typeof value !== 'object') {
+        throw new Error('[IdentityStore] Invalid identity.');
+    }
+    const identity = value as NotiflyIdentity;
+    for (const [field] of LEGACY_FIELDS) {
+        if ((field === 'username' || field === 'password') && (identity[field] == null || identity[field] === ''))
+            continue;
+        if (field === 'externalUserId' && identity[field] === null) continue;
+        if (typeof identity[field] !== 'string' || identity[field]?.length === 0) {
+            throw new Error(`[IdentityStore] Invalid identity field: ${field}.`);
+        }
+    }
+    // Only identity fields belong in this encrypted payload.
+    return {
+        projectId: identity.projectId,
+        ...(identity.username ? { username: identity.username } : {}),
+        ...(identity.password ? { password: identity.password } : {}),
+        deviceId: identity.deviceId,
+        externalUserId: identity.externalUserId,
+    };
+}
+
+function isIdentityRecord(value: unknown): value is IdentityRecord {
+    if (!value || typeof value !== 'object') return false;
+    const record = value as IdentityRecord;
+    return (
+        record.version === 1 &&
+        !!record.key &&
+        record.iv instanceof Uint8Array &&
+        record.ciphertext instanceof ArrayBuffer
+    );
+}
+
+function sameRecord(left: IdentityRecord | undefined, right: IdentityRecord | undefined): boolean {
+    if (left === undefined || right === undefined) return left === right;
+    if (!isIdentityRecord(left) || !isIdentityRecord(right)) return false;
+    const sameBytes = (a: Uint8Array, b: Uint8Array) =>
+        a.length === b.length && a.every((byte, index) => byte === b[index]);
+    return sameBytes(left.iv, right.iv) && sameBytes(new Uint8Array(left.ciphertext), new Uint8Array(right.ciphertext));
+}
+
+/** Identity storage shared by pages and workers; importing it does not open or migrate IndexedDB. */
+export default class IdentityStore {
+    /** Call only after the active push worker supports encrypted identities. */
+    async initialize(): Promise<NotiflyIdentity | null> {
+        for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+            let snapshot = await this._read();
+            const identity = await this._decode(snapshot);
+            if (!identity) return null;
+
+            if (snapshot.record === undefined) {
+                const key = await generateIdentityKey();
+                const record = await this._encrypt(identity, key);
+                if (!(await this._commit(snapshot, (store) => store.put(record, IDENTITY_KEY)))) continue;
+
+                // Verify the committed, structured-cloned key and ciphertext before deleting plaintext.
+                snapshot = await this._read();
+                if (!sameRecord(snapshot.record, record)) continue;
+                const restored = await this._decode(snapshot);
+                if (JSON.stringify(restored) !== JSON.stringify(identity)) {
+                    throw new Error('[IdentityStore] Identity verification failed.');
+                }
+            }
+
+            if (
+                await this._commit(snapshot, (store) => {
+                    LEGACY_FIELDS.forEach(([, key]) => store.delete(key));
+                    store.delete(STATE_KEY);
+                })
+            )
+                return identity;
+        }
+        throw new Error('[IdentityStore] Identity changed during migration. Retry initialization.');
+    }
+
+    /** Read-only, including legacy fallback before migration. Corrupt encrypted data never falls back. */
+    async getIdentity(): Promise<NotiflyIdentity | null> {
+        return this._decode(await this._read());
+    }
+
+    /** Replaces the complete identity. The caller supplies IDs; this store never generates a visitor ID. */
+    async setIdentity(value: NotiflyIdentity): Promise<void> {
+        await this.updateIdentity(() => value);
+    }
+
+    /** Retries partial changes against the latest identity; encrypted records never return to plaintext. */
+    async updateIdentity(
+        update: (current: Partial<NotiflyIdentity> | null) => Partial<NotiflyIdentity> | null,
+        encrypt = true
+    ): Promise<void> {
+        for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+            const snapshot = await this._read();
+            // Initialization fills missing legacy fields; encrypted records must already be complete.
+            const current =
+                snapshot.record === undefined ? this._decodeLegacy(snapshot.legacy) : await this._decode(snapshot);
+            const next = update(current);
+            if (!next) return;
+            const identity = validateIdentity(next);
+            const record =
+                encrypt || snapshot.record !== undefined
+                    ? await this._encrypt(identity, snapshot.record?.key ?? (await generateIdentityKey()))
+                    : undefined;
+            if (
+                await this._commit(snapshot, (store) => {
+                    if (record) {
+                        store.put(record, IDENTITY_KEY);
+                    } else {
+                        LEGACY_FIELDS.forEach(([field, key]) => {
+                            if (identity[field] == null) store.delete(key);
+                            else store.put(identity[field], key);
+                        });
+                    }
+                })
+            ) {
+                if (record) await this.initialize();
+                return;
+            }
+        }
+        throw new Error('[IdentityStore] Identity changed during save. Retry the operation.');
+    }
+
+    private async _decode(snapshot: Snapshot): Promise<NotiflyIdentity | null> {
+        if (snapshot.record !== undefined) {
+            if (!isIdentityRecord(snapshot.record)) {
+                throw new Error('[IdentityStore] Invalid or unsupported encrypted identity.');
+            }
+            const plaintext = await decryptIdentity(snapshot.record, snapshot.record.key);
+            return validateIdentity(JSON.parse(plaintext));
+        }
+        const identity = this._decodeLegacy(snapshot.legacy);
+        return identity ? validateIdentity(identity) : null;
+    }
+
+    private _decodeLegacy(legacy: unknown[]): Partial<NotiflyIdentity> | null {
+        if (legacy.every((value) => value === undefined)) return null;
+        const identity: Partial<NotiflyIdentity> = { externalUserId: null };
+        LEGACY_FIELDS.forEach(([field], index) => {
+            const value = legacy[index];
+            if (value == null || ((field === 'username' || field === 'password') && value === '')) return;
+            if (typeof value !== 'string' || value.length === 0) {
+                throw new Error(`[IdentityStore] Invalid identity field: ${field}.`);
+            }
+            identity[field] = value;
+        });
+        return identity;
+    }
+
+    private async _encrypt(identity: NotiflyIdentity, key: CryptoKey): Promise<IdentityRecord> {
+        return { version: 1, key, ...(await encryptIdentity(JSON.stringify(identity), key)) };
+    }
+
+    private _read(): Promise<Snapshot> {
+        return this._transaction('readonly', (store, done) => this._readSnapshot(store, done));
+    }
+
+    private _readSnapshot(store: IDBObjectStore, done: (snapshot: Snapshot) => void): void {
+        const keys = [IDENTITY_KEY, ...LEGACY_FIELDS.map(([, key]) => key)];
+        const values: unknown[] = new Array(keys.length);
+        let remaining = keys.length;
+        keys.forEach((key, index) => {
+            const request = store.get(key);
+            request.onsuccess = () => {
+                values[index] = request.result;
+                if (--remaining === 0) {
+                    done({ record: values[0] as IdentityRecord | undefined, legacy: values.slice(1) });
+                }
+            };
+        });
+    }
+
+    private _commit(expected: Snapshot, write: (store: IDBObjectStore) => void): Promise<boolean> {
+        return this._transaction('readwrite', (store, done) => {
+            this._readSnapshot(store, (current) => {
+                if (
+                    !sameRecord(current.record, expected.record) ||
+                    !current.legacy.every((value, index) => value === expected.legacy[index])
+                ) {
+                    done(false);
+                    return;
+                }
+                // Crypto runs outside the transaction. Recheck and write synchronously to avoid auto-commit.
+                write(store);
+                done(true);
+            });
+        });
+    }
+
+    private _transaction<T>(
+        mode: IDBTransactionMode,
+        work: (store: IDBObjectStore, done: (result: T) => void) => void
+    ): Promise<T> {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DATABASE);
+            let db: IDBDatabase | undefined;
+            let transaction: IDBTransaction | undefined;
+            let failed = false;
+            const fail = (error: unknown) => {
+                if (failed) return;
+                failed = true;
+                clearTimeout(timeout);
+                try {
+                    transaction?.abort();
+                } catch {
+                    // A transaction that already committed or aborted cannot be cancelled.
+                }
+                db?.close();
+                reject(error);
+            };
+            const timeout = setTimeout(
+                () => fail(new Error('[IdentityStore] Database operation timed out.')),
+                TRANSACTION_TIMEOUT
+            );
+            request.onerror = () => fail(request.error);
+            request.onblocked = () => fail(new Error('[IdentityStore] Database open is blocked.'));
+            request.onupgradeneeded = () => {
+                if (failed) {
+                    request.transaction?.abort();
+                    return;
+                }
+                if (!request.result.objectStoreNames.contains(OBJECT_STORE)) {
+                    request.result.createObjectStore(OBJECT_STORE);
+                }
+            };
+            request.onsuccess = () => {
+                db = request.result;
+                if (failed) {
+                    db.close();
+                    return;
+                }
+                db.onversionchange = () => db?.close();
+                try {
+                    transaction = db.transaction(OBJECT_STORE, mode);
+                } catch (error) {
+                    fail(error);
+                    return;
+                }
+                let result: T;
+                transaction.oncomplete = () => {
+                    clearTimeout(timeout);
+                    db?.close();
+                    resolve(result);
+                };
+                transaction.onabort = () => {
+                    fail(transaction?.error || new Error('[IdentityStore] Transaction aborted.'));
+                };
+                try {
+                    work(transaction.objectStore(OBJECT_STORE), (value) => {
+                        result = value;
+                    });
+                } catch (error) {
+                    fail(error);
+                }
+            };
+        });
+    }
+}

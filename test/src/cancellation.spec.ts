@@ -7,7 +7,7 @@ import { WebMessageScheduler } from '../../src/Core/WebMessages/Scheduler';
 
 jest.mock('../../src/Core/Storage', () => ({
     ...jest.requireActual('../../src/Core/Storage'),
-    NotiflyStorage: {
+    NotiflyStore: {
         ensureInitialized: jest.fn(),
         getItems: jest.fn(),
         getItem: jest.fn(),

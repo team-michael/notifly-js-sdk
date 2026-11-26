@@ -6,7 +6,7 @@ import { UserIdentityManager } from '../User';
 import { EventLogger, NotiflyInternalEvent } from '../Event';
 import { SdkState, SdkStateManager, SdkStateObserver } from '../SdkState';
 import { UserStateManager } from '../User/State';
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
+import { NotiflyStore, NotiflyStorageKeys } from '../Storage';
 import { generateNotiflyUserId } from '../Utils';
 import { KmpPopupRenderTask } from '../KmpCore';
 import { renderPopup } from './Renderer';
@@ -378,7 +378,7 @@ export class WebMessageScheduler {
         }
         this._renderingWebMessage = scheduled;
         try {
-            const identity = await NotiflyStorage.getItems(RENDER_IDENTITY_KEYS);
+            const identity = await NotiflyStore.getItems(RENDER_IDENTITY_KEYS);
             const [projectId, currentUserId, deviceId] = identity;
             if (!this._isCurrentRendering(scheduled) || !projectId || !deviceId || currentUserId !== externalUserId) {
                 this._finishRendering(scheduled);
@@ -415,7 +415,7 @@ export class WebMessageScheduler {
                 this._finishRendering(scheduled);
                 return;
             }
-            const currentIdentity = await NotiflyStorage.getItems(RENDER_IDENTITY_KEYS);
+            const currentIdentity = await NotiflyStore.getItems(RENDER_IDENTITY_KEYS);
             if (
                 !this._isCurrentRendering(scheduled) ||
                 !identity.every((value, index) => value === currentIdentity[index])

@@ -5,14 +5,17 @@ import {
     type RequestPermissionPromptDesignParams,
     type TextDesignParams,
 } from './Interfaces/RequestPermissionPromptDesignParams';
-import { NotiflyStorage, NotiflyStorageKeys } from './Storage';
+import { NotiflyStore, NotiflyStorageKeys } from './Storage';
 import { EventLogger } from './Event';
 
 enum NotiflyServiceWorkerEvents {
     NAVIGATE_TO_URL = '__notifly_navigate_to_url',
+    IS_CRYPTO_SERVICE_WORKER = '__notifly_is_crypto_service_worker',
 }
 
 const REQUEST_PERMISSION_PROMPT_ID_PREFIX = '__notifly_push_prompt_';
+const SERVICE_WORKER_CHECK_TIMEOUT = 1000;
+const DEFAULT_SERVICE_WORKER_PATH = '/notifly-service-worker.js';
 
 const DEFAULT_DESIGN_PARAMS = {
     backgroundColor: '#ffffff',
@@ -82,7 +85,7 @@ export class NotiflyWebPushManager {
     static async initialize(
         vapidPublicKey: string,
         askPermission = true,
-        path = '/notifly-service-worker.js',
+        path = DEFAULT_SERVICE_WORKER_PATH,
         promptDelayMillis = 5000,
         promptDefaultLanguage: Language = Language.EN,
         promptDesignParams?: RequestPermissionPromptDesignParams
@@ -93,12 +96,12 @@ export class NotiflyWebPushManager {
             }
 
             const registration = await navigator.serviceWorker.register(path);
+            this._serviceWorkerRegistration = registration;
             if ('pushManager' in registration === false) {
                 console.warn('[Notifly] Push notification is not supported in this browser.');
                 return;
             }
 
-            this._serviceWorkerRegistration = registration;
             this._vapidPublicKey = vapidPublicKey;
             this._askPermission = askPermission;
 
@@ -114,7 +117,7 @@ export class NotiflyWebPushManager {
             }
             this._promptDesignParams = promptDesignParams;
 
-            this._notiflyNotificationPermission = await NotiflyStorage.getItem(
+            this._notiflyNotificationPermission = await NotiflyStore.getItem(
                 NotiflyStorageKeys.NOTIFLY_NOTIFICATION_PERMISSION
             );
 
@@ -127,6 +130,102 @@ export class NotiflyWebPushManager {
         } catch (error) {
             console.error('[Notifly] Failed to initialize PushManager: ', error);
         }
+    }
+
+    /** Historical custom paths outside the current configuration cannot be identified automatically. */
+    static async canEncryptIdentity(serviceWorkerPath = DEFAULT_SERVICE_WORKER_PATH): Promise<boolean> {
+        try {
+            if (typeof navigator === 'undefined') return false;
+            if (!('serviceWorker' in navigator)) return true;
+            const scriptUrls = [
+                new URL(serviceWorkerPath, document.baseURI),
+                new URL(DEFAULT_SERVICE_WORKER_PATH, location.origin),
+            ];
+            scriptUrls.forEach((url) => {
+                url.hash = ''; // register() strips fragments from the stored script URL.
+            });
+            if (scriptUrls.some((url) => url.origin !== location.origin)) return false;
+
+            const managedRegistration = this._serviceWorkerRegistration;
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            if (this._serviceWorkerRegistration !== managedRegistration) return false;
+            if (!registrations.length) return true;
+
+            const targetsByScope = new Map<string, ServiceWorkerRegistration>();
+            for (const registration of registrations) {
+                if (
+                    registration.scope === managedRegistration?.scope ||
+                    [registration.active, registration.waiting, registration.installing].some(
+                        (worker) => worker && scriptUrls.some((url) => url.href === worker.scriptURL)
+                    )
+                ) {
+                    targetsByScope.set(registration.scope, registration);
+                }
+            }
+            const targets = Array.from(targetsByScope.values());
+            if (!targets.length) return false; // Unknown registrations are not proof that Notifly is absent.
+
+            const workers = targets.map((registration) => registration.active);
+            const supported = await Promise.all(
+                targets.map((registration) => this.isCryptoServiceWorker(registration))
+            );
+            return (
+                this._serviceWorkerRegistration === managedRegistration &&
+                supported.every(
+                    (result, index) =>
+                        result &&
+                        targets[index].active === workers[index] &&
+                        workers[index]?.state === 'activated' &&
+                        !targets[index].waiting &&
+                        !targets[index].installing
+                )
+            );
+        } catch {
+            return false;
+        }
+    }
+
+    /** Checks whether the active worker can read encrypted identities. */
+    static async isCryptoServiceWorker(
+        registration: ServiceWorkerRegistration | null = this._serviceWorkerRegistration
+    ): Promise<boolean> {
+        const currentRegistration = this._serviceWorkerRegistration;
+        const worker = registration?.active;
+        if (
+            !registration ||
+            !worker ||
+            worker.state !== 'activated' ||
+            registration.waiting ||
+            registration.installing ||
+            typeof MessageChannel === 'undefined'
+        ) {
+            return false;
+        }
+
+        return new Promise<boolean>((resolve) => {
+            const channel = new MessageChannel();
+            const finish = (isCryptoWorker: boolean) => {
+                clearTimeout(timeout);
+                channel.port1.close();
+                channel.port2.close();
+                resolve(
+                    isCryptoWorker &&
+                        this._serviceWorkerRegistration === currentRegistration &&
+                        registration.active === worker &&
+                        worker.state === 'activated' &&
+                        !registration.waiting &&
+                        !registration.installing
+                );
+            };
+            const timeout = setTimeout(() => finish(false), SERVICE_WORKER_CHECK_TIMEOUT);
+            channel.port1.onmessage = (event) => finish(event.data === true);
+            channel.port1.onmessageerror = () => finish(false);
+            try {
+                worker.postMessage({ action: NotiflyServiceWorkerEvents.IS_CRYPTO_SERVICE_WORKER }, [channel.port2]);
+            } catch {
+                finish(false);
+            }
+        }).catch(() => false);
     }
 
     static requestPermission(languageToForce?: Language) {
@@ -534,7 +633,7 @@ export class NotiflyWebPushManager {
         };
         const onDenied = () => {
             console.info('[Notifly] Notification permission was not granted.');
-            NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_NOTIFICATION_PERMISSION, 'denied')
+            NotiflyStore.setItem(NotiflyStorageKeys.NOTIFLY_NOTIFICATION_PERMISSION, 'denied')
                 .catch((e) => console.error('[Notifly] Failed to set notification permission to denied: ', e))
                 .finally(cleanup);
         };

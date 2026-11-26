@@ -4,7 +4,7 @@ import isEqual from 'lodash/isEqual';
 
 import { SyncStatePolicy, UserStateManager } from './State';
 import { EventLogger, NotiflyInternalEvent } from '../Event';
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
+import { NotiflyStore, NotiflyStorageKeys } from '../Storage';
 import { SetUserIdOptions } from '../Interfaces/Options';
 import { SdkStateManager, SdkType } from '../SdkState';
 import { KmpUserIdTransitionPolicy } from '../KmpCore';
@@ -49,7 +49,7 @@ export class UserIdentityManager {
     }
 
     static async getUserId(): Promise<string | null> {
-        return NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
+        return NotiflyStore.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
     }
 
     static async getUserProperties(): Promise<Record<string, any> | null> {
@@ -60,14 +60,14 @@ export class UserIdentityManager {
         const externalUserId = params.external_user_id?.toString();
 
         if (externalUserId) {
-            const projectId = await NotiflyStorage.getItem(NotiflyStorageKeys.PROJECT_ID);
+            const projectId = await NotiflyStore.getItem(NotiflyStorageKeys.PROJECT_ID);
             if (!projectId) {
                 throw new Error('[Notifly] Project ID should be set before setting user properties.');
             }
 
             const [previousExternalUserId, previousNotiflyUserId] = await Promise.all([
-                NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID),
-                NotiflyStorage.getNotiflyUserId(),
+                NotiflyStore.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID),
+                NotiflyStore.getNotiflyUserId(),
             ]);
 
             params.previous_notifly_user_id = previousNotiflyUserId;
@@ -76,7 +76,7 @@ export class UserIdentityManager {
             if (!this._areUserIdsIdentical(externalUserId, previousExternalUserId)) {
                 this._lastUserPropertiesSentAt = -Infinity;
                 // Caution: order matters here!
-                await NotiflyStorage.setItem(NotiflyStorageKeys.EXTERNAL_USER_ID, externalUserId);
+                await NotiflyStore.setItem(NotiflyStorageKeys.EXTERNAL_USER_ID, externalUserId);
                 await EventLogger.logEvent(NotiflyInternalEvent.SET_USER_PROPERTIES, params, null, true);
 
                 const policy = previousExternalUserId
@@ -120,7 +120,7 @@ export class UserIdentityManager {
 
     static async removeUserId(): Promise<void> {
         this._lastUserPropertiesSentAt = -Infinity;
-        const previousExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
+        const previousExternalUserId = await NotiflyStore.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
         if (previousExternalUserId) {
             // A -> null
             await this._cleanUserIdInLocalStorage();
@@ -131,7 +131,7 @@ export class UserIdentityManager {
     }
 
     private static async _cleanUserIdInLocalStorage() {
-        await NotiflyStorage.removeItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
+        await NotiflyStore.removeItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
     }
 
     private static _areUserIdsIdentical(

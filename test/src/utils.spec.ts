@@ -3,7 +3,7 @@ import { getPlatform, removeKeys } from '../../src/Core/Utils';
 
 jest.mock('../../src/Core/Storage', () => ({
     ...jest.requireActual('../../src/Core/Storage'),
-    NotiflyStorage: {
+    NotiflyStore: {
         ensureInitialized: jest.fn(),
         getNotiflyUserId: jest.fn().mockResolvedValue('test'),
         getItems: jest.fn(),

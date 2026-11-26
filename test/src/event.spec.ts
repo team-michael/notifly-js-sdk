@@ -3,7 +3,7 @@ import type { Campaign } from '../../src/Core/Interfaces/Campaign';
 
 import { NotiflyAPI } from '../../src/Core/API';
 import { EventLogger } from '../../src/Core/Event';
-import { NotiflyStorage } from '../../src/Core/Storage';
+import { NotiflyStore } from '../../src/Core/Storage';
 import { UserStateManager } from '../../src/Core/User/State';
 import { WebMessageScheduler } from '../../src/Core/WebMessages/Scheduler';
 
@@ -13,7 +13,7 @@ jest.mock('../../src/Core/API', () => ({
 
 jest.mock('../../src/Core/Storage', () => ({
     ...jest.requireActual('../../src/Core/Storage'),
-    NotiflyStorage: {
+    NotiflyStore: {
         getItems: jest.fn(),
         setItem: jest.fn(),
     },
@@ -60,7 +60,7 @@ describe('EventLogger web-message evaluation order', () => {
     beforeEach(() => {
         jest.spyOn(document, 'readyState', 'get').mockReturnValue('complete');
         scheduleSpy = jest.spyOn(WebMessageScheduler, 'scheduleInWebMessage').mockImplementation(() => undefined);
-        jest.mocked(NotiflyStorage.getItems).mockResolvedValue([
+        jest.mocked(NotiflyStore.getItems).mockResolvedValue([
             'test-project-id',
             'test-device-id',
             'test-external-user-id',

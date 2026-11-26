@@ -2,7 +2,7 @@
 import type { Campaign, ReEligibleCondition } from '../Interfaces/Campaign';
 import type { EventIntermediateCounts, UserData } from '../Interfaces/User';
 
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
+import { NotiflyStore, NotiflyStorageKeys } from '../Storage';
 import { NotiflyAPI } from '../API';
 import {
     getCurrentDefaultUserData,
@@ -12,12 +12,7 @@ import {
     sanitizeRandomBucketNumber,
 } from './Utils';
 
-import {
-    getKSTCalendarDateString,
-    isValidCampaignData,
-    isValidEventIntermediateCounts,
-    isValidUserState,
-} from './Utils';
+import { getKSTCalendarDateString, isValidCampaignData, isValidEventIntermediateCounts } from './Utils';
 
 export enum SyncStatePolicy {
     OVERWRITE,
@@ -26,7 +21,6 @@ export enum SyncStatePolicy {
 
 type SyncStateOptions = {
     policy?: SyncStatePolicy;
-    useStorageIfAvailable?: boolean;
     handleExternalUserIdMismatch?: boolean;
 };
 
@@ -43,17 +37,6 @@ export class UserStateManager {
         };
     }
 
-    static async saveState() {
-        try {
-            await NotiflyStorage.setItem(NotiflyStorageKeys.NOTIFLY_STATE, JSON.stringify(this.state));
-        } catch (e) {
-            console.warn(
-                '[Notifly] Failed to save state to IndexedDB. This is mostly due to the sudden browser shutdown.',
-                e
-            );
-        }
-    }
-
     static async sync(options: SyncStateOptions): Promise<void> {
         await this._syncState(options);
     }
@@ -61,12 +44,11 @@ export class UserStateManager {
     static async refresh(policy: SyncStatePolicy = SyncStatePolicy.OVERWRITE) {
         return this._syncState({
             policy,
-            useStorageIfAvailable: false,
         });
     }
 
     static async updateExternalUserId() {
-        this.userData.external_user_id = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
+        this.userData.external_user_id = await NotiflyStore.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
     }
 
     static updateAndGetCampaignHiddenUntilDataAccordingToReEligibleCondition(
@@ -121,8 +103,6 @@ export class UserStateManager {
                 event_params: eventParams || {},
             });
         }
-
-        this.saveState();
     }
 
     private static _clearEventCounts() {
@@ -136,8 +116,6 @@ export class UserStateManager {
         Object.keys(params).forEach((key) => {
             this.userData.user_properties && (this.userData.user_properties[key] = params[key]);
         });
-
-        this.saveState();
     }
 
     private static _clearUserProperties() {
@@ -152,8 +130,6 @@ export class UserStateManager {
             ...this.userData.campaign_hidden_until,
             ...campaignHiddenUntilData,
         };
-
-        this.saveState();
     }
 
     private static _clearCampaignHiddenUntilData() {
@@ -164,46 +140,18 @@ export class UserStateManager {
         this._clearEventCounts();
         this._clearUserProperties();
         this._clearCampaignHiddenUntilData();
-
-        this.saveState();
     }
 
     private static async _syncState(options: SyncStateOptions): Promise<void> {
         await this.updateExternalUserId();
 
-        const useStorageIfAvailable = options.useStorageIfAvailable ?? true;
         const policy = options.policy ?? SyncStatePolicy.OVERWRITE;
 
-        if (useStorageIfAvailable) {
-            // Get state from storage, if available
-            const storedState = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_STATE);
-            try {
-                const parsedStateJson = storedState ? JSON.parse(storedState) : null;
-                if (parsedStateJson && isValidUserState(parsedStateJson)) {
-                    const parsedState = parsedStateJson as {
-                        eventIntermediateCounts: EventIntermediateCounts[];
-                        inWebMessageCampaigns: Campaign[];
-                        userData: UserData;
-                    };
-
-                    this.eventIntermediateCounts = parsedState.eventIntermediateCounts;
-                    this.inWebMessageCampaigns = parsedState.inWebMessageCampaigns;
-                    this._overwriteUserData(parsedState.userData);
-
-                    await this.saveState();
-                    return;
-                }
-                console.warn('[Notifly] State from storage might have been corrupted. Ignoring state from storage.');
-            } catch (error) {
-                console.warn('[Notifly] State from storage might have been corrupted. Ignoring state from storage.');
-            }
-        }
-
-        const [projectId, notiflyDeviceId] = await NotiflyStorage.getItems([
+        const [projectId, notiflyDeviceId] = await NotiflyStore.getItems([
             NotiflyStorageKeys.PROJECT_ID,
             NotiflyStorageKeys.NOTIFLY_DEVICE_ID,
         ]);
-        const notiflyUserId = await NotiflyStorage.getNotiflyUserId();
+        const notiflyUserId = await NotiflyStore.getNotiflyUserId();
 
         if (!projectId || !notiflyDeviceId || !notiflyUserId) {
             throw new Error('Project ID, device ID, Notifly User ID should be set before logging an event.');
@@ -221,11 +169,11 @@ export class UserStateManager {
         if (options.handleExternalUserIdMismatch) {
             const userData = data.userData || {};
             const deviceExternalUserId = userData['device_external_user_id'];
-            const sdkExternalUserId = await NotiflyStorage.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
+            const sdkExternalUserId = await NotiflyStore.getItem(NotiflyStorageKeys.EXTERNAL_USER_ID);
 
             if (this.shouldHandleExternalUserIdMismatch(sdkExternalUserId, deviceExternalUserId)) {
                 // SDK의 external_user_id를 DB 값으로 변경
-                await NotiflyStorage.setItem(NotiflyStorageKeys.EXTERNAL_USER_ID, deviceExternalUserId);
+                await NotiflyStore.setItem(NotiflyStorageKeys.EXTERNAL_USER_ID, deviceExternalUserId);
                 await this._syncState({
                     ...options,
                     policy: SyncStatePolicy.OVERWRITE,
@@ -236,7 +184,6 @@ export class UserStateManager {
         }
 
         this._updateStatesBasedOnPolicy(data, policy);
-        await this.saveState();
     }
 
     private static shouldHandleExternalUserIdMismatch(

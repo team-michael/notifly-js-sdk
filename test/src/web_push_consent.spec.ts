@@ -62,7 +62,7 @@ beforeEach(async () => {
     ({ SdkStateManager: state } = await import('../../src/Core/SdkState'));
     ({ UserStateManager: user } = await import('../../src/Core/User/State'));
     renderer = await import('notifly-web-message-renderer');
-    const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
+    const { NotiflyStore: storage } = await import('../../src/Core/Storage');
     const { EventLogger } = await import('../../src/Core/Event');
     const { NotiflyAPI } = await import('../../src/Core/API');
     jest.spyOn(storage, 'getItem').mockResolvedValue(null);
@@ -185,7 +185,7 @@ test('requires a recent real user interaction and the current popup source', asy
 
 test('records consent for the current user after a login while the popup is open', async () => {
     user.userData.external_user_id = 'another-user';
-    const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
+    const { NotiflyStore: storage } = await import('../../src/Core/Storage');
     jest.mocked(storage.getItem).mockResolvedValue('another-user');
     jest.mocked(storage.getItems).mockResolvedValue(['test-project', 'test-device', 'another-user']);
     send();
@@ -210,7 +210,7 @@ test('registers a granted subscription for the current user after a login during
     send();
     await flush();
     user.userData.external_user_id = 'another-user';
-    const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
+    const { NotiflyStore: storage } = await import('../../src/Core/Storage');
     jest.mocked(storage.getItem).mockResolvedValue('another-user');
     jest.mocked(storage.getItems).mockResolvedValue(['test-project', 'test-device', 'another-user']);
     complete('granted');
@@ -251,7 +251,7 @@ test('keeps consent and closes the popup in an unsupported browser', async () =>
 });
 
 test('registers the subscription for the current user if the user changes while subscribing', async () => {
-    const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
+    const { NotiflyStore: storage } = await import('../../src/Core/Storage');
     subscribe.mockImplementation(async () => {
         user.userData.external_user_id = 'another-user';
         jest.mocked(storage.getItem).mockResolvedValue('another-user');
@@ -295,7 +295,7 @@ test('repeats the compatibility acknowledgement when reused popup content finish
 });
 
 test('uses the stored user for consent and subscription after another tab changes it', async () => {
-    const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
+    const { NotiflyStore: storage } = await import('../../src/Core/Storage');
     jest.spyOn(storage, 'getItem').mockResolvedValue('user-from-another-tab');
     jest.spyOn(storage, 'getItems').mockResolvedValue(['test-project', 'test-device', 'user-from-another-tab']);
     send();
@@ -347,7 +347,7 @@ test('does not overwrite the new user when an earlier consent upload completes',
     send();
     await flush();
     user.userData = { ...user.userData, external_user_id: 'new-user', user_properties: {} };
-    const { NotiflyStorage: storage } = await import('../../src/Core/Storage');
+    const { NotiflyStore: storage } = await import('../../src/Core/Storage');
     jest.spyOn(storage, 'getItem').mockResolvedValue('new-user');
     complete();
     await flush();

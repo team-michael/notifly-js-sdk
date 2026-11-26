@@ -1,22 +1,7 @@
-import { v4, v5 } from 'uuid';
+import { v5 } from 'uuid';
 import { HashNamespace } from '../../Constants';
-import { NotiflyStorage, NotiflyStorageKeys } from '../Storage';
 
 export * from './Timezone';
-
-export async function initializeNotiflyStorage(projectId: string, username: string, password: string) {
-    await NotiflyStorage.ensureInitialized();
-    const itemsToSet: Partial<Record<NotiflyStorageKeys, string>> = {
-        [NotiflyStorageKeys.PROJECT_ID]: projectId,
-        [NotiflyStorageKeys.USERNAME]: username,
-        [NotiflyStorageKeys.PASSWORD]: password,
-    };
-    const existingDeviceId = await NotiflyStorage.getItem(NotiflyStorageKeys.NOTIFLY_DEVICE_ID);
-    if (!existingDeviceId) {
-        itemsToSet[NotiflyStorageKeys.NOTIFLY_DEVICE_ID] = v4();
-    }
-    await NotiflyStorage.setItems(itemsToSet);
-}
 
 export function isValidProjectId(projectId: string) {
     const regex = /^(?:[0-9a-fA-F]{32})$/;
