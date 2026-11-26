@@ -23,6 +23,7 @@ const OBJECT_STORE = 'notiflyconfig';
 const IDENTITY_KEY = '__notiflyIdentity';
 const STATE_KEY = '__notiflyState';
 const MAX_ATTEMPTS = 5;
+const TRANSACTION_TIMEOUT = 1000;
 const LEGACY_FIELDS: [keyof NotiflyIdentity, string][] = [
     ['projectId', '__notiflyProjectID'],
     ['username', '__notiflyUserName'],
@@ -223,48 +224,64 @@ export default class IdentityStore {
     ): Promise<T> {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(DATABASE);
-            let blocked = false;
-            request.onerror = () => reject(request.error);
-            request.onblocked = () => {
-                blocked = true;
-                reject(new Error('[IdentityStore] Database open is blocked.'));
+            let db: IDBDatabase | undefined;
+            let transaction: IDBTransaction | undefined;
+            let failed = false;
+            const fail = (error: unknown) => {
+                if (failed) return;
+                failed = true;
+                clearTimeout(timeout);
+                try {
+                    transaction?.abort();
+                } catch {
+                    // A transaction that already committed or aborted cannot be cancelled.
+                }
+                db?.close();
+                reject(error);
             };
+            const timeout = setTimeout(
+                () => fail(new Error('[IdentityStore] Database operation timed out.')),
+                TRANSACTION_TIMEOUT
+            );
+            request.onerror = () => fail(request.error);
+            request.onblocked = () => fail(new Error('[IdentityStore] Database open is blocked.'));
             request.onupgradeneeded = () => {
+                if (failed) {
+                    request.transaction?.abort();
+                    return;
+                }
                 if (!request.result.objectStoreNames.contains(OBJECT_STORE)) {
                     request.result.createObjectStore(OBJECT_STORE);
                 }
             };
             request.onsuccess = () => {
-                const db = request.result;
-                if (blocked) {
+                db = request.result;
+                if (failed) {
                     db.close();
                     return;
                 }
-                db.onversionchange = () => db.close();
-                let transaction: IDBTransaction;
+                db.onversionchange = () => db?.close();
                 try {
                     transaction = db.transaction(OBJECT_STORE, mode);
                 } catch (error) {
-                    db.close();
-                    reject(error);
+                    fail(error);
                     return;
                 }
                 let result: T;
                 transaction.oncomplete = () => {
-                    db.close();
+                    clearTimeout(timeout);
+                    db?.close();
                     resolve(result);
                 };
                 transaction.onabort = () => {
-                    db.close();
-                    reject(transaction.error || new Error('[IdentityStore] Transaction aborted.'));
+                    fail(transaction?.error || new Error('[IdentityStore] Transaction aborted.'));
                 };
                 try {
                     work(transaction.objectStore(OBJECT_STORE), (value) => {
                         result = value;
                     });
                 } catch (error) {
-                    transaction.abort();
-                    reject(error);
+                    fail(error);
                 }
             };
         });
